@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About us | HealthCare+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet" type="text/css" />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+<!-- Navbar -->
+    <div class="navbar bg-base-100 shadow-lg px-2 sm:px-4">
+      <div class="navbar-start">
+        <div class="dropdown">
+          <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h8m-8 6h16" />
+            </svg>
+          </div>
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+            <li><a href="services.html">Services</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="doctors.html">Doctors</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <a href="index.html" class="btn btn-ghost text-lg sm:text-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 sm:w-8 sm:h-8 text-primary">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+          </svg>
+          <span class="hidden sm:inline">HealthCare+</span>
+        </a>
+      </div>
+      <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1">
+          <li><a href="services.html" class="btn btn-ghost">Services</a></li>
+          <li><a href="about.html" class="btn btn-ghost">About</a></li>
+          <li><a href="doctors.html" class="btn btn-ghost">Doctors</a></li>
+          <li><a href="contact.html" class="btn btn-ghost">Contact</a></li>
+        </ul>
+      </div>
+      <div class="navbar-end">
+        <!-- Theme toggle -->
+       <label class="swap swap-rotate">
+  <!-- this hidden checkbox controls the state -->
+  <input type="checkbox" class="theme-controller" value="synthwave" />
+
+  <!-- sun icon -->
+  <svg
+    class="swap-off h-10 w-10 fill-current"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24">
+    <path
+      d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
+  </svg>
+
+  <!-- moon icon -->
+  <svg
+    class="swap-on h-10 w-10 fill-current"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24">
+    <path
+      d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z" />
+  </svg>
+</label>
+        <a class="btn btn-ghost btn-sm sm:btn-md text-xs sm:text-sm mr-2" href="login.html">
+          Login
+        </a>
+        <a class="btn btn-primary btn-sm sm:btn-md text-xs sm:text-sm" href="signup.html">
+          <span class="hidden sm:inline">Join Us Now!</span>
+          <span class="sm:hidden">Join us!</span>
+        </a>
+      </div>
+    </div>
+    <!-- About Section -->
+    <section id="about" class="py-16 sm:py-20 lg:py-24 bg-base-100">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Section Header -->
+        <div class="text-center mb-12 sm:mb-16">
+          <div class="flex justify-center mb-4">
+            <div class="badge badge-primary badge-lg px-4 py-3 text-sm font-medium">
+              About HealthCare+
+            </div>
+          </div>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+            Trusted Healthcare Partner Since 
+            <span class="text-primary">2010</span>
+          </h2>
+          <p class="text-lg sm:text-xl text-base-content/70 max-w-3xl mx-auto leading-relaxed">
+            We've been revolutionizing healthcare delivery with cutting-edge technology, 
+            compassionate care, and a commitment to your wellness journey.
+          </p>
+        </div>
+
+        <!-- Mission & Vision Cards -->
+        <div class="grid md:grid-cols-2 gap-6 sm:gap-8 mb-16 sm:mb-20">
+          <div class="card bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div class="card-body p-6 sm:p-8">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mr-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                  </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-base-content">Our Mission</h3>
+              </div>
+              <p class="text-base-content/80 text-lg leading-relaxed">
+                To provide accessible, innovative healthcare solutions that empower individuals 
+                to live healthier, happier lives through personalized care and cutting-edge medical technology.
+              </p>
+            </div>
+          </div>
+
+          <div class="card bg-gradient-to-br from-secondary/5 to-secondary/10 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div class="card-body p-6 sm:p-8">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center mr-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-secondary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-base-content">Our Vision</h3>
+              </div>
+              <p class="text-base-content/80 text-lg leading-relaxed">
+                To be the leading healthcare platform that transforms communities by making 
+                quality healthcare accessible, affordable, and patient-centered for everyone.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Tabs Section -->
+        <div class="mb-16 sm:mb-20">
+          <div role="tablist" class="tabs tabs-bordered tabs-lg justify-center mb-8">
+            <input type="radio" name="about_tabs" role="tab" class="tab text-lg font-semibold" aria-label="Our Story" checked />
+            <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6 sm:p-8">
+              <div class="grid lg:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h3 class="text-2xl sm:text-3xl font-bold mb-4 text-base-content">Our Journey</h3>
+                  <div class="space-y-4 text-base-content/80">
+                    <p class="text-lg leading-relaxed">
+                      Founded in 2010 with a simple belief: healthcare should be accessible to everyone. 
+                      What started as a small clinic has grown into a comprehensive healthcare ecosystem 
+                      serving thousands of patients across multiple locations.
+                    </p>
+                    <p class="text-lg leading-relaxed">
+                      Today, we combine traditional medical expertise with innovative technology to deliver 
+                      personalized care that meets you where you are in your health journey.
+                    </p>
+                  </div>
+                </div>
+                <div class="stats stats-vertical shadow-lg bg-gradient-to-br from-base-200 to-base-300">
+                  <div class="stat">
+                    <div class="stat-figure text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.26-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                      </svg>
+                    </div>
+                    <div class="stat-title">Healthcare Centers</div>
+                    <div class="stat-value text-primary">15+</div>
+                    <div class="stat-desc">Across the region</div>
+                  </div>
+                  
+                  <div class="stat">
+                    <div class="stat-figure text-secondary">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443a55.381 55.381 0 015.25 2.882V15" />
+                      </svg>
+                    </div>
+                    <div class="stat-title">Years Experience</div>
+                    <div class="stat-value text-secondary">15</div>
+                    <div class="stat-desc">Of trusted care</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <input type="radio" name="about_tabs" role="tab" class="tab text-lg font-semibold" aria-label="Our Values" />
+            <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6 sm:p-8">
+              <h3 class="text-2xl sm:text-3xl font-bold mb-8 text-center text-base-content">Core Values</h3>
+              <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="text-center">
+                  <div class="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                    </svg>
+                  </div>
+                  <h4 class="font-bold text-lg mb-2">Compassion</h4>
+                  <p class="text-base-content/70 text-sm">Every interaction guided by empathy and understanding</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-secondary">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    </svg>
+                  </div>
+                  <h4 class="font-bold text-lg mb-2">Excellence</h4>
+                  <p class="text-base-content/70 text-sm">Striving for the highest standards in everything we do</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-accent">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                    </svg>
+                  </div>
+                  <h4 class="font-bold text-lg mb-2">Innovation</h4>
+                  <p class="text-base-content/70 text-sm">Embracing cutting-edge technology for better outcomes</p>
+                </div>
+                <div class="text-center">
+                  <div class="w-16 h-16 bg-info/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-info">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    </svg>
+                  </div>
+                  <h4 class="font-bold text-lg mb-2">Integrity</h4>
+                  <p class="text-base-content/70 text-sm">Transparent, honest relationships built on trust</p>
+                </div>
+              </div>
+            </div>
+
+            <input type="radio" name="about_tabs" role="tab" class="tab text-lg font-semibold" aria-label="Achievements" />
+            <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6 sm:p-8">
+              <h3 class="text-2xl sm:text-3xl font-bold mb-8 text-center text-base-content">Our Achievements</h3>
+              <div class="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
+                <div class="timeline-item">
+                  <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-primary">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.53 10.53a.75.75 0 00-1.06 1.061l2.03 2.03a.75.75 0 001.137-.089l3.857-5.401z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="timeline-start md:text-end mb-10">
+                    <time class="font-mono italic text-primary">2020</time>
+                    <div class="text-lg font-black">COVID-19 Response Excellence Award</div>
+                    <p class="text-base-content/70">Recognized for outstanding pandemic response and community support</p>
+                  </div>
+                  <hr class="bg-primary" />
+                </div>
+                <div class="timeline-item">
+                  <hr class="bg-secondary" />
+                  <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-secondary">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.53 10.53a.75.75 0 00-1.06 1.061l2.03 2.03a.75.75 0 001.137-.089l3.857-5.401z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="timeline-end mb-10">
+                    <time class="font-mono italic text-secondary">2019</time>
+                    <div class="text-lg font-black">Digital Innovation Award</div>
+                    <p class="text-base-content/70">First healthcare provider to implement AI-assisted diagnostics</p>
+                  </div>
+                  <hr class="bg-accent" />
+                </div>
+                <div class="timeline-item">
+                  <hr class="bg-accent" />
+                  <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-accent">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.53 10.53a.75.75 0 00-1.06 1.061l2.03 2.03a.75.75 0 001.137-.089l3.857-5.401z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="timeline-start md:text-end mb-10">
+                    <time class="font-mono italic text-accent">2015</time>
+                    <div class="text-lg font-black">Patient Safety Excellence</div>
+                    <p class="text-base-content/70">Achieved 99.8% patient satisfaction rating and zero safety incidents</p>
+                  </div>
+                  <hr class="bg-info" />
+                </div>
+                <div class="timeline-item">
+                  <hr class="bg-info" />
+                  <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-info">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.236 4.53L8.53 10.53a.75.75 0 00-1.06 1.061l2.03 2.03a.75.75 0 001.137-.089l3.857-5.401z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="timeline-end mb-10">
+                    <time class="font-mono italic text-info">2010</time>
+                    <div class="text-lg font-black">HealthCare+ Founded</div>
+                    <p class="text-base-content/70">Started our journey with a vision to transform healthcare delivery</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonials Section -->
+        <div class="mb-16 sm:mb-20">
+          <h3 class="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 text-base-content">
+            What Our Patients Say
+          </h3>
+          <div class="carousel carousel-center max-w-full p-4 space-x-4 bg-base-200 rounded-box">
+            <div class="carousel-item">
+              <div class="card w-80 bg-base-100 shadow-xl">
+                <div class="card-body">
+                  <div class="flex items-center mb-4">
+                    <div class="avatar">
+                      <div class="w-12 rounded-full">
+                        <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                          <span class="text-primary font-bold text-lg">SM</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ml-3">
+                      <h4 class="font-bold">Sarah Mitchell</h4>
+                      <div class="rating rating-sm">
+                        <input type="radio" name="rating-1" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-1" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-1" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-1" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-1" class="mask mask-star-2 bg-orange-400" checked />
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-base-content/80">"The telemedicine service has been a game-changer for my family. Quick, professional, and incredibly convenient."</p>
+                </div>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="card w-80 bg-base-100 shadow-xl">
+                <div class="card-body">
+                  <div class="flex items-center mb-4">
+                    <div class="avatar">
+                      <div class="w-12 rounded-full">
+                        <div class="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center">
+                          <span class="text-secondary font-bold text-lg">MJ</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ml-3">
+                      <h4 class="font-bold">Michael Johnson</h4>
+                      <div class="rating rating-sm">
+                        <input type="radio" name="rating-2" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-2" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-2" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-2" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-2" class="mask mask-star-2 bg-orange-400" checked />
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-base-content/80">"Exceptional care from diagnosis to treatment. The medical team truly cares about patient outcomes."</p>
+                </div>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="card w-80 bg-base-100 shadow-xl">
+                <div class="card-body">
+                  <div class="flex items-center mb-4">
+                    <div class="avatar">
+                      <div class="w-12 rounded-full">
+                        <div class="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center">
+                          <span class="text-accent font-bold text-lg">EW</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ml-3">
+                      <h4 class="font-bold">Emily Wilson</h4>
+                      <div class="rating rating-sm">
+                        <input type="radio" name="rating-3" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-3" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-3" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-3" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-3" class="mask mask-star-2 bg-orange-400" checked />
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-base-content/80">"The preventive care program helped me catch health issues early. Grateful for their proactive approach."</p>
+                </div>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="card w-80 bg-base-100 shadow-xl">
+                <div class="card-body">
+                  <div class="flex items-center mb-4">
+                    <div class="avatar">
+                      <div class="w-12 rounded-full">
+                        <div class="w-12 h-12 bg-info/20 rounded-full flex items-center justify-center">
+                          <span class="text-info font-bold text-lg">DB</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ml-3">
+                      <h4 class="font-bold">David Brown</h4>
+                      <div class="rating rating-sm">
+                        <input type="radio" name="rating-4" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-4" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-4" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-4" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating-4" class="mask mask-star-2 bg-orange-400" checked />
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-base-content/80">"Amazing specialists and state-of-the-art facilities. The booking system is seamless and user-friendly."</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="text-center">
+          <div class="card bg-gradient-to-r from-primary to-secondary text-primary-content shadow-2xl">
+            <div class="card-body py-12 sm:py-16">
+              <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
+                Ready to Experience Better Healthcare?
+              </h3>
+              <p class="text-lg sm:text-xl mb-6 sm:mb-8 opacity-90 max-w-2xl mx-auto">
+                Join thousands of patients who trust HealthCare+ for their wellness journey. 
+                Your health is our priority.
+              </p>
+              <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="btn btn-secondary btn-lg text-lg px-8">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5m-18 0h18" />
+                  </svg>
+                  Schedule Consultation
+                </button>
+                <button class="btn btn-outline btn-lg text-lg px-8 border-white text-white hover:bg-white hover:text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 006 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                  </svg>
+                  Learn More
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+     <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
