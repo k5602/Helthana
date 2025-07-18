@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM python:3.10-slim as backend-builder
+FROM python:3.12-slim as backend-builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -27,7 +27,7 @@ COPY backend/ .
 RUN python manage.py collectstatic --noinput --settings=health_guide.settings.production
 
 # Production stage
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1

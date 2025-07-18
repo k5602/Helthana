@@ -7,7 +7,7 @@ psycopg==3.2.9
 redis==5.0.8
 celery==5.4.0
 google-cloud-vision==3.7.2
-google-cloud-speech==2.27.0
+google-cloud-speech==2.33.0
 twilio==9.2.4
 python-decouple==3.8
 gunicorn==23.0.0
