@@ -15,12 +15,14 @@ class UIManager {
             element = document.getElementById(element);
         }
         
-        element.innerHTML = `
-            <div class="flex items-center justify-center p-8">
-                <div class="loading-spinner"></div>
-                <span class="ml-2">${text}</span>
-            </div>
-        `;
+        if (element) {
+            element.innerHTML = `
+                <div class="flex items-center justify-center p-8">
+                    <div class="loading-spinner"></div>
+                    <span class="ml-2">${text}</span>
+                </div>
+            `;
+        }
     }
 
     // Show error message
@@ -29,11 +31,13 @@ class UIManager {
             element = document.getElementById(element);
         }
         
-        element.innerHTML = `
-            <div class="alert alert-error">
-                <span>${message}</span>
-            </div>
-        `;
+        if (element) {
+            element.innerHTML = `
+                <div class="alert alert-error">
+                    <span>${message}</span>
+                </div>
+            `;
+        }
     }
 
     // Show success message
@@ -73,7 +77,7 @@ class UIManager {
                 <h3 class="font-bold text-lg mb-4">${title}</h3>
                 <div class="modal-content">${content}</div>
                 <div class="modal-action">
-                    <button class="btn" onclick="ui.closeModal('${id}')">Close</button>
+                    <button class="btn" onclick="window.ui.closeModal('${id}')">Close</button>
                     ${actionsHTML}
                 </div>
             </div>
@@ -106,15 +110,15 @@ class UIManager {
             <div class="space-y-4">
                 <div class="form-control">
                     <label class="label">Doctor Name</label>
-                    <input type="text" id="doctor-name" class="input-custom" required>
+                    <input type="text" id="doctor-name" class="input input-bordered" required>
                 </div>
                 <div class="form-control">
                     <label class="label">Clinic Name</label>
-                    <input type="text" id="clinic-name" class="input-custom">
+                    <input type="text" id="clinic-name" class="input input-bordered">
                 </div>
                 <div class="form-control">
                     <label class="label">Prescription Date</label>
-                    <input type="date" id="prescription-date" class="input-custom" required>
+                    <input type="date" id="prescription-date" class="input input-bordered" required>
                 </div>
                 <div class="form-control">
                     <label class="label">Prescription Image</label>
@@ -127,7 +131,7 @@ class UIManager {
         `;
         
         return this.createModal('prescription-scanner', 'Scan Prescription', content, [
-            { text: 'Upload & Process', class: 'btn-primary', onclick: 'uploadPrescription()' }
+            { text: 'Upload & Process', class: 'btn-primary', onclick: 'window.uploadPrescription()' }
         ]);
     }
 
@@ -147,15 +151,15 @@ class UIManager {
                 </div>
                 <div class="form-control">
                     <label class="label">Value</label>
-                    <input type="text" id="vital-value" class="input-custom" placeholder="e.g., 120/80, 95, 70kg" required>
+                    <input type="text" id="vital-value" class="input input-bordered" placeholder="e.g., 120/80, 95, 70kg" required>
                 </div>
                 <div class="form-control">
                     <label class="label">Unit</label>
-                    <input type="text" id="vital-unit" class="input-custom" placeholder="e.g., mmHg, mg/dL, kg" required>
+                    <input type="text" id="vital-unit" class="input input-bordered" placeholder="e.g., mmHg, mg/dL, kg" required>
                 </div>
                 <div class="form-control">
                     <label class="label">Date & Time</label>
-                    <input type="datetime-local" id="vital-datetime" class="input-custom" required>
+                    <input type="datetime-local" id="vital-datetime" class="input input-bordered" required>
                 </div>
                 <div class="form-control">
                     <label class="label">Notes (Optional)</label>
@@ -165,7 +169,7 @@ class UIManager {
         `;
         
         return this.createModal('vitals-form', 'Log Vital Signs', content, [
-            { text: 'Save Vital', class: 'btn-primary', onclick: 'saveVital()' }
+            { text: 'Save Vital', class: 'btn-primary', onclick: 'window.saveVital()' }
         ]);
     }
 
@@ -209,54 +213,58 @@ class UIManager {
 }
 
 // Global UI manager instance
-const ui = new UIManager();
+window.ui = new UIManager();
 
 // Global UI functions
-function showPrescriptionScanner() {
-    if (!ui.modals.has('prescription-scanner')) {
-        ui.createPrescriptionScanner();
+window.showPrescriptionScanner = function() {
+    if (!window.ui.modals.has('prescription-scanner')) {
+        window.ui.createPrescriptionScanner();
     }
-    ui.showModal('prescription-scanner');
+    window.ui.showModal('prescription-scanner');
     
     // Set up image preview
     const imageInput = document.getElementById('prescription-image');
     const preview = document.getElementById('image-preview');
     const previewImg = document.getElementById('preview-img');
     
-    imageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                preview.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    if (imageInput && preview && previewImg) {
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 }
 
-function showVitalsForm() {
-    if (!ui.modals.has('vitals-form')) {
-        ui.createVitalsForm();
+window.showVitalsForm = function() {
+    if (!window.ui.modals.has('vitals-form')) {
+        window.ui.createVitalsForm();
     }
-    ui.showModal('vitals-form');
+    window.ui.showModal('vitals-form');
     
     // Set current datetime
     const datetimeInput = document.getElementById('vital-datetime');
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    datetimeInput.value = now.toISOString().slice(0, 16);
+    if (datetimeInput) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        datetimeInput.value = now.toISOString().slice(0, 16);
+    }
 }
 
-async function uploadPrescription() {
-    const doctorName = document.getElementById('doctor-name').value;
-    const clinicName = document.getElementById('clinic-name').value;
-    const prescriptionDate = document.getElementById('prescription-date').value;
-    const imageFile = document.getElementById('prescription-image').files[0];
+window.uploadPrescription = async function() {
+    const doctorName = document.getElementById('doctor-name')?.value;
+    const clinicName = document.getElementById('clinic-name')?.value;
+    const prescriptionDate = document.getElementById('prescription-date')?.value;
+    const imageFile = document.getElementById('prescription-image')?.files[0];
     
     if (!doctorName || !prescriptionDate || !imageFile) {
-        ui.showToast('Please fill in all required fields', 'error');
+        window.ui.showToast('Please fill in all required fields', 'error');
         return;
     }
     
@@ -267,44 +275,44 @@ async function uploadPrescription() {
     formData.append('image', imageFile);
     
     try {
-        ui.showLoading('prescription-scanner .modal-content', 'Processing prescription...');
-        const result = await api.uploadPrescription(formData);
-        ui.closeModal('prescription-scanner');
-        ui.showSuccess('Prescription uploaded successfully!');
+        window.ui.showLoading('prescription-scanner .modal-content', 'Processing prescription...');
+        const result = await window.api.uploadPrescription(formData);
+        window.ui.closeModal('prescription-scanner');
+        window.ui.showSuccess('Prescription uploaded successfully!');
         
         // Refresh dashboard if we're on it
-        if (window.location.pathname.includes('dashboard')) {
-            loadDashboardData();
+        if (window.location.pathname.includes('dashboard') && window.loadDashboardData) {
+            window.loadDashboardData();
         }
     } catch (error) {
-        ui.showError('prescription-scanner .modal-content', 'Failed to upload prescription');
+        window.ui.showError('prescription-scanner .modal-content', 'Failed to upload prescription');
     }
 }
 
-async function saveVital() {
+window.saveVital = async function() {
     const vitalData = {
-        vital_type: document.getElementById('vital-type').value,
-        value: document.getElementById('vital-value').value,
-        unit: document.getElementById('vital-unit').value,
-        recorded_at: document.getElementById('vital-datetime').value,
-        notes: document.getElementById('vital-notes').value
+        vital_type: document.getElementById('vital-type')?.value,
+        value: document.getElementById('vital-value')?.value,
+        unit: document.getElementById('vital-unit')?.value,
+        recorded_at: document.getElementById('vital-datetime')?.value,
+        notes: document.getElementById('vital-notes')?.value
     };
     
     if (!vitalData.value || !vitalData.unit || !vitalData.recorded_at) {
-        ui.showToast('Please fill in all required fields', 'error');
+        window.ui.showToast('Please fill in all required fields', 'error');
         return;
     }
     
     try {
-        await api.addVital(vitalData);
-        ui.closeModal('vitals-form');
-        ui.showSuccess('Vital signs logged successfully!');
+        await window.api.addVital(vitalData);
+        window.ui.closeModal('vitals-form');
+        window.ui.showSuccess('Vital signs logged successfully!');
         
         // Refresh dashboard if we're on it
-        if (window.location.pathname.includes('dashboard')) {
-            loadDashboardData();
+        if (window.location.pathname.includes('dashboard') && window.loadDashboardData) {
+            window.loadDashboardData();
         }
     } catch (error) {
-        ui.showToast('Failed to save vital signs', 'error');
+        window.ui.showToast('Failed to save vital signs', 'error');
     }
 }

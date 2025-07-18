@@ -147,11 +147,11 @@ class OfflineManager {
     async syncItem(item) {
         switch (item.action) {
             case 'add_prescription':
-                return await api.uploadPrescription(item.data);
+                return await window.api.uploadPrescription(item.data);
             case 'add_vital':
-                return await api.addVital(item.data);
+                return await window.api.addVital(item.data);
             case 'emergency_alert':
-                return await api.sendEmergencyAlert(item.data);
+                return await window.api.sendEmergencyAlert(item.data);
             default:
                 console.warn('Unknown sync action:', item.action);
         }
@@ -167,7 +167,7 @@ class OfflineManager {
         const stored = await this.storeOffline('prescriptions', prescriptionData);
         if (stored) {
             await this.addToSyncQueue('add_prescription', prescriptionData);
-            ui.showToast('Prescription saved offline. Will sync when online.', 'info');
+            if (window.ui) window.ui.showToast('Prescription saved offline. Will sync when online.', 'info');
         }
         return stored;
     }
@@ -177,7 +177,7 @@ class OfflineManager {
         const stored = await this.storeOffline('vitals', vitalData);
         if (stored) {
             await this.addToSyncQueue('add_vital', vitalData);
-            ui.showToast('Vital signs saved offline. Will sync when online.', 'info');
+            if (window.ui) window.ui.showToast('Vital signs saved offline. Will sync when online.', 'info');
         }
         return stored;
     }
@@ -188,7 +188,7 @@ class OfflineManager {
         
         if (this.isOnline()) {
             try {
-                const onlineData = await api.getPrescriptions();
+                const onlineData = await window.api.getPrescriptions();
                 return [...onlineData.results || onlineData, ...offlineData];
             } catch (error) {
                 console.error('Failed to fetch online prescriptions:', error);
@@ -204,7 +204,7 @@ class OfflineManager {
         
         if (this.isOnline()) {
             try {
-                const onlineData = await api.getVitals();
+                const onlineData = await window.api.getVitals();
                 return [...onlineData.results || onlineData, ...offlineData];
             } catch (error) {
                 console.error('Failed to fetch online vitals:', error);
@@ -217,46 +217,50 @@ class OfflineManager {
 }
 
 // Global offline manager instance
-const offline = new OfflineManager();
+window.offline = new OfflineManager();
 
 // Auto-sync when coming online
 window.addEventListener('online', () => {
-    offline.syncOfflineData();
+    window.offline.syncOfflineData();
 });
 
 // Enhanced API methods that work offline
-const originalUploadPrescription = api.uploadPrescription;
-api.uploadPrescription = async function(formData) {
-    if (offline.isOnline()) {
-        try {
-            return await originalUploadPrescription.call(this, formData);
-        } catch (error) {
-            // If online request fails, store offline
-            const prescriptionData = Object.fromEntries(formData);
-            await offline.storePrescriptionOffline(prescriptionData);
-            throw error;
-        }
-    } else {
-        // Store offline
-        const prescriptionData = Object.fromEntries(formData);
-        await offline.storePrescriptionOffline(prescriptionData);
-        return { id: Date.now(), offline: true };
-    }
-};
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.api) {
+        const originalUploadPrescription = window.api.uploadPrescription;
+        window.api.uploadPrescription = async function(formData) {
+            if (window.offline.isOnline()) {
+                try {
+                    return await originalUploadPrescription.call(this, formData);
+                } catch (error) {
+                    // If online request fails, store offline
+                    const prescriptionData = Object.fromEntries(formData);
+                    await window.offline.storePrescriptionOffline(prescriptionData);
+                    throw error;
+                }
+            } else {
+                // Store offline
+                const prescriptionData = Object.fromEntries(formData);
+                await window.offline.storePrescriptionOffline(prescriptionData);
+                return { id: Date.now(), offline: true };
+            }
+        };
 
-const originalAddVital = api.addVital;
-api.addVital = async function(vitalData) {
-    if (offline.isOnline()) {
-        try {
-            return await originalAddVital.call(this, vitalData);
-        } catch (error) {
-            // If online request fails, store offline
-            await offline.storeVitalOffline(vitalData);
-            throw error;
-        }
-    } else {
-        // Store offline
-        await offline.storeVitalOffline(vitalData);
-        return { id: Date.now(), offline: true };
+        const originalAddVital = window.api.addVital;
+        window.api.addVital = async function(vitalData) {
+            if (window.offline.isOnline()) {
+                try {
+                    return await originalAddVital.call(this, vitalData);
+                } catch (error) {
+                    // If online request fails, store offline
+                    await window.offline.storeVitalOffline(vitalData);
+                    throw error;
+                }
+            } else {
+                // Store offline
+                await window.offline.storeVitalOffline(vitalData);
+                return { id: Date.now(), offline: true };
+            }
+        };
     }
-};
+});

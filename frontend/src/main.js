@@ -1,3 +1,11 @@
+import './style.css'
+import './navigation.js'
+import './localization.js'
+import './api.js'
+import './auth.js'
+import './ui.js'
+import './offline.js'
+
 /**
  * Main Application Entry Point
  * Initializes the app and handles routing
@@ -10,12 +18,12 @@ class HealthGuideApp {
 
     init() {
         // Check if user is authenticated and redirect accordingly
-        if (auth.isAuthenticated() && window.location.pathname === '/') {
+        if (window.auth && window.auth.isAuthenticated() && window.location.pathname === '/') {
             window.location.href = '/dashboard.html';
             return;
         }
         
-        if (!auth.isAuthenticated() && window.location.pathname.includes('dashboard')) {
+        if (window.auth && !window.auth.isAuthenticated() && window.location.pathname.includes('dashboard')) {
             window.location.href = '/';
             return;
         }
@@ -41,13 +49,12 @@ class HealthGuideApp {
     }
 
     initializeLandingPage() {
-        // Landing page is already set up in HTML
         console.log('Landing page initialized');
     }
 
     initializeDashboard() {
-        if (typeof loadDashboardData === 'function') {
-            loadDashboardData();
+        if (typeof window.loadDashboardData === 'function') {
+            window.loadDashboardData();
         }
     }
 
@@ -55,12 +62,12 @@ class HealthGuideApp {
         // Handle offline/online status
         window.addEventListener('online', () => {
             this.hideOfflineIndicator();
-            ui.showToast('Connection restored', 'success');
+            if (window.ui && window.t) window.ui.showToast(window.t('msg.connection.restored'), 'success');
         });
 
         window.addEventListener('offline', () => {
             this.showOfflineIndicator();
-            ui.showToast('You are now offline', 'warning');
+            if (window.ui && window.t) window.ui.showToast(window.t('msg.offline'), 'warning');
         });
 
         // Handle emergency button
@@ -101,7 +108,7 @@ class HealthGuideApp {
         // Handle PWA install
         window.addEventListener('appinstalled', () => {
             console.log('PWA was installed');
-            ui.showToast('App installed successfully!', 'success');
+            if (window.ui) window.ui.showToast('App installed successfully!', 'success');
         });
     }
 
@@ -153,7 +160,7 @@ class HealthGuideApp {
     }
 
     async handleEmergencyAlert() {
-        if (!confirm('Send emergency alert to your contacts?')) {
+        if (!confirm(window.t ? window.t('msg.emergency.confirm') : 'Send emergency alert to your contacts?')) {
             return;
         }
 
@@ -170,21 +177,23 @@ class HealthGuideApp {
                 };
             }
 
-            await api.sendEmergencyAlert({
-                message: 'Emergency alert sent from Health Guide app',
-                ...location
-            });
+            if (window.api) {
+                await window.api.sendEmergencyAlert({
+                    message: 'Emergency alert sent from Health Guide app',
+                    ...location
+                });
 
-            ui.showSuccess('Emergency alert sent to your contacts!');
+                if (window.ui) window.ui.showSuccess(window.t ? window.t('msg.emergency.sent') : 'Emergency alert sent to your contacts!');
+            }
         } catch (error) {
             console.error('Emergency alert failed:', error);
-            ui.showToast('Failed to send emergency alert', 'error');
+            if (window.ui) window.ui.showToast(window.t ? window.t('msg.emergency.failed') : 'Failed to send emergency alert', 'error');
         }
     }
 
     handleVoiceCommand() {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            ui.showToast('Voice recognition not supported in this browser', 'error');
+            if (window.ui) window.ui.showToast(window.t ? window.t('msg.voice.not.supported') : 'Voice recognition not supported in this browser', 'error');
             return;
         }
 
@@ -196,8 +205,9 @@ class HealthGuideApp {
         recognition.interimResults = false;
 
         recognition.onstart = () => {
-            ui.showToast('Listening... Speak now', 'info');
-            document.getElementById('voice-btn').textContent = '🔴';
+            if (window.ui) window.ui.showToast(window.t ? window.t('msg.voice.listening') : 'Listening... Speak now', 'info');
+            const voiceBtn = document.getElementById('voice-btn');
+            if (voiceBtn) voiceBtn.textContent = '🔴';
         };
 
         recognition.onresult = (event) => {
@@ -207,11 +217,12 @@ class HealthGuideApp {
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            ui.showToast('Voice recognition failed', 'error');
+            if (window.ui) window.ui.showToast(window.t ? window.t('msg.voice.failed') : 'Voice recognition failed', 'error');
         };
 
         recognition.onend = () => {
-            document.getElementById('voice-btn').textContent = '🎤';
+            const voiceBtn = document.getElementById('voice-btn');
+            if (voiceBtn) voiceBtn.textContent = '🎤';
         };
 
         recognition.start();
@@ -222,13 +233,13 @@ class HealthGuideApp {
         
         // Simple command processing (can be enhanced with NLP)
         if (command.includes('scan') || command.includes('prescription')) {
-            showPrescriptionScanner();
+            if (window.showPrescriptionScanner) window.showPrescriptionScanner();
         } else if (command.includes('vital') || command.includes('blood')) {
-            showVitalsForm();
+            if (window.showVitalsForm) window.showVitalsForm();
         } else if (command.includes('emergency') || command.includes('help')) {
             this.handleEmergencyAlert();
         } else {
-            ui.showToast('Command not recognized. Try "scan prescription" or "log vitals"', 'info');
+            if (window.ui) window.ui.showToast(window.t ? window.t('msg.command.not.recognized') : 'Command not recognized. Try "scan prescription" or "log vitals"', 'info');
         }
     }
 }
@@ -239,18 +250,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Global functions for backward compatibility
-function logout() {
-    auth.logout();
+window.logout = function() {
+    if (window.auth) window.auth.logout();
 }
 
-function showProfile() {
-    ui.showToast('Profile feature coming soon!', 'info');
+window.showProfile = function() {
+    if (window.ui) window.ui.showToast('Profile feature coming soon!', 'info');
 }
 
-function generateReport() {
-    ui.showToast('Report generation feature coming soon!', 'info');
+window.generateReport = function() {
+    if (window.ui) window.ui.showToast('Report generation feature coming soon!', 'info');
 }
 
-function showEmergencyContacts() {
-    ui.showToast('Emergency contacts feature coming soon!', 'info');
+window.showEmergencyContacts = function() {
+    if (window.ui) window.ui.showToast('Emergency contacts feature coming soon!', 'info');
 }

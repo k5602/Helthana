@@ -160,4 +160,4 @@ class ApiClient {
 }
 
 // Global API client instance
-const api = new ApiClient();
+window.api = new ApiClient();

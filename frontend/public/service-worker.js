@@ -2,13 +2,17 @@ const CACHE_NAME = 'health-guide-v1';
 const urlsToCache = [
   '/',
   '/dashboard.html',
-  '/src/styles/output.css',
-  '/src/scripts/main.js',
-  '/src/scripts/api.js',
-  '/src/scripts/auth.js',
-  '/src/scripts/ui.js',
-  '/src/scripts/offline.js',
-  '/manifest.json'
+  '/login.html',
+  '/signup.html',
+  '/src/style.css',
+  '/src/main.js',
+  '/src/api.js',
+  '/src/auth.js',
+  '/src/ui.js',
+  '/src/offline.js',
+  '/src/navigation.js',
+  'https://cdn.tailwindcss.com',
+  'https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css'
 ];
 
 // Install event

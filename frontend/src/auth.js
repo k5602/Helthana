@@ -24,10 +24,10 @@ class AuthManager {
     // Login user
     async login(username, password) {
         try {
-            const response = await api.login(username, password);
+            const response = await window.api.login(username, password);
             
             if (response.access) {
-                api.setToken(response.access);
+                window.api.setToken(response.access);
                 localStorage.setItem('refresh_token', response.refresh);
                 
                 await this.loadUserProfile();
@@ -45,7 +45,7 @@ class AuthManager {
     // Register new user
     async register(userData) {
         try {
-            const response = await api.register(userData);
+            const response = await window.api.register(userData);
             
             if (response.id) {
                 // Auto-login after successful registration
@@ -62,7 +62,7 @@ class AuthManager {
     // Load user profile
     async loadUserProfile() {
         try {
-            const response = await api.request('/auth/profile/');
+            const response = await window.api.request('/auth/profile/');
             if (response.ok) {
                 this.currentUser = await response.json();
                 this.updateUIWithUser();
@@ -85,7 +85,7 @@ class AuthManager {
 
     // Logout user
     logout() {
-        api.clearToken();
+        window.api.clearToken();
         this.currentUser = null;
         window.location.href = '/';
     }
@@ -102,74 +102,78 @@ class AuthManager {
 }
 
 // Global auth manager instance
-const auth = new AuthManager();
+window.auth = new AuthManager();
 
 // Auth form handlers
-function showLoginForm() {
+window.showLoginForm = function() {
     const modal = document.getElementById('auth-modal');
     const title = document.getElementById('modal-title');
     const fields = document.getElementById('auth-fields');
+    
+    if (!modal || !title || !fields) return;
     
     title.textContent = 'Login';
     fields.innerHTML = `
         <div class="form-control">
             <label class="label">Username</label>
-            <input type="text" name="username" class="input-custom" required>
+            <input type="text" name="username" class="input input-bordered" required>
         </div>
         <div class="form-control">
             <label class="label">Password</label>
-            <input type="password" name="password" class="input-custom" required>
+            <input type="password" name="password" class="input input-bordered" required>
         </div>
     `;
     
     modal.classList.add('modal-open');
 }
 
-function showRegisterForm() {
+window.showRegisterForm = function() {
     const modal = document.getElementById('auth-modal');
     const title = document.getElementById('modal-title');
     const fields = document.getElementById('auth-fields');
+    
+    if (!modal || !title || !fields) return;
     
     title.textContent = 'Register';
     fields.innerHTML = `
         <div class="grid md:grid-cols-2 gap-4">
             <div class="form-control">
                 <label class="label">First Name</label>
-                <input type="text" name="first_name" class="input-custom" required>
+                <input type="text" name="first_name" class="input input-bordered" required>
             </div>
             <div class="form-control">
                 <label class="label">Last Name</label>
-                <input type="text" name="last_name" class="input-custom" required>
+                <input type="text" name="last_name" class="input input-bordered" required>
             </div>
         </div>
         <div class="form-control">
             <label class="label">Username</label>
-            <input type="text" name="username" class="input-custom" required>
+            <input type="text" name="username" class="input input-bordered" required>
         </div>
         <div class="form-control">
             <label class="label">Email</label>
-            <input type="email" name="email" class="input-custom" required>
+            <input type="email" name="email" class="input input-bordered" required>
         </div>
         <div class="form-control">
             <label class="label">Phone Number</label>
-            <input type="tel" name="phone_number" class="input-custom">
+            <input type="tel" name="phone_number" class="input input-bordered">
         </div>
         <div class="form-control">
             <label class="label">Password</label>
-            <input type="password" name="password" class="input-custom" required>
+            <input type="password" name="password" class="input input-bordered" required>
         </div>
         <div class="form-control">
             <label class="label">Confirm Password</label>
-            <input type="password" name="password_confirm" class="input-custom" required>
+            <input type="password" name="password_confirm" class="input input-bordered" required>
         </div>
     `;
     
     modal.classList.add('modal-open');
 }
 
-function closeAuthModal() {
+window.closeAuthModal = function() {
     const modal = document.getElementById('auth-modal');
-    modal.classList.remove('modal-open');
+    if (modal) modal.classList.remove('modal-open');
 }
 
 // Handle auth form submission
@@ -185,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let result;
             if (isLogin) {
-                result = await auth.login(data.username, data.password);
+                result = await window.auth.login(data.username, data.password);
             } else {
-                result = await auth.register(data);
+                result = await window.auth.register(data);
             }
             
             if (result.success) {
-                closeAuthModal();
+                window.closeAuthModal();
             } else {
                 alert(result.error);
             }
@@ -202,6 +206,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
     const registerBtn = document.getElementById('register-btn');
     
-    if (loginBtn) loginBtn.addEventListener('click', showLoginForm);
-    if (registerBtn) registerBtn.addEventListener('click', showRegisterForm);
+    if (loginBtn) loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.showLoginForm();
+    });
+    if (registerBtn) registerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.showRegisterForm();
+    });
 });

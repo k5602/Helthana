@@ -1,19 +1,21 @@
 {
   "name": "your-health-guide-frontend",
+  "private": true,
   "version": "1.0.0",
-  "description": "Progressive Web App for Your Health Guide",
-  "main": "src/scripts/main.js",
+  "type": "module",
+  "description": "Progressive Web App for Your Health Guide - دليلك الصحي",
   "scripts": {
-    "build-css": "tailwindcss -i src/styles/input.css -o src/styles/output.css --watch",
-    "build": "tailwindcss -i src/styles/input.css -o src/styles/output.css --minify",
-    "dev": "python -m http.server 8080 --directory public",
-    "serve": "python -m http.server 8080 --directory public"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "vite preview --port 8080"
   },
-  "keywords": ["pwa", "health", "tailwind", "vanilla-js"],
-  "author": "Your Health Guide Team",
-  "license": "MIT",
   "devDependencies": {
-    "tailwindcss": "^3.3.6",
-    "daisyui": "^4.4.19"
+    "vite": "^7.0.4"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "daisyui": "^5.0.46",
+    "tailwindcss": "^4.1.11"
   }
 }

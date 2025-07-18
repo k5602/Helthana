@@ -1,4 +1,4 @@
-// Navigation helper for GitHub Pages
+// Navigation helper for different environments
 function navigateToPage(pageName) {
   const isGitHubPages = window.location.hostname === 'gasse4.github.io';
   const baseUrl = isGitHubPages ? '/Hakathon/' : '/';

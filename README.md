@@ -21,7 +21,7 @@ A Progressive Web App (PWA) designed to transform healthcare management in Egypt
 - **AI/ML**: Google Cloud Vision API, MedGemma via Vertex AI
 
 ### Frontend
-- **Framework**: Vanilla JavaScript (ES6+) - No framework dependencies
+- **Framework**: Vanilla JavaScript (ES6+) with Vite
 - **Styling**: Tailwind CSS with DaisyUI component library
 - **PWA Features**: Service Workers, IndexedDB for offline support
 - **Architecture**: Modular component-based structure
@@ -52,7 +52,7 @@ pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
 
-# Create superuser
+# Create superuser (optional)
 python manage.py createsuperuser
 
 # Run development server
@@ -68,12 +68,33 @@ cd frontend
 # Install dependencies
 npm install
 
-# Build Tailwind CSS
-npm run build-css
+# Run development server with Vite
+npm run dev
 
-# Serve frontend (development)
+# Or build for production
+npm run build
+npm run preview
+```
+
+### Full Stack Development
+
+1. **Start Backend** (Terminal 1):
+```bash
+cd backend
+source venv/bin/activate
+python manage.py runserver
+```
+
+2. **Start Frontend** (Terminal 2):
+```bash
+cd frontend
 npm run dev
 ```
+
+3. **Access the Application**:
+   - Frontend: http://localhost:5173 (Vite dev server)
+   - Backend API: http://localhost:8000
+   - Admin Panel: http://localhost:8000/admin
 
 ### Docker Setup (Alternative)
 
