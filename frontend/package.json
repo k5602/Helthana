@@ -1,0 +1,19 @@
+{
+  "name": "your-health-guide-frontend",
+  "version": "1.0.0",
+  "description": "Progressive Web App for Your Health Guide",
+  "main": "src/scripts/main.js",
+  "scripts": {
+    "build-css": "tailwindcss -i src/styles/input.css -o src/styles/output.css --watch",
+    "build": "tailwindcss -i src/styles/input.css -o src/styles/output.css --minify",
+    "dev": "python -m http.server 8080 --directory public",
+    "serve": "python -m http.server 8080 --directory public"
+  },
+  "keywords": ["pwa", "health", "tailwind", "vanilla-js"],
+  "author": "Your Health Guide Team",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.3.6",
+    "daisyui": "^4.4.19"
+  }
+}

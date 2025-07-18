@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Your Health Guide</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/styles/output.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2">
+                    <img src="icons/icon-72x72.png" alt="Logo" class="w-8 h-8">
+                    <h1 class="text-xl font-bold text-primary">Health Guide</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="voice-btn" class="btn btn-circle btn-outline">🎤</button>
+                    <button id="emergency-btn" class="btn btn-error btn-circle">🆘</button>
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                            <div class="w-10 rounded-full bg-primary text-white flex items-center justify-center">
+                                <span id="user-initial">U</span>
+                            </div>
+                        </label>
+                        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                            <li><a href="#" onclick="showProfile()">Profile</a></li>
+                            <li><a href="#" onclick="logout()">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Dashboard Cards -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card-custom">
+                <h3 class="text-lg font-semibold mb-2">Prescriptions</h3>
+                <p class="text-3xl font-bold text-primary" id="prescription-count">0</p>
+                <p class="text-sm text-gray-600">Total scanned</p>
+            </div>
+            <div class="card-custom">
+                <h3 class="text-lg font-semibold mb-2">Vitals Logged</h3>
+                <p class="text-3xl font-bold text-secondary" id="vitals-count">0</p>
+                <p class="text-sm text-gray-600">This month</p>
+            </div>
+            <div class="card-custom">
+                <h3 class="text-lg font-semibold mb-2">Reports</h3>
+                <p class="text-3xl font-bold text-accent" id="reports-count">0</p>
+                <p class="text-sm text-gray-600">Generated</p>
+            </div>
+            <div class="card-custom">
+                <h3 class="text-lg font-semibold mb-2">Next Checkup</h3>
+                <p class="text-lg font-bold text-info">Jan 15</p>
+                <p class="text-sm text-gray-600">Dr. Ahmed</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <button onclick="showPrescriptionScanner()" class="btn btn-primary btn-lg">
+                📱 Scan Prescription
+            </button>
+            <button onclick="showVitalsForm()" class="btn btn-secondary btn-lg">
+                📊 Log Vitals
+            </button>
+            <button onclick="generateReport()" class="btn btn-accent btn-lg">
+                📄 Generate Report
+            </button>
+            <button onclick="showEmergencyContacts()" class="btn btn-error btn-lg">
+                🚨 Emergency
+            </button>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card-custom">
+            <h3 class="text-xl font-semibold mb-4">Recent Activity</h3>
+            <div id="recent-activity" class="space-y-4">
+                <!-- Activity items will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals and Components will be dynamically loaded -->
+    <div id="modal-container"></div>
+
+    <!-- Offline Indicator -->
+    <div id="offline-indicator" class="offline-indicator hidden">
+        You're currently offline. Some features may be limited.
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/scripts/api.js"></script>
+    <script src="src/scripts/auth.js"></script>
+    <script src="src/scripts/ui.js"></script>
+    <script src="src/scripts/offline.js"></script>
+    <script src="src/scripts/dashboard.js"></script>
+</body>
+</html>

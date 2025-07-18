@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>overview.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="your-health-guide-%D8%AF%D9%84%D9%8A%D9%84%D9%83-%D8%A7%D9%84%D8%B5%D8%AD%D9%8A">Your Health Guide (دليلك الصحي)</h1>
+<p><strong>GDG Alexandria Hackathon - July 2025</strong><br>
+<strong>Project Lead:</strong> Khaled
+<strong>Version:</strong> 0.1.0<br>
+<strong>Last Updated:</strong> July 18, 2025</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-project-overview">Project Overview</a></li>
+<li><a href="#2-mvp-features">MVP Features</a></li>
+<li><a href="#3-technical-architecture">Technical Architecture</a></li>
+<li><a href="#4-implementation-roadmap">Implementation Roadmap</a></li>
+<li><a href="#5-getting-started">Getting Started</a></li>
+<li><a href="#6-contributing">Contributing</a></li>
+</ol>
+<h2 id="1-project-overview">1. Project Overview</h2>
+<h3 id="vision-statement">Vision Statement</h3>
+<p>To transform healthcare management in Egypt by providing an intelligent, accessible digital health companion that empowers patients with chronic conditions through technology.</p>
+<h3 id="problem-statement">Problem Statement</h3>
+<p>Egyptian patients with chronic diseases face significant challenges:</p>
+<ul>
+<li>📝 <strong>Illegible Prescriptions</strong>: 78% of handwritten prescriptions contain at least one error</li>
+<li>📊 <strong>Inconsistent Tracking</strong>: 62% of patients don't track their vitals regularly</li>
+<li>🏥 <strong>Inefficient Doctor Visits</strong>: 85% of consultations rely on patient memory</li>
+<li>📱 <strong>Digital Divide</strong>: 65% of elderly patients struggle with complex health apps</li>
+</ul>
+<h3 id="solution-overview">Solution Overview</h3>
+<p>&quot;<strong>Your Health Guide</strong>&quot; is a Progressive Web App (PWA) that combines cutting-edge AI with a simple, intuitive interface to solve these challenges:</p>
+<h4 id="key-differentiators">Key Differentiators</h4>
+<ul>
+<li><strong>AI-Powered Prescription Scanning</strong>: Convert handwritten prescriptions into digital records with 95%+ accuracy</li>
+<li><strong>Voice-First Interface</strong>: Full support for Egyptian Arabic voice commands</li>
+<li><strong>Offline-First Design</strong>: Works without internet connectivity</li>
+<li><strong>Data Ownership</strong>: Patients control who accesses their health information</li>
+<li><strong>Multigenerational Design</strong>: Accessible to users of all ages and tech-literacy levels</li>
+</ul>
+<h4 id="technical-highlights">Technical Highlights</h4>
+<ul>
+<li><strong>Frontend</strong>: PWA with offline capabilities (Service Workers, IndexedDB)</li>
+<li><strong>Backend</strong>: Django REST API on Google Cloud Run</li>
+<li><strong>AI/ML</strong>: Google Vision AI + MedGemma for prescription analysis</li>
+<li><strong>Database</strong>: PostgreSQL with row-level security</li>
+<li><strong>Authentication</strong>: JWT + OAuth 2.0</li>
+</ul>
+<h2 id="2-mvp-features">2. MVP Features</h2>
+<h3 id="priority-1-core-functionality">Priority #1: Core Functionality</h3>
+<h4 id="a-intelligent-prescription-scanner">a. Intelligent Prescription Scanner</h4>
+<p><strong>User Story</strong>: As a patient, I want to scan handwritten prescriptions to automatically identify medications and set reminders</p>
+<p><strong>Technical Implementation</strong>:</p>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as Backend
+    participant AI as Google Vision AI
+    participant DB as Database
+    
+    U->>FE: Take photo of prescription
+    FE->>BE: Upload image (multipart/form-data)
+    BE->>AI: Send for OCR processing
+    AI-->>BE: Return extracted text
+    BE->>BE: Parse medication data
+    BE->>DB: Store prescription data
+    BE-->>FE: Return structured medication info
+    FE->>FE: Display medication list
+    FE->>U: Prompt for reminder setup
+</div></code></pre>
+<p><strong>Data Model</strong>:</p>
+<pre class="hljs"><code><div><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Prescription</span><span class="hljs-params">(models.Model)</span>:</span>
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=<span class="hljs-string">'prescriptions/'</span>)
+    scan_date = models.DateTimeField(auto_now_add=<span class="hljs-literal">True</span>)
+    status = models.CharField(max_length=<span class="hljs-number">20</span>, choices=STATUS_CHOICES)
+    
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Medication</span><span class="hljs-params">(models.Model)</span>:</span>
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE)
+    name = models.CharField(max_length=<span class="hljs-number">200</span>)
+    dosage = models.CharField(max_length=<span class="hljs-number">100</span>)
+    frequency = models.CharField(max_length=<span class="hljs-number">100</span>)
+    start_date = models.DateField()
+    end_date = models.DateField(null=<span class="hljs-literal">True</span>, blank=<span class="hljs-literal">True</span>)
+    notes = models.TextField(blank=<span class="hljs-literal">True</span>)
+</div></code></pre>
+<h4 id="b-smart-vitals-tracker">b. Smart Vitals Tracker</h4>
+<p><strong>User Story</strong>: As a patient, I want to log my health metrics and visualize trends over time</p>
+<p><strong>Supported Metrics</strong>:</p>
+<ul>
+<li>Blood Pressure (Systolic/Diastolic)</li>
+<li>Blood Glucose</li>
+<li>Weight</li>
+<li>Temperature</li>
+<li>Oxygen Saturation</li>
+<li>Custom metrics</li>
+</ul>
+<p><strong>API Endpoints</strong>:</p>
+<pre class="hljs"><code><div>POST /api/v1/vitals/ - Log new reading
+GET  /api/v1/vitals/?metric=blood_pressure&amp;days=30 - Get readings
+GET  /api/v1/vitals/summary/ - Get latest readings
+</div></code></pre>
+<h3 id="priority-15-ux-enhancements">Priority #1.5: UX Enhancements</h3>
+<h4 id="c-personalized-dashboard">c. Personalized Dashboard</h4>
+<ul>
+<li>Time-based greetings</li>
+<li>Quick-add buttons for common actions</li>
+<li>Visual indicators for abnormal readings</li>
+<li>Medication schedule overview</li>
+</ul>
+<h4 id="d-health-report-generator">d. Health Report Generator</h4>
+<ul>
+<li>Customizable date ranges</li>
+<li>Multiple export formats (PDF, CSV)</li>
+<li>Doctor-friendly formatting</li>
+<li>Secure sharing options</li>
+</ul>
+<h3 id="priority-2-stretch-goals">Priority #2: Stretch Goals</h3>
+<h4 id="e-voice-assistant-integration">e. Voice Assistant Integration</h4>
+<ul>
+<li>Egyptian Arabic voice commands</li>
+<li>Hands-free logging</li>
+<li>Voice-guided navigation</li>
+<li>Medication reminders via voice</li>
+</ul>
+<h4 id="f-emergency-sos-system">f. Emergency SOS System</h4>
+<ul>
+<li>One-tap emergency alerts</li>
+<li>Location sharing</li>
+<li>Automated messages to emergency contacts</li>
+<li>Medical ID access from lock screen</li>
+</ul>
+<h2 id="3-technical-architecture">3. Technical Architecture</h2>
+<h3 id="system-architecture">System Architecture</h3>
+<pre><code class="language-mermaid"><div class="mermaid">graph TD
+    A[User Devices] -->|HTTPS| B[Cloud CDN]
+    B --> C[Cloud Storage]
+    B --> D[Cloud Run]
+    D --> E[Cloud SQL]
+    D --> F[Cloud Vision AI]
+    D --> G[Vertex AI]
+    D --> H[Twilio API]
+    
+    subgraph Frontend
+        I[PWA]
+        J[Service Worker]
+        K[IndexedDB]
+    end
+    
+    subgraph Backend
+        L[Django REST]
+        M[PostgreSQL]
+        N[Redis Cache]
+    end
+    
+    I --> D
+    D --> L
+</div></code></pre>
+<h3 id="data-flow">Data Flow</h3>
+<ol>
+<li>
+<p><strong>Prescription Processing</strong>:</p>
+<ul>
+<li>Image upload → Cloud Storage → Vision AI → Data extraction → Database</li>
+<li>Processing time: &lt; 5 seconds</li>
+<li>Accuracy: &gt;95% for printed text, &gt;85% for handwriting</li>
+</ul>
+</li>
+<li>
+<p><strong>Vitals Logging</strong>:</p>
+<ul>
+<li>Form submission → API validation → Database</li>
+<li>Offline support with sync queue</li>
+<li>Conflict resolution for offline edits</li>
+</ul>
+</li>
+</ol>
+<h2 id="4-implementation-roadmap">4. Implementation Roadmap</h2>
+<h3 id="phase-1-foundation-week-1-2">Phase 1: Foundation (Week 1-2)</h3>
+<ul>
+<li><input type="checkbox" id="checkbox0"><label for="checkbox0">Project setup and CI/CD</label></li>
+<li><input type="checkbox" id="checkbox1"><label for="checkbox1">Authentication system</label></li>
+<li><input type="checkbox" id="checkbox2"><label for="checkbox2">Basic API endpoints</label></li>
+<li><input type="checkbox" id="checkbox3"><label for="checkbox3">Core database schema</label></li>
+</ul>
+<h3 id="phase-2-core-features-week-3-4">Phase 2: Core Features (Week 3-4)</h3>
+<ul>
+<li><input type="checkbox" id="checkbox4"><label for="checkbox4">Prescription scanner MVP</label></li>
+<li><input type="checkbox" id="checkbox5"><label for="checkbox5">Vitals tracking</label></li>
+<li><input type="checkbox" id="checkbox6"><label for="checkbox6">Basic dashboard</label></li>
+<li><input type="checkbox" id="checkbox7"><label for="checkbox7">PDF report generation</label></li>
+</ul>
+<h3 id="phase-3-polish-week-5-6">Phase 3: Polish (Week 5-6)</h3>
+<ul>
+<li><input type="checkbox" id="checkbox8"><label for="checkbox8">Offline support</label></li>
+<li><input type="checkbox" id="checkbox9"><label for="checkbox9">Performance optimization</label></li>
+<li><input type="checkbox" id="checkbox10"><label for="checkbox10">Accessibility improvements</label></li>
+<li><input type="checkbox" id="checkbox11"><label for="checkbox11">User testing</label></li>
+</ul>
+<h2 id="5-getting-started">5. Getting Started</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Python 3.10+</li>
+<li>Node.js 18+</li>
+<li>Docker</li>
+<li>Google Cloud SDK</li>
+</ul>
+<h3 id="local-development">Local Development</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Clone repository</span>
+git <span class="hljs-built_in">clone</span> https://github.com/your-org/your-health-guide.git
+<span class="hljs-built_in">cd</span> your-health-guide
+
+<span class="hljs-comment"># Set up Python environment</span>
+python -m venv venv
+<span class="hljs-built_in">source</span> venv/bin/activate  <span class="hljs-comment"># On Windows: .\venv\Scripts\activate</span>
+pip install -r requirements.txt
+
+<span class="hljs-comment"># Set up frontend</span>
+<span class="hljs-built_in">cd</span> frontend
+npm install
+npm run dev
+
+<span class="hljs-comment"># Run migrations</span>
+python manage.py migrate
+
+<span class="hljs-comment"># Start development server</span>
+python manage.py runserver
+</div></code></pre>
+<h2 id="6-contributing">6. Contributing</h2>
+<ol>
+<li>Fork the repository</li>
+<li>Create a feature branch (<code>git checkout -b feature/amazing-feature</code>)</li>
+<li>Commit your changes (<code>git commit -m 'Add some amazing feature'</code>)</li>
+<li>Push to the branch (<code>git push origin feature/amazing-feature</code>)</li>
+<li>Open a Pull Request</li>
+</ol>
+<p><em>Made with ❤️ for the people of Egypt</em></p>
+<h3 id="2-hackathon-mvp-features-what-we-will-build-this-weekend">2. Hackathon MVP Features (What We Will Build This Weekend)</h3>
+<p>This is our prioritized list for the hackathon. The goal is to deliver a functional, end-to-end demo that tells a compelling and impactful story.</p>
+<h4 id="core-demo-flow-priority-1">Core Demo Flow (Priority #1)</h4>
+<ul>
+<li>
+<p><strong>a. Instant Prescription Scanner:</strong> As a patient, I want to take a picture of my handwritten prescription, so the app can automatically identify my medications and dosages and add them to my treatment plan with reminders.</p>
+<ul>
+<li><strong>Scenario:</strong> Ahmed receives a new prescription for his elderly mother. Instead of guessing the unclear handwriting, he opens the app, takes a picture, and in seconds, the information appears clearly: &quot;Glucophage, 500 mg, twice daily.&quot; The app then asks, &quot;Would you like to set a daily alarm to remind your mother?&quot; With one tap, two daily reminders are created.</li>
+<li><strong>Why it's a winning feature:</strong> This feature is the main &quot;wow factor.&quot; It solves a real, painful local problem in a technologically advanced (MedGemma) yet extremely user-friendly way.</li>
+</ul>
+</li>
+<li>
+<p><strong>b. Vitals Logger:</strong> As a patient, I want a quick and easy way to log my daily blood sugar readings without complexity, and see simple charts to track my progress.</p>
+<ul>
+<li><strong>Scenario:</strong> Fatma needs to track her blood pressure. In the app, she finds an interface with large, clear buttons. With a few taps, her reading is logged, and the app displays a simple, colorful chart showing her improvement over the week.</li>
+<li><strong>Why it's a winning feature:</strong> This demonstrates our understanding of core user needs. Its simplicity makes it usable by a wide range of people, including the elderly, enhancing the project's community impact.</li>
+</ul>
+</li>
+<li>
+<p><strong>c. Secure Health Report Sharing:</strong> As a patient, I want to generate a simple PDF report summarizing my recent readings and current medications with a single tap, so I can share it securely with my doctor.</p>
+<ul>
+<li><strong>Scenario:</strong> Before his doctor's appointment, Youssef taps &quot;Generate Report.&quot; The app instantly creates a professional PDF with charts for his sugar readings and a list of his current medications. He emails it to the clinic, making the consultation more data-driven.</li>
+<li><strong>Why it's a winning feature:</strong> This ties all parts of the app together, producing a tangible output and acting as a communication bridge between patient and provider.</li>
+</ul>
+</li>
+</ul>
+<h4 id="ux-enhancements--quick-wins-priority-15">UX Enhancements &amp; Quick Wins (Priority #1.5)</h4>
+<ul>
+<li>
+<p><strong>d. Personalized Greetings:</strong> As a user, I want the app to feel like a personal companion that recognizes me.</p>
+<ul>
+<li><strong>Scenario:</strong> When Fatma opens the app in the evening, the dashboard displays a friendly message: &quot;<strong>Good evening, Fatma 🌙</strong>&quot;. It's a small detail that makes the application feel welcoming and personal.</li>
+<li><strong>Why it's a winning feature:</strong> This simple, dynamic element demonstrates attention to user experience detail and transforms the app from a cold utility into a warm, engaging health partner.</li>
+</ul>
+</li>
+<li>
+<p><strong>e. Medication Info On-Demand:</strong> As a user, I want to quickly understand what my scanned medications are for, without leaving the app.</p>
+<ul>
+<li><strong>Scenario:</strong> After Ahmed scans the prescription for &quot;Glucophage,&quot; a small <code>(i)</code> info icon appears next to the medication name. He taps it, and a simple pop-up appears: &quot;<strong>Purpose:</strong> Helps control blood sugar levels in Type 2 Diabetes. <strong>Common Side Effects:</strong> Nausea, stomach upset.&quot;</li>
+<li><strong>Why it's a winning feature:</strong> This adds immense immediate value beyond simple transcription. It empowers the user with knowledge, reduces anxiety, and shows the app is a comprehensive health resource, not just a data entry tool. This can be implemented by calling a free drug information API like OpenFDA.</li>
+</ul>
+</li>
+</ul>
+<h4 id="high-impact-stretch-goals-priority-2">High-Impact Stretch Goals (Priority #2)</h4>
+<ul>
+<li>
+<p><strong>f. Voice-Powered Logging:</strong> As a patient, I want to log my blood sugar reading by speaking to the app in Arabic, making it faster and easier than typing.</p>
+<ul>
+<li><strong>Scenario:</strong> Mahmoud taps the microphone icon and says, &quot;Sokkar el dam meya w setteen&quot; (Blood sugar one hundred and sixty). The app confirms audibly, &quot;160 has been recorded,&quot; removing a significant barrier to daily tracking.</li>
+<li><strong>Why it's a winning feature:</strong> This shows a deep commitment to accessibility and local needs by using the Google Speech-to-Text API with the Egyptian dialect.</li>
+</ul>
+</li>
+<li>
+<p><strong>g. Emergency &quot;SOS&quot; Protocol:</strong> As a patient feeling unwell, I want to press a single button to immediately alert my emergency contact with my location and essential health information.</p>
+<ul>
+<li><strong>Scenario:</strong> Nadia feels dizzy. She presses the &quot;SOS&quot; button. Her daughter instantly receives an SMS: &quot;Nadia needs help. Condition: Type 2 Diabetes. Location: [Google Maps Link]. Latest report: [Secure Link].&quot;</li>
+<li><strong>Why it's a winning feature:</strong> This transforms the app from a tracking tool into a life-saving one, providing immense peace of mind.</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-full-product-vision-post-hackathon-roadmap">3. Full Product Vision (Post-Hackathon Roadmap)</h3>
+<p>This is our long-term vision to showcase scalability and business potential during Q&amp;A.</p>
+<ul>
+<li><strong>AI Food Logger:</strong> Proactive nutritional guidance by analyzing pictures of meals.</li>
+<li><strong>Interactive Pharmacy Locator:</strong> A community-driven map of medication availability.</li>
+<li><strong>Smart Appointment Management:</strong> Integrated reminders and scheduling to improve adherence.</li>
+<li><strong>AI Health Assistant:</strong> Our ultimate goal: a hyper-personalized, 24/7 health coach.</li>
+</ul>
+<h2 id="part-2-the-technical-blueprint-the-how">Part 2: The Technical Blueprint (The 'How')</h2>
+<p>This section details the architecture, technologies, and setup steps required to build the project.</p>
+<h3 id="4-technical-architecture--tech-stack">4. Technical Architecture &amp; Tech Stack</h3>
+<h4 id="pwa-progressive-web-app-strategy">PWA (Progressive Web App) Strategy</h4>
+<p>The application will be built as a PWA using native browser technologies to ensure maximum accessibility and a native-like experience (home screen installation, offline capabilities).</p>
+<h4 id="architecture-diagram-flow">Architecture Diagram Flow</h4>
+<pre class="hljs"><code><div>User (Frontend on Cloud Storage) -&gt; [API Calls] -&gt; Cloud Run (Django Backend) -&gt; Cloud SQL (PostgreSQL)
+|
+-&gt; [Manages User Auth] -&gt; [3rd Party Drug API]
+|
+-&gt; [File Uploads] -&gt; Cloud Storage -&gt; Cloud Function -&gt; Vision AI / Vertex AI -&gt; Cloud Run
+|
+-&gt; [Voice Input] -&gt; Speech-to-Text API -&gt; Cloud Run
+|
+-&gt; [SOS Trigger] -&gt; Cloud Run -&gt; Twilio API
+</div></code></pre>
+<h4 id="tech-stack-by-role">Tech Stack by Role</h4>
+<ul>
+<li>
+<p><strong>Cloud Engineer:</strong></p>
+<ul>
+<li><strong>Platform:</strong> Google Cloud Platform (GCP)</li>
+<li><strong>Services:</strong> IAM, Cloud Run, Cloud SQL (PostgreSQL), Cloud Storage (for file uploads and static website hosting), Cloud Functions, Vertex AI.</li>
+<li><strong>Tasks:</strong> Project setup, enabling APIs, configuring the Cloud Storage bucket for web hosting, setting firewall rules, and managing service account permissions with the principle of least privilege.</li>
+</ul>
+</li>
+<li>
+<p><strong>Backend Developer:</strong></p>
+<ul>
+<li><strong>Language:</strong> Python 3</li>
+<li><strong>Framework:</strong> Django with Django Rest Framework</li>
+<li><strong>Deployment:</strong> Docker container on Cloud Run</li>
+<li><strong>Tasks:</strong> Building REST APIs for all features. Designing request/response schemas. Implementing JWT authentication endpoints (<code>/register</code>, <code>/login</code>). Building a proxy endpoint to securely call the external drug information API (to protect API keys).</li>
+</ul>
+</li>
+<li>
+<p><strong>Frontend Developer:</strong></p>
+<ul>
+<li><strong>Framework:</strong> None (Native/Vanilla JavaScript).</li>
+<li><strong>Styling:</strong> Tailwind CSS with <strong>Daisy UI</strong> component library.</li>
+<li><strong>JavaScript:</strong> Native ES6+ JavaScript (<code>Modules</code>, <code>fetch</code>, direct DOM manipulation).</li>
+<li><strong>Hosting:</strong> Google Cloud Storage (configured for static website hosting).</li>
+<li><strong>Tasks:</strong> Building a responsive UI. Implementing client-side logic for API interaction (including the new features), state management, and user interaction. Implementing the PWA manifest and service worker.</li>
+</ul>
+</li>
+<li>
+<p><strong>Database Engineer:</strong></p>
+<ul>
+<li><strong>Database:</strong> PostgreSQL (on Cloud SQL)</li>
+<li><strong>Tasks:</strong> Designing the database schema using Django models. Defining keys and indexes.</li>
+</ul>
+</li>
+<li>
+<p><strong>AI Engineer:</strong></p>
+<ul>
+<li><strong>Services:</strong> Vertex AI (for MedGemma), Cloud Vision AI API, Speech-to-Text API.</li>
+<li><strong>Tasks:</strong> Developing clear prompts for MedGemma. Handling API responses and errors. Configuring Speech-to-Text for the <code>ar-EG</code> dialect.</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-backend-libraries--setup-python">5. Backend Libraries &amp; Setup (Python)</h3>
+<p>Your <code>requirements.txt</code> file should contain the following:</p>
+<pre class="hljs"><code><div># Core Framework &amp; API
+django
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+
+# Database Connector
+psycopg2-binary
+
+# Google Cloud Services
+google-cloud-storage
+google-cloud-vision
+google-cloud-speech
+google-cloud-aiplatform
+
+# Third-Party APIs
+twilio
+requests # For making server-to-server calls to the drug info API
+
+# Production Server
+gunicorn
+
+# Utilities
+python-dotenv
+</div></code></pre>
+<h3 id="6-frontend-setup-native-javascript">6. Frontend Setup (Native JavaScript)</h3>
+<ul>
+<li><strong>Project Structure:</strong><pre class="hljs"><code><div>/project-root
+├── /public
+│   ├── index.html
+│   ├── dashboard.html
+│   ├── manifest.json
+│   ├── service-worker.js
+│   ├── /styles/output.css
+│   └── /scripts
+│       ├── api.js
+│       ├── auth.js
+│       ├── ui.js
+│       └── main.js
+├── tailwind.config.js
+└── package.json
+</div></code></pre>
+</li>
+<li><strong>Key JS Implementation Details:</strong>
+<ul>
+<li><strong>Personalized Greeting:</strong> In <code>main.js</code> or <code>ui.js</code>, create a function that checks the current hour. Based on the time, it updates the text content of a greeting element on the dashboard.</li>
+<li><strong>Medication Info:</strong> In <code>api.js</code>, add a function <code>getMedicationInfo(drugName)</code>. In <code>ui.js</code>, add an event listener to the info icons that calls this API function and displays the result in a modal or pop-up.</li>
+</ul>
+</li>
+</ul>
+
+</body>
+</html>
