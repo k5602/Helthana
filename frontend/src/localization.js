@@ -13,7 +13,16 @@ class LocalizationManager {
     async init() {
         await this.loadTranslations();
         this.applyLanguage();
-        this.setupLanguageToggle();
+        
+        // Setup language toggle after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.setupLanguageToggle();
+            });
+        } else {
+            // DOM is already ready
+            this.setupLanguageToggle();
+        }
     }
 
     async loadTranslations() {
@@ -26,6 +35,8 @@ class LocalizationManager {
             'nav.login': 'Login',
             'nav.signup': 'Join Us Now!',
             'nav.signup.mobile': 'Join us!',
+            'nav.join': 'Join Us Now!',
+            'nav.join.short': 'Join us!',
             'nav.logout': 'Logout',
             'nav.profile': 'Profile',
 
@@ -93,33 +104,67 @@ class LocalizationManager {
             'auth.no.account': "Don't have an account?",
             'auth.signin.here': 'Sign in here',
             'auth.signup.here': 'Sign up here',
-            'auth.terms': 'I agree to the Terms of Service and Privacy Policy',
+            // Authentication placeholders
+            'auth.username.placeholder': 'Enter your username',
+            'auth.email.placeholder': 'Enter your email',
+            'auth.password.placeholder': 'Enter your password',
+            'auth.password.confirm.placeholder': 'Confirm your password',
+            'auth.firstname.placeholder': 'First name',
+            'auth.lastname.placeholder': 'Last name',
+            'auth.phone.placeholder': 'Enter your phone number',
 
             // Services
             'services.title': 'Smart Health Services',
             'services.subtitle': 'AI-powered healthcare management designed for Egyptian patients',
             'services.scanner.title': 'AI Prescription Scanner',
             'services.scanner.desc': 'Convert handwritten prescriptions to digital records with 95%+ accuracy using advanced OCR technology.',
+            'services.scanner.badge': '95% Accuracy',
+            'services.scanner.btn': 'Try Now',
             'services.vitals.title': 'Smart Vitals Tracking',
             'services.vitals.desc': 'Log and visualize your health metrics over time with intelligent insights and trends.',
+            'services.vitals.badge': '24/7 Monitoring',
+            'services.vitals.btn': 'Start Tracking',
             'services.voice.title': 'Voice Commands',
             'services.voice.desc': 'Egyptian Arabic voice recognition for hands-free health management and accessibility.',
+            'services.voice.badge': 'Arabic Support',
+            'services.voice.btn': 'Try Voice',
             'services.reports.title': 'Health Reports',
             'services.reports.desc': 'Generate comprehensive PDF reports for doctor visits with your health data and trends.',
-            'services.sos.title': 'Emergency SOS',
-            'services.sos.desc': 'One-tap emergency alerts to your contacts with location sharing and medical information.',
+            'services.reports.badge': 'PDF Export',
+            'services.reports.btn': 'Generate Report',
+            'services.emergency.title': 'Emergency SOS',
+            'services.emergency.desc': 'One-tap emergency alerts to your contacts with location sharing and medical information.',
+            'services.emergency.badge': 'Instant Alert',
+            'services.emergency.btn': 'Setup SOS',
             'services.offline.title': 'Offline Support',
             'services.offline.desc': 'Works without internet connection and syncs data when you\'re back online.',
+            'services.offline.badge': 'Always Available',
+            'services.offline.btn': 'Learn More',
+            'services.cta.title': 'Ready to Transform Your Health Management?',
+            'services.cta.desc': 'Join thousands of Egyptian patients who trust Your Health Guide for their healthcare needs',
+            'services.cta.start': 'Get Started Free',
+            'services.cta.demo': 'Try Demo',
 
             // About
             'about.title': 'About Your Health Guide',
             'about.subtitle': 'Transforming healthcare management in Egypt with AI-powered solutions',
-            'about.mission': 'Our Mission',
+            'about.mission.title': 'Our Mission',
             'about.mission.desc': 'To transform healthcare management in Egypt by providing an intelligent, accessible digital health companion that empowers patients with chronic conditions to take control of their health journey.',
-            'about.vision': 'Our Vision',
+            'about.vision.title': 'Our Vision',
             'about.vision.desc': 'To be the leading healthcare technology platform in the Middle East, making quality healthcare accessible, understandable, and manageable for every Egyptian patient.',
             'about.problem.title': 'The Problem We Solve',
-            'about.problem.prescriptions': 'Illegible Prescriptions',
+            'about.problem.prescription.title': 'Illegible Prescriptions',
+            'about.problem.prescription.desc': '78% of prescriptions in Egypt contain errors due to poor handwriting',
+            'about.problem.tracking.title': 'Poor Health Tracking',
+            'about.problem.tracking.desc': '62% of patients don\'t consistently track their vital signs',
+            'about.problem.visits.title': 'Inefficient Doctor Visits',
+            'about.problem.visits.desc': '85% of patients rely on memory during medical consultations',
+            'about.problem.digital.title': 'Digital Barriers',
+            'about.problem.digital.desc': '65% of elderly patients struggle with complex health apps',
+            'about.cta.title': 'Ready to Transform Your Health Management?',
+            'about.cta.desc': 'Join thousands of Egyptian patients who trust Your Health Guide for their healthcare needs',
+            'about.cta.start': 'Get Started Free',
+            'about.cta.services': 'View Services',
             'about.problem.prescriptions.desc': '78% of prescriptions in Egypt contain errors due to poor handwriting',
             'about.problem.tracking': 'Poor Health Tracking',
             'about.problem.tracking.desc': '62% of patients don\'t consistently track their vital signs',
@@ -188,6 +233,8 @@ class LocalizationManager {
             'nav.login': 'تسجيل الدخول',
             'nav.signup': 'انضم إلينا الآن!',
             'nav.signup.mobile': 'انضم!',
+            'nav.join': 'انضم إلينا الآن!',
+            'nav.join.short': 'انضم!',
             'nav.logout': 'تسجيل الخروج',
             'nav.profile': 'الملف الشخصي',
 
@@ -255,33 +302,67 @@ class LocalizationManager {
             'auth.no.account': 'ليس لديك حساب؟',
             'auth.signin.here': 'سجل الدخول هنا',
             'auth.signup.here': 'سجل هنا',
-            'auth.terms': 'أوافق على شروط الخدمة وسياسة الخصوصية',
+            // Authentication placeholders
+            'auth.username.placeholder': 'أدخل اسم المستخدم',
+            'auth.email.placeholder': 'أدخل بريدك الإلكتروني',
+            'auth.password.placeholder': 'أدخل كلمة المرور',
+            'auth.password.confirm.placeholder': 'تأكيد كلمة المرور',
+            'auth.firstname.placeholder': 'الاسم الأول',
+            'auth.lastname.placeholder': 'اسم العائلة',
+            'auth.phone.placeholder': 'أدخل رقم الهاتف',
 
             // Services
             'services.title': 'خدمات صحية ذكية',
             'services.subtitle': 'إدارة الرعاية الصحية المدعومة بالذكاء الاصطناعي مصممة للمرضى المصريين',
             'services.scanner.title': 'ماسح الوصفات بالذكاء الاصطناعي',
             'services.scanner.desc': 'حول الوصفات الطبية المكتوبة بخط اليد إلى سجلات رقمية بدقة تزيد عن 95% باستخدام تقنية OCR المتقدمة.',
+            'services.scanner.badge': 'دقة 95%',
+            'services.scanner.btn': 'جرب الآن',
             'services.vitals.title': 'تتبع العلامات الحيوية الذكي',
             'services.vitals.desc': 'سجل وتصور مقاييسك الصحية بمرور الوقت مع رؤى ذكية وتحليل الاتجاهات.',
+            'services.vitals.badge': 'مراقبة 24/7',
+            'services.vitals.btn': 'ابدأ التتبع',
             'services.voice.title': 'الأوامر الصوتية',
             'services.voice.desc': 'التعرف على الصوت باللغة العربية المصرية لإدارة الصحة بدون استخدام اليدين وسهولة الوصول.',
+            'services.voice.badge': 'دعم العربية',
+            'services.voice.btn': 'جرب الصوت',
             'services.reports.title': 'التقارير الصحية',
             'services.reports.desc': 'إنشاء تقارير PDF شاملة لزيارات الطبيب مع بياناتك الصحية والاتجاهات.',
-            'services.sos.title': 'نداء الاستغاثة الطارئ',
-            'services.sos.desc': 'تنبيهات طوارئ بنقرة واحدة لجهات الاتصال الخاصة بك مع مشاركة الموقع والمعلومات الطبية.',
+            'services.reports.badge': 'تصدير PDF',
+            'services.reports.btn': 'إنشاء تقرير',
+            'services.emergency.title': 'نداء الاستغاثة الطارئ',
+            'services.emergency.desc': 'تنبيهات طوارئ بنقرة واحدة لجهات الاتصال الخاصة بك مع مشاركة الموقع والمعلومات الطبية.',
+            'services.emergency.badge': 'تنبيه فوري',
+            'services.emergency.btn': 'إعداد SOS',
             'services.offline.title': 'الدعم دون اتصال',
             'services.offline.desc': 'يعمل بدون اتصال بالإنترنت ويزامن البيانات عند العودة للاتصال.',
+            'services.offline.badge': 'متوفر دائماً',
+            'services.offline.btn': 'اعرف المزيد',
+            'services.cta.title': 'مستعد لتحويل إدارة صحتك؟',
+            'services.cta.desc': 'انضم إلى آلاف المرضى المصريين الذين يثقون في دليلك الصحي لاحتياجاتهم الصحية',
+            'services.cta.start': 'ابدأ مجاناً',
+            'services.cta.demo': 'جرب العرض التوضيحي',
 
             // About
             'about.title': 'عن دليلك الصحي',
             'about.subtitle': 'تحويل إدارة الرعاية الصحية في مصر بحلول مدعومة بالذكاء الاصطناعي',
-            'about.mission': 'مهمتنا',
+            'about.mission.title': 'مهمتنا',
             'about.mission.desc': 'تحويل إدارة الرعاية الصحية في مصر من خلال توفير رفيق صحي رقمي ذكي ومتاح يمكن المرضى الذين يعانون من حالات مزمنة من السيطرة على رحلتهم الصحية.',
-            'about.vision': 'رؤيتنا',
+            'about.vision.title': 'رؤيتنا',
             'about.vision.desc': 'أن نكون منصة تكنولوجيا الرعاية الصحية الرائدة في الشرق الأوسط، مما يجعل الرعاية الصحية عالية الجودة متاحة ومفهومة وقابلة للإدارة لكل مريض مصري.',
             'about.problem.title': 'المشكلة التي نحلها',
-            'about.problem.prescriptions': 'الوصفات غير المقروءة',
+            'about.problem.prescription.title': 'الوصفات غير المقروءة',
+            'about.problem.prescription.desc': '78% من الوصفات في مصر تحتوي على أخطاء بسبب سوء الخط',
+            'about.problem.tracking.title': 'ضعف تتبع الصحة',
+            'about.problem.tracking.desc': '62% من المرضى لا يتتبعون علاماتهم الحيوية باستمرار',
+            'about.problem.visits.title': 'زيارات الطبيب غير الفعالة',
+            'about.problem.visits.desc': '85% من المرضى يعتمدون على الذاكرة أثناء الاستشارات الطبية',
+            'about.problem.digital.title': 'الحواجز الرقمية',
+            'about.problem.digital.desc': '65% من كبار السن يواجهون صعوبة في التطبيقات الصحية المعقدة',
+            'about.cta.title': 'مستعد لتحويل إدارة صحتك؟',
+            'about.cta.desc': 'انضم إلى آلاف المرضى المصريين الذين يثقون في دليلك الصحي لاحتياجاتهم الصحية',
+            'about.cta.start': 'ابدأ مجاناً',
+            'about.cta.services': 'عرض الخدمات',
             'about.problem.prescriptions.desc': '78% من الوصفات في مصر تحتوي على أخطاء بسبب سوء الخط',
             'about.problem.tracking': 'ضعف تتبع الصحة',
             'about.problem.tracking.desc': '62% من المرضى لا يتتبعون علاماتهم الحيوية باستمرار',
@@ -354,6 +435,9 @@ class LocalizationManager {
             this.currentLanguage = lang;
             localStorage.setItem('language', lang);
             this.applyLanguage();
+            
+            // Re-setup language toggle to ensure proper event handling
+            this.setupLanguageToggle();
         }
     }
 
@@ -365,6 +449,7 @@ class LocalizationManager {
     // Apply language to all elements with data-i18n attribute
     applyLanguage() {
         const elements = document.querySelectorAll('[data-i18n]');
+        
         elements.forEach(element => {
             const key = element.getAttribute('data-i18n');
             const translation = this.t(key);
@@ -381,19 +466,61 @@ class LocalizationManager {
             }
         });
 
+        // Apply language direction and font
+        this.applyLanguageStyles();
+
         // Update language toggle button
         this.updateLanguageToggle();
     }
 
+    // Apply language-specific styles
+    applyLanguageStyles() {
+        const htmlElement = document.documentElement;
+        const bodyElement = document.body;
+        
+        if (this.currentLanguage === 'ar') {
+            // Apply Arabic styles
+            htmlElement.setAttribute('dir', 'rtl');
+            htmlElement.setAttribute('lang', 'ar');
+            bodyElement.style.fontFamily = "'Cairo', sans-serif";
+            bodyElement.classList.add('text-arabic');
+            
+            // Update navbar direction for Arabic
+            const navbars = document.querySelectorAll('.navbar');
+            navbars.forEach(navbar => {
+                navbar.style.direction = 'rtl';
+            });
+        } else {
+            // Apply English styles
+            htmlElement.setAttribute('dir', 'ltr');
+            htmlElement.setAttribute('lang', 'en');
+            bodyElement.style.fontFamily = '';
+            bodyElement.classList.remove('text-arabic');
+            
+            // Update navbar direction for English
+            const navbars = document.querySelectorAll('.navbar');
+            navbars.forEach(navbar => {
+                navbar.style.direction = 'ltr';
+            });
+        }
+    }
+
     // Setup language toggle functionality
     setupLanguageToggle() {
-        // Create language toggle if it doesn't exist
+        // Find existing language toggle or create one
         let langToggle = document.getElementById('language-toggle');
+        
         if (!langToggle) {
             langToggle = this.createLanguageToggle();
         }
 
-        langToggle.addEventListener('click', () => {
+        // Remove existing event listeners
+        const newToggle = langToggle.cloneNode(true);
+        langToggle.parentNode.replaceChild(newToggle, langToggle);
+        
+        // Add event listener to the new toggle
+        newToggle.addEventListener('click', (e) => {
+            e.preventDefault();
             const newLang = this.currentLanguage === 'en' ? 'ar' : 'en';
             this.setLanguage(newLang);
         });
@@ -405,6 +532,7 @@ class LocalizationManager {
         langToggle.id = 'language-toggle';
         langToggle.className = 'btn btn-ghost btn-circle';
         langToggle.innerHTML = this.currentLanguage === 'en' ? 'عربي' : 'EN';
+        langToggle.setAttribute('title', this.currentLanguage === 'en' ? 'Switch to Arabic' : 'Switch to English');
         
         // Insert before theme toggle
         const themeToggle = document.querySelector('.theme-controller')?.closest('label');
@@ -426,6 +554,7 @@ class LocalizationManager {
         const langToggle = document.getElementById('language-toggle');
         if (langToggle) {
             langToggle.innerHTML = this.currentLanguage === 'en' ? 'عربي' : 'EN';
+            langToggle.setAttribute('title', this.currentLanguage === 'en' ? 'Switch to Arabic' : 'Switch to English');
         }
     }
 }
