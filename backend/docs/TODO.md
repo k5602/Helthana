@@ -20,7 +20,7 @@
 - [ ] Implement file access permissions and security
 
 ### **PDF Report Generation**
-- [ ] Install and configure PDF generation library (ReportLab/WeasyPrint)
+- [ ] Install and configure PDF generation library (WeasyPrint)
 - [ ] Create report templates for different report types
 - [ ] Implement data aggregation for vitals summaries
 - [ ] Add chart generation for vital signs trends
@@ -49,7 +49,7 @@
 - [ ] Add emergency contact notification system
 
 ### **Background Task Processing**
-- [ ] Set up Celery with Redis broker
+- [ ] Set up Celery with Redis (valkey) broker
 - [ ] Create OCR processing background tasks
 - [ ] Implement report generation tasks
 - [ ] Add email notification tasks

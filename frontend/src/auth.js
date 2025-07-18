@@ -34,11 +34,14 @@ class AuthManager {
                 this.redirectToDashboard();
                 return { success: true };
             } else {
-                return { success: false, error: 'Invalid credentials' };
+                // Handle specific error messages from backend
+                const errorMessage = response.detail || response.non_field_errors?.[0] || 'Invalid credentials';
+                return { success: false, error: errorMessage };
             }
         } catch (error) {
             console.error('Login error:', error);
-            return { success: false, error: 'Login failed. Please try again.' };
+            const errorMessage = error.message || 'Login failed. Please try again.';
+            return { success: false, error: errorMessage };
         }
     }
 
@@ -51,11 +54,23 @@ class AuthManager {
                 // Auto-login after successful registration
                 return await this.login(userData.username, userData.password);
             } else {
-                return { success: false, error: response.error || 'Registration failed' };
+                // Handle validation errors from backend
+                let errorMessage = 'Registration failed';
+                if (response.username) {
+                    errorMessage = `Username: ${response.username[0]}`;
+                } else if (response.email) {
+                    errorMessage = `Email: ${response.email[0]}`;
+                } else if (response.password) {
+                    errorMessage = `Password: ${response.password[0]}`;
+                } else if (response.non_field_errors) {
+                    errorMessage = response.non_field_errors[0];
+                }
+                return { success: false, error: errorMessage };
             }
         } catch (error) {
             console.error('Registration error:', error);
-            return { success: false, error: 'Registration failed. Please try again.' };
+            const errorMessage = error.message || 'Registration failed. Please try again.';
+            return { success: false, error: errorMessage };
         }
     }
 
@@ -176,6 +191,30 @@ window.closeAuthModal = function() {
     if (modal) modal.classList.remove('modal-open');
 }
 
+// Display error message in modal
+window.showAuthError = function(message) {
+    let errorDiv = document.getElementById('auth-error');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'auth-error';
+        errorDiv.className = 'alert alert-error mb-4';
+        const authFields = document.getElementById('auth-fields');
+        if (authFields && authFields.parentNode) {
+            authFields.parentNode.insertBefore(errorDiv, authFields);
+        }
+    }
+    errorDiv.innerHTML = `<span>${message}</span>`;
+    errorDiv.style.display = 'block';
+}
+
+// Hide error message
+window.hideAuthError = function() {
+    const errorDiv = document.getElementById('auth-error');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
+
 // Handle auth form submission
 document.addEventListener('DOMContentLoaded', () => {
     const authForm = document.getElementById('auth-form');
@@ -183,21 +222,38 @@ document.addEventListener('DOMContentLoaded', () => {
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(authForm);
-            const data = Object.fromEntries(formData);
-            const isLogin = document.getElementById('modal-title').textContent === 'Login';
+            // Hide any previous errors
+            window.hideAuthError();
             
-            let result;
-            if (isLogin) {
-                result = await window.auth.login(data.username, data.password);
-            } else {
-                result = await window.auth.register(data);
-            }
+            // Show loading state
+            const submitBtn = authForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Loading...';
+            submitBtn.disabled = true;
             
-            if (result.success) {
-                window.closeAuthModal();
-            } else {
-                alert(result.error);
+            try {
+                const formData = new FormData(authForm);
+                const data = Object.fromEntries(formData);
+                const isLogin = document.getElementById('modal-title').textContent === 'Login';
+                
+                let result;
+                if (isLogin) {
+                    result = await window.auth.login(data.username, data.password);
+                } else {
+                    result = await window.auth.register(data);
+                }
+                
+                if (result.success) {
+                    window.closeAuthModal();
+                } else {
+                    window.showAuthError(result.error);
+                }
+            } catch (error) {
+                window.showAuthError('An unexpected error occurred. Please try again.');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         });
     }

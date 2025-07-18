@@ -3,7 +3,10 @@
  * Handles all backend API interactions
  */
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+// Determine API base URL based on environment
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000/api/v1'
+    : `${window.location.protocol}//${window.location.host}/api/v1`;
 
 class ApiClient {
     constructor() {
@@ -32,6 +35,7 @@ class ApiClient {
                 'Content-Type': 'application/json',
                 ...options.headers
             },
+            credentials: 'include', // Include cookies for CORS
             ...options
         };
 
@@ -51,13 +55,20 @@ class ApiClient {
                     return fetch(url, config);
                 } else {
                     this.clearToken();
-                    window.location.href = '/';
+                    // Don't redirect if we're already on login page
+                    if (!window.location.pathname.includes('login') && !window.location.pathname.includes('index')) {
+                        window.location.href = '/';
+                    }
                 }
             }
 
             return response;
         } catch (error) {
             console.error('API request failed:', error);
+            // Check if it's a network error (CORS, connection issues)
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Unable to connect to server. Please check your connection.');
+            }
             throw error;
         }
     }
@@ -68,6 +79,12 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
         return response.json();
     }
 
@@ -76,6 +93,12 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify(userData)
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
         return response.json();
     }
 
