@@ -40,6 +40,14 @@ class LocalizationManager {
             'nav.logout': 'Logout',
             'nav.profile': 'Profile',
 
+            // Sidebar
+            'sidebar.dashboard': 'Dashboard',
+            'sidebar.prescriptions': 'Prescriptions',
+            'sidebar.vitals': 'Vitals Tracking',
+            'sidebar.reports': 'Health Reports',
+            'sidebar.emergency': 'Emergency',
+            'sidebar.settings': 'Settings',
+
             // Landing Page
             'hero.title': 'Your Health, Our Priority',
             'hero.subtitle': 'Transform your healthcare management with AI-powered prescription scanning, smart vitals tracking, and voice-first interface designed for Egyptian patients.',
@@ -237,6 +245,14 @@ class LocalizationManager {
             'nav.join.short': 'انضم!',
             'nav.logout': 'تسجيل الخروج',
             'nav.profile': 'الملف الشخصي',
+
+            // Sidebar
+            'sidebar.dashboard': 'لوحة التحكم',
+            'sidebar.prescriptions': 'الوصفات الطبية',
+            'sidebar.vitals': 'تتبع العلامات الحيوية',
+            'sidebar.reports': 'التقارير الصحية',
+            'sidebar.emergency': 'الطوارئ',
+            'sidebar.settings': 'الإعدادات',
 
             // Landing Page
             'hero.title': 'صحتك، أولويتنا',
