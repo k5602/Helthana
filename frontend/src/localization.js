@@ -13,7 +13,16 @@ class LocalizationManager {
     async init() {
         await this.loadTranslations();
         this.applyLanguage();
-        this.setupLanguageToggle();
+        
+        // Setup language toggle after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.setupLanguageToggle();
+            });
+        } else {
+            // DOM is already ready
+            this.setupLanguageToggle();
+        }
     }
 
     async loadTranslations() {
@@ -93,7 +102,14 @@ class LocalizationManager {
             'auth.no.account': "Don't have an account?",
             'auth.signin.here': 'Sign in here',
             'auth.signup.here': 'Sign up here',
-            'auth.terms': 'I agree to the Terms of Service and Privacy Policy',
+            // Authentication placeholders
+            'auth.username.placeholder': 'Enter your username',
+            'auth.email.placeholder': 'Enter your email',
+            'auth.password.placeholder': 'Enter your password',
+            'auth.password.confirm.placeholder': 'Confirm your password',
+            'auth.firstname.placeholder': 'First name',
+            'auth.lastname.placeholder': 'Last name',
+            'auth.phone.placeholder': 'Enter your phone number',
 
             // Services
             'services.title': 'Smart Health Services',
@@ -255,7 +271,14 @@ class LocalizationManager {
             'auth.no.account': 'ليس لديك حساب؟',
             'auth.signin.here': 'سجل الدخول هنا',
             'auth.signup.here': 'سجل هنا',
-            'auth.terms': 'أوافق على شروط الخدمة وسياسة الخصوصية',
+            // Authentication placeholders
+            'auth.username.placeholder': 'أدخل اسم المستخدم',
+            'auth.email.placeholder': 'أدخل بريدك الإلكتروني',
+            'auth.password.placeholder': 'أدخل كلمة المرور',
+            'auth.password.confirm.placeholder': 'تأكيد كلمة المرور',
+            'auth.firstname.placeholder': 'الاسم الأول',
+            'auth.lastname.placeholder': 'اسم العائلة',
+            'auth.phone.placeholder': 'أدخل رقم الهاتف',
 
             // Services
             'services.title': 'خدمات صحية ذكية',
@@ -354,6 +377,9 @@ class LocalizationManager {
             this.currentLanguage = lang;
             localStorage.setItem('language', lang);
             this.applyLanguage();
+            
+            // Re-setup language toggle to ensure proper event handling
+            this.setupLanguageToggle();
         }
     }
 
@@ -365,6 +391,7 @@ class LocalizationManager {
     // Apply language to all elements with data-i18n attribute
     applyLanguage() {
         const elements = document.querySelectorAll('[data-i18n]');
+        
         elements.forEach(element => {
             const key = element.getAttribute('data-i18n');
             const translation = this.t(key);
@@ -381,19 +408,61 @@ class LocalizationManager {
             }
         });
 
+        // Apply language direction and font
+        this.applyLanguageStyles();
+
         // Update language toggle button
         this.updateLanguageToggle();
     }
 
+    // Apply language-specific styles
+    applyLanguageStyles() {
+        const htmlElement = document.documentElement;
+        const bodyElement = document.body;
+        
+        if (this.currentLanguage === 'ar') {
+            // Apply Arabic styles
+            htmlElement.setAttribute('dir', 'rtl');
+            htmlElement.setAttribute('lang', 'ar');
+            bodyElement.style.fontFamily = "'Cairo', sans-serif";
+            bodyElement.classList.add('text-arabic');
+            
+            // Update navbar direction for Arabic
+            const navbars = document.querySelectorAll('.navbar');
+            navbars.forEach(navbar => {
+                navbar.style.direction = 'rtl';
+            });
+        } else {
+            // Apply English styles
+            htmlElement.setAttribute('dir', 'ltr');
+            htmlElement.setAttribute('lang', 'en');
+            bodyElement.style.fontFamily = '';
+            bodyElement.classList.remove('text-arabic');
+            
+            // Update navbar direction for English
+            const navbars = document.querySelectorAll('.navbar');
+            navbars.forEach(navbar => {
+                navbar.style.direction = 'ltr';
+            });
+        }
+    }
+
     // Setup language toggle functionality
     setupLanguageToggle() {
-        // Create language toggle if it doesn't exist
+        // Find existing language toggle or create one
         let langToggle = document.getElementById('language-toggle');
+        
         if (!langToggle) {
             langToggle = this.createLanguageToggle();
         }
 
-        langToggle.addEventListener('click', () => {
+        // Remove existing event listeners
+        const newToggle = langToggle.cloneNode(true);
+        langToggle.parentNode.replaceChild(newToggle, langToggle);
+        
+        // Add event listener to the new toggle
+        newToggle.addEventListener('click', (e) => {
+            e.preventDefault();
             const newLang = this.currentLanguage === 'en' ? 'ar' : 'en';
             this.setLanguage(newLang);
         });
@@ -405,6 +474,7 @@ class LocalizationManager {
         langToggle.id = 'language-toggle';
         langToggle.className = 'btn btn-ghost btn-circle';
         langToggle.innerHTML = this.currentLanguage === 'en' ? 'عربي' : 'EN';
+        langToggle.setAttribute('title', this.currentLanguage === 'en' ? 'Switch to Arabic' : 'Switch to English');
         
         // Insert before theme toggle
         const themeToggle = document.querySelector('.theme-controller')?.closest('label');
@@ -426,6 +496,7 @@ class LocalizationManager {
         const langToggle = document.getElementById('language-toggle');
         if (langToggle) {
             langToggle.innerHTML = this.currentLanguage === 'en' ? 'عربي' : 'EN';
+            langToggle.setAttribute('title', this.currentLanguage === 'en' ? 'Switch to Arabic' : 'Switch to English');
         }
     }
 }
