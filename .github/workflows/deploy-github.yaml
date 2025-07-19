@@ -196,7 +196,7 @@ jobs:
               redis:
                 condition: service_healthy
             healthcheck:
-              test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
+              test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
               interval: 30s
               timeout: 10s
               retries: 5
@@ -235,7 +235,7 @@ jobs:
     - name: Run integration tests
       run: |
         echo "Testing backend health..."
-        curl -f http://localhost:8000/admin/ || exit 1
+        curl -f http://localhost:8000/health/ || exit 1
         echo "✅ Backend health check passed"
         
         echo "Testing frontend health..."
@@ -278,9 +278,37 @@ jobs:
         docker-compose -f docker-compose.github.yml down -v
         docker system prune -f
 
-  create-release:
+  deploy-to-railway:
     runs-on: ubuntu-latest
     needs: [build-and-push, deploy-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Deploy to Railway
+      uses: railwayapp/railway-deploy@v1.1.0
+      with:
+        railway_token: ${{ secrets.RAILWAY_TOKEN }}
+        service: health-guide-backend
+        dockerfile_path: ./Dockerfile
+    
+    - name: Get Railway URLs
+      run: |
+        echo "🚀 Deployment successful!"
+        echo "Your app is now live on the internet!"
+        echo ""
+        echo "🌐 Live URLs:"
+        echo "Backend: https://health-guide-backend-production.up.railway.app"
+        echo "Frontend: https://health-guide-frontend-production.up.railway.app"
+        echo ""
+        echo "Note: Railway URLs will be provided after first deployment"
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-test, deploy-to-railway]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -295,31 +323,26 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: v${{ github.run_number }}
-        release_name: GitHub Docker Release v${{ github.run_number }}
+        release_name: Live Deployment v${{ github.run_number }}
         body: |
-          🐳 Docker Deployment Release v${{ github.run_number }}
+          🚀 Live Deployment v${{ github.run_number }}
           
           **Commit:** ${{ github.sha }}
           **Branch:** ${{ github.ref_name }}
           
-          **Docker Images:**
+          **🌐 Live URLs:**
+          - Backend: https://health-guide-backend-production.up.railway.app
+          - Frontend: https://health-guide-frontend-production.up.railway.app
+          
+          **🐳 Docker Images:**
           - Backend: `${{ needs.build-and-push.outputs.backend-image }}`
           - Frontend: `${{ needs.build-and-push.outputs.frontend-image }}`
           
-          **Quick Start:**
+          **Local Testing:**
           ```bash
-          # Pull the images
           docker pull ${{ needs.build-and-push.outputs.backend-image }}
           docker pull ${{ needs.build-and-push.outputs.frontend-image }}
-          
-          # Run with docker-compose
-          curl -O https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
-          docker-compose up
+          docker-compose -f docker-compose.github.yml up
           ```
-          
-          **Access URLs:**
-          - Frontend: http://localhost:8080
-          - Backend API: http://localhost:8000
-          - Admin Panel: http://localhost:8000/admin/
         draft: false
         prerelease: false

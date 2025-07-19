@@ -23,6 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/ .
 
+# Set minimal environment variables for collectstatic
+ENV SECRET_KEY=build-time-secret-key-not-for-production
+ENV DATABASE_URL=sqlite:///build.db
+ENV ALLOWED_HOSTS=localhost
+
 # Collect static files
 RUN python manage.py collectstatic --noinput --settings=health_guide.settings.production
 
@@ -44,7 +49,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
-COPY --from=backend-builder /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
+COPY --from=backend-builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=backend-builder /usr/local/bin/ /usr/local/bin/
 
 # Copy application code
@@ -59,7 +64,7 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/admin/', timeout=10)"
+    CMD python -c "import requests; requests.get('http://localhost:8000/health/', timeout=10)"
 
 # Run application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "health_guide.wsgi:application"]
