@@ -4,9 +4,25 @@
  */
 
 // Determine API base URL based on environment
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000/api/v1'
-    : `${window.location.protocol}//${window.location.host}/api/v1`;
+function getApiBaseUrl() {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // Development environments - use port 8000 for Django backend
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' || 
+        hostname.startsWith('192.168.') || 
+        hostname.startsWith('10.') || 
+        hostname.startsWith('172.') ||
+        /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        return `${protocol}//${hostname}:8000/api/v1`;
+    }
+    
+    // Production environment - same host as frontend
+    return `${protocol}//${window.location.host}/api/v1`;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiClient {
     constructor() {

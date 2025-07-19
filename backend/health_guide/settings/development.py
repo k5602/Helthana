@@ -30,10 +30,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
     "http://localhost:4173",  # Vite preview port
     "http://127.0.0.1:4173",
+    "http://localhost:8000",  # Django dev server
+    "http://127.0.0.1:8000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
+
+# Additional CORS settings for network access
+CORS_ALLOW_PRIVATE_NETWORK = True  # Allow private network access
+CORS_REPLACE_HTTPS_REFERER = True  # Handle HTTPS referer replacement
 
 # Enhanced CORS headers for authentication and API functionality
 CORS_ALLOWED_HEADERS = [
@@ -51,12 +57,15 @@ CORS_ALLOWED_HEADERS = [
     'expires',
     'x-forwarded-for',
     'x-forwarded-proto',
+    'x-real-ip',
+    'referer',
 ]
 
 # Allow specific HTTP methods for API endpoints
 CORS_ALLOWED_METHODS = [
     'DELETE',
     'GET',
+    'HEAD',
     'OPTIONS',
     'PATCH',
     'POST',
@@ -67,7 +76,14 @@ CORS_ALLOWED_METHODS = [
 CORS_EXPOSE_HEADERS = [
     'content-type',
     'x-csrftoken',
+    'authorization',
+    'cache-control',
+    'expires',
+    'pragma',
 ]
+
+# Preflight request cache time (1 hour for development)
+CORS_PREFLIGHT_MAX_AGE = 3600
 
 # Cache configuration
 CACHES = {
