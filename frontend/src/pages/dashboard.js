@@ -58,56 +58,224 @@ class DashboardPage {
     }
 
     /**
-     * Load dashboard data from API
+     * Load dashboard data from API with enhanced error handling
      */
     async loadDashboardData() {
         try {
-            uiShowLoading('dashboard-content');
+            // Show loading states for individual components
+            this.showLoadingStates();
             
-            // Load dashboard statistics
-            this.stats = await apiGetDashboardStats();
+            // Load dashboard statistics with retry logic
+            this.stats = await this.loadStatsWithFallback();
             this.renderStats();
             
-            // Load recent activity
-            this.recentActivity = await apiGetRecentActivity();
+            // Load recent activity with retry logic
+            this.recentActivity = await this.loadActivityWithFallback();
             this.renderRecentActivity();
+            
+            // Update last refresh time
+            this.updateLastRefreshTime();
             
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
-            uiShowToast(getTranslation('dashboard.loadError'), 'error');
+            this.handleLoadError(error);
         } finally {
-            uiHideLoading('dashboard-content');
+            this.hideLoadingStates();
         }
     }
 
     /**
-     * Render dashboard statistics
+     * Load stats with fallback to offline data
+     */
+    async loadStatsWithFallback() {
+        try {
+            return await apiGetDashboardStats();
+        } catch (error) {
+            console.warn('Failed to load stats from API, using fallback:', error);
+            
+            // Fallback to basic counts if API fails
+            return {
+                prescriptions: 0,
+                vitals: 0,
+                reports: 0,
+                emergencyContacts: 0,
+                pendingPrescriptions: 0,
+                recentVitals: 0
+            };
+        }
+    }
+
+    /**
+     * Load activity with fallback to offline data
+     */
+    async loadActivityWithFallback() {
+        try {
+            return await apiGetRecentActivity();
+        } catch (error) {
+            console.warn('Failed to load activity from API, using fallback:', error);
+            
+            // Return empty activity if API fails
+            return [];
+        }
+    }
+
+    /**
+     * Show loading states for dashboard components
+     */
+    showLoadingStates() {
+        // Show loading for stats cards
+        const statElements = [
+            'prescription-count',
+            'vitals-count', 
+            'reports-count',
+            'emergency-count'
+        ];
+        
+        statElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.innerHTML = '<span class="loading loading-spinner loading-sm"></span>';
+            }
+        });
+
+        // Show loading for recent activity
+        const activityContainer = document.getElementById('recent-activity');
+        if (activityContainer) {
+            activityContainer.innerHTML = `
+                <div class="flex items-center justify-center py-8">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Hide loading states
+     */
+    hideLoadingStates() {
+        // Loading states are replaced by actual content in render methods
+    }
+
+    /**
+     * Handle loading errors with user-friendly messages
+     */
+    handleLoadError(error) {
+        let errorMessage = getTranslation('dashboard.loadError');
+        
+        if (error.status === 401) {
+            errorMessage = getTranslation('auth.sessionExpired');
+            // Redirect to login after showing error
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        } else if (error.status >= 500) {
+            errorMessage = getTranslation('dashboard.serverError');
+        } else if (!navigator.onLine) {
+            errorMessage = getTranslation('dashboard.offlineError');
+        }
+        
+        uiShowToast(errorMessage, 'error');
+    }
+
+    /**
+     * Update last refresh time indicator
+     */
+    updateLastRefreshTime() {
+        const refreshIndicator = document.getElementById('last-refresh');
+        if (refreshIndicator) {
+            const now = new Date();
+            refreshIndicator.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+        }
+    }
+
+    /**
+     * Render dashboard statistics with enhanced data
      */
     renderStats() {
         if (!this.stats) return;
 
-        // Update prescription count
-        const prescriptionCount = document.getElementById('prescription-count');
-        if (prescriptionCount) {
-            prescriptionCount.textContent = this.stats.prescriptions || 0;
-        }
-
+        // Update prescription count with animation
+        this.animateCountUpdate('prescription-count', this.stats.prescriptions || 0);
+        
         // Update vitals count
-        const vitalsCount = document.getElementById('vitals-count');
-        if (vitalsCount) {
-            vitalsCount.textContent = this.stats.vitals || 0;
-        }
-
+        this.animateCountUpdate('vitals-count', this.stats.vitals || 0);
+        
         // Update reports count
-        const reportsCount = document.getElementById('reports-count');
-        if (reportsCount) {
-            reportsCount.textContent = this.stats.reports || 0;
-        }
-
-        // Update emergency contacts count
+        this.animateCountUpdate('reports-count', this.stats.reports || 0);
+        
+        // Update emergency contacts count (if element exists)
         const emergencyCount = document.getElementById('emergency-count');
         if (emergencyCount) {
-            emergencyCount.textContent = this.stats.emergencyContacts || 0;
+            this.animateCountUpdate('emergency-count', this.stats.emergencyContacts || 0);
+        }
+
+        // Add status indicators for pending items
+        this.updateStatusIndicators();
+    }
+
+    /**
+     * Animate count updates for better UX
+     */
+    animateCountUpdate(elementId, newValue) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        const currentValue = parseInt(element.textContent) || 0;
+        const increment = newValue > currentValue ? 1 : -1;
+        const steps = Math.abs(newValue - currentValue);
+        
+        if (steps === 0) return;
+
+        let current = currentValue;
+        const stepTime = Math.min(50, 500 / steps); // Max 500ms total animation
+
+        const timer = setInterval(() => {
+            current += increment;
+            element.textContent = current;
+            
+            if (current === newValue) {
+                clearInterval(timer);
+            }
+        }, stepTime);
+    }
+
+    /**
+     * Update status indicators for pending items
+     */
+    updateStatusIndicators() {
+        // Add pending prescriptions indicator
+        if (this.stats.pendingPrescriptions > 0) {
+            const prescriptionCard = document.getElementById('prescription-count')?.closest('.card');
+            if (prescriptionCard) {
+                const badge = document.createElement('div');
+                badge.className = 'badge badge-warning badge-sm absolute -top-2 -right-2';
+                badge.textContent = this.stats.pendingPrescriptions;
+                badge.title = `${this.stats.pendingPrescriptions} pending processing`;
+                prescriptionCard.style.position = 'relative';
+                
+                // Remove existing badge
+                const existingBadge = prescriptionCard.querySelector('.badge');
+                if (existingBadge) existingBadge.remove();
+                
+                prescriptionCard.appendChild(badge);
+            }
+        }
+
+        // Add recent vitals indicator
+        if (this.stats.recentVitals > 0) {
+            const vitalsCard = document.getElementById('vitals-count')?.closest('.card');
+            if (vitalsCard) {
+                const indicator = document.createElement('div');
+                indicator.className = 'w-3 h-3 bg-success rounded-full absolute top-2 right-2';
+                indicator.title = 'Recent vitals logged';
+                vitalsCard.style.position = 'relative';
+                
+                // Remove existing indicator
+                const existingIndicator = vitalsCard.querySelector('.bg-success');
+                if (existingIndicator) existingIndicator.remove();
+                
+                vitalsCard.appendChild(indicator);
+            }
         }
     }
 

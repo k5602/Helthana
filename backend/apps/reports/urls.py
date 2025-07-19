@@ -1,7 +1,10 @@
-from django.urls import path
-from .views import HealthReportListCreateView, HealthReportDetailView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import HealthReportViewSet
+
+router = DefaultRouter()
+router.register(r'', HealthReportViewSet, basename='health-report')
 
 urlpatterns = [
-    path('', HealthReportListCreateView.as_view(), name='report-list-create'),
-    path('<int:pk>/', HealthReportDetailView.as_view(), name='report-detail'),
+    path('', include(router.urls)),
 ]

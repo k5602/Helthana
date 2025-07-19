@@ -1,0 +1,86 @@
+{% extends "reports/basic_report.html" %}
+
+{% block extra_styles %}
+<style>
+    .chart-placeholder {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 15px 0;
+        color: #6c757d;
+        font-style: italic;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e1e8ed;
+        border-radius: 6px;
+        padding: 15px;
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #3498db;
+        margin-bottom: 5px;
+    }
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Vitals Statistics -->
+    {% if vitals and include_summary %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}إحصائيات العلامات الحيوية{% else %}Vital Signs Statistics{% endif %}</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ vitals.total_readings }}</div>
+                <div class="stat-label">{% if language == 'ar' %}إجمالي القراءات{% else %}Total Readings{% endif %}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ vitals.by_type|length }}</div>
+                <div class="stat-label">{% if language == 'ar' %}أنواع العلامات{% else %}Vital Types{% endif %}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ date_from|timesince:date_to }}</div>
+                <div class="stat-label">{% if language == 'ar' %}فترة التقرير{% else %}Report Period{% endif %}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Charts Section -->
+    {% if include_charts and vitals.by_type %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}الرسوم البيانية{% else %}Charts{% endif %}</h2>
+        
+        {% for vital_type, readings in vitals.by_type.items %}
+        {% if readings %}
+        <div class="section">
+            <h3>{{ vital_type|title|replace:"_":" " }} {% if language == 'ar' %}الاتجاه{% else %}Trend{% endif %}</h3>
+            <div class="chart-placeholder">
+                {% if language == 'ar' %}
+                    رسم بياني لـ {{ vital_type|title|replace:"_":" " }} ({{ readings|length }} قراءة)
+                {% else %}
+                    Chart for {{ vital_type|title|replace:"_":" " }} ({{ readings|length }} readings)
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endblock %}

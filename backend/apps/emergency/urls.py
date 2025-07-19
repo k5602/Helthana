@@ -1,12 +1,11 @@
-from django.urls import path
-from .views import (
-    EmergencyContactListCreateView,
-    EmergencyContactDetailView,
-    EmergencyAlertCreateView
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import EmergencyContactViewSet, EmergencyAlertViewSet
+
+router = DefaultRouter()
+router.register(r'contacts', EmergencyContactViewSet, basename='emergency-contact')
+router.register(r'alerts', EmergencyAlertViewSet, basename='emergency-alert')
 
 urlpatterns = [
-    path('contacts/', EmergencyContactListCreateView.as_view(), name='emergency-contact-list'),
-    path('contacts/<int:pk>/', EmergencyContactDetailView.as_view(), name='emergency-contact-detail'),
-    path('alert/', EmergencyAlertCreateView.as_view(), name='emergency-alert'),
+    path('', include(router.urls)),
 ]

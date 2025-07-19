@@ -161,50 +161,22 @@
 
       <!-- Main Content -->
       <main class="flex-1 overflow-y-auto p-6">
-      <!-- Header -->
-      <div class="mb-8">
-        <div class="breadcrumbs text-sm">
-          <ul>
-            <li><a href="dashboard.html" data-i18n="sidebar.dashboard">Dashboard</a></li>
-            <li data-i18n="sidebar.prescriptions">Prescriptions</li>
-          </ul>
-        </div>
-        <h1 class="text-4xl font-bold text-base-content mb-2" data-i18n="prescriptions.title">Prescriptions</h1>
-        <p class="text-base-content/70" data-i18n="prescriptions.subtitle">Manage and track your prescription medications with AI-powered scanning</p>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap gap-4 mb-8">
-        <button onclick="openPrescriptionScanner()" class="btn btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-          </svg>
-          <span data-i18n="prescriptions.scan.new">Scan New Prescription</span>
-        </button>
-        <button onclick="addManualPrescription()" class="btn btn-outline btn-secondary">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          <span data-i18n="prescriptions.add.manual">Add Manually</span>
-        </button>
-      </div>
-
-      <!-- Prescriptions Grid -->
-      <div id="prescriptions-grid" class="grid gap-6">
-        <!-- Loading State -->
-        <div class="flex justify-center items-center py-12">
-          <span class="loading loading-spinner loading-lg text-primary"></span>
-        </div>
-      </div>
-
-
-      <!-- Main Content Area -->
-      <main class="flex-1 overflow-y-auto p-6">
       <!-- Welcome Section -->
       <div class="mb-8">
-        <h2 class="text-3xl font-bold text-base-content mb-2" data-i18n="dashboard.welcome">Welcome to Your Health Dashboard</h2>
-        <p class="text-base-content/70" data-i18n="dashboard.subtitle">Manage your health with AI-powered tools and smart tracking</p>
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-base-content mb-2" data-i18n="dashboard.welcome">Welcome to Your Health Dashboard</h2>
+            <p class="text-base-content/70" data-i18n="dashboard.subtitle">Manage your health with AI-powered tools and smart tracking</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="last-refresh" class="text-xs text-base-content/50"></span>
+            <button id="refresh-dashboard" class="btn btn-ghost btn-sm" title="Refresh Dashboard">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Dashboard Cards -->
@@ -319,79 +291,11 @@
     </div>
 
     <!-- Dashboard-specific JavaScript -->
-    <script>
-      // Dashboard data loading
-      window.loadDashboardData = async function() {
-        try {
-          // Load dashboard statistics
-          const [prescriptions, vitals, reports] = await Promise.all([
-            window.offline.getCombinedPrescriptions(),
-            window.offline.getCombinedVitals(),
-            window.api.getReports().catch(() => ({ results: [] }))
-          ]);
-
-          // Update dashboard stats
-          window.ui.updateDashboardStats({
-            prescriptions: prescriptions.length,
-            vitals: vitals.length,
-            reports: reports.results?.length || 0
-          });
-
-          // Load recent activity
-          loadRecentActivity(prescriptions, vitals);
-
-        } catch (error) {
-          console.error('Failed to load dashboard data:', error);
-          if (window.ui) window.ui.showToast('Failed to load dashboard data', 'error');
-        }
-      }
-
-      function loadRecentActivity(prescriptions, vitals) {
-        const activities = [];
-
-        // Add recent prescriptions
-        prescriptions.slice(0, 3).forEach(prescription => {
-          activities.push({
-            icon: '📱',
-            title: 'Prescription Scanned',
-            description: `Dr. ${prescription.doctor_name}`,
-            timestamp: formatDate(prescription.created_at)
-          });
-        });
-
-        // Add recent vitals
-        vitals.slice(0, 3).forEach(vital => {
-          activities.push({
-            icon: '📊',
-            title: 'Vital Signs Logged',
-            description: `${vital.vital_type}: ${vital.value} ${vital.unit}`,
-            timestamp: formatDate(vital.recorded_at)
-          });
-        });
-
-        // Sort by timestamp and take most recent
-        activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        
-        if (window.ui) {
-          window.ui.renderRecentActivity(activities.slice(0, 5));
-        }
-      }
-
-      function formatDate(dateString) {
-        if (!dateString) return 'Recently';
-        
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffTime = Math.abs(now - date);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 1) return 'Yesterday';
-        if (diffDays < 7) return `${diffDays} days ago`;
-        return date.toLocaleDateString();
-      }
-
-      // Load dashboard data when page loads
-      document.addEventListener('DOMContentLoaded', () => {
+    <script type="module">
+      import { DashboardPage } from '/src/pages/dashboard.js';
+      
+      // Initialize dashboard when page loads
+      document.addEventListener('DOMContentLoaded', async () => {
         // Check if user is authenticated
         if (!window.auth || !window.auth.isAuthenticated()) {
           window.location.href = '/login.html';
@@ -406,10 +310,20 @@
           });
         }
         
-        // Load dashboard data
-        setTimeout(() => {
-          window.loadDashboardData();
-        }, 1000); // Wait for modules to load
+        // Initialize dashboard page
+        try {
+          window.dashboardPage = new DashboardPage();
+          await window.dashboardPage.init();
+        } catch (error) {
+          console.error('Failed to initialize dashboard:', error);
+        }
+      });
+
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        if (window.dashboardPage) {
+          window.dashboardPage.destroy();
+        }
       });
     </script>
 

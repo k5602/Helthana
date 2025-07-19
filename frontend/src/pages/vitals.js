@@ -34,34 +34,71 @@ class VitalsPage {
      * Set up event listeners for vitals interactions
      */
     setupEventListeners() {
-        // Add vital button
+        // Add vital button (detailed modal)
         const addVitalBtn = document.getElementById('add-vital-btn');
         if (addVitalBtn) {
             addVitalBtn.addEventListener('click', () => this.openAddVitalModal());
         }
 
-        // Vital form submission
-        const vitalForm = document.getElementById('vital-form');
-        if (vitalForm) {
-            vitalForm.addEventListener('submit', (e) => this.handleVitalSubmit(e));
+        // Quick vitals form submission
+        const vitalsForm = document.getElementById('vitals-form');
+        if (vitalsForm) {
+            vitalsForm.addEventListener('submit', (e) => this.handleQuickVitalSubmit(e));
         }
 
-        // Refresh vitals
-        const refreshBtn = document.getElementById('refresh-vitals');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.loadVitals());
+        // Detailed vital form submission
+        const detailedVitalForm = document.getElementById('detailed-vital-form');
+        if (detailedVitalForm) {
+            detailedVitalForm.addEventListener('submit', (e) => this.handleDetailedVitalSubmit(e));
         }
 
-        // Chart type selector
+        // Chart controls
         const chartTypeSelect = document.getElementById('chart-type-select');
         if (chartTypeSelect) {
             chartTypeSelect.addEventListener('change', (e) => this.updateChart(e.target.value));
         }
 
-        // Date range selector
         const dateRangeSelect = document.getElementById('date-range-select');
         if (dateRangeSelect) {
             dateRangeSelect.addEventListener('change', () => this.loadTrends());
+        }
+
+        const refreshChartBtn = document.getElementById('refresh-chart-btn');
+        if (refreshChartBtn) {
+            refreshChartBtn.addEventListener('click', () => this.loadTrends());
+        }
+
+        const exportChartBtn = document.getElementById('export-chart-btn');
+        if (exportChartBtn) {
+            exportChartBtn.addEventListener('click', () => this.exportChart());
+        }
+
+        // Form validation
+        this.setupFormValidation();
+    }
+
+    /**
+     * Set up form validation for vitals inputs
+     */
+    setupFormValidation() {
+        const bpInput = document.querySelector('input[name="blood_pressure"]');
+        if (bpInput) {
+            bpInput.addEventListener('input', (e) => this.validateBloodPressure(e.target));
+        }
+
+        const hrInput = document.querySelector('input[name="heart_rate"]');
+        if (hrInput) {
+            hrInput.addEventListener('input', (e) => this.validateHeartRate(e.target));
+        }
+
+        const tempInput = document.querySelector('input[name="temperature"]');
+        if (tempInput) {
+            tempInput.addEventListener('input', (e) => this.validateTemperature(e.target));
+        }
+
+        const weightInput = document.querySelector('input[name="weight"]');
+        if (weightInput) {
+            weightInput.addEventListener('input', (e) => this.validateWeight(e.target));
         }
     }
 
@@ -216,23 +253,91 @@ class VitalsPage {
     }
 
     /**
-     * Handle vital form submission
+     * Handle quick vitals form submission (multiple vitals at once)
      */
-    async handleVitalSubmit(event) {
+    async handleQuickVitalSubmit(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const vitalsToSave = [];
+        const recordedAt = new Date().toISOString();
+        
+        // Process each vital type
+        const vitalTypes = ['blood_pressure', 'heart_rate', 'temperature', 'weight'];
+        
+        for (const type of vitalTypes) {
+            const value = formData.get(type);
+            if (value && value.trim()) {
+                // Validate the value
+                if (!this.validateVitalValue(type, value)) {
+                    uiShowToast(getTranslation(`vitals.${type}.invalid`), 'error');
+                    return;
+                }
+                
+                vitalsToSave.push({
+                    vital_type: type,
+                    value: value,
+                    notes: formData.get('notes') || '',
+                    recorded_at: recordedAt
+                });
+            }
+        }
+        
+        if (vitalsToSave.length === 0) {
+            uiShowToast(getTranslation('vitals.noDataEntered'), 'warning');
+            return;
+        }
+
+        try {
+            // Save all vitals
+            const savePromises = vitalsToSave.map(vital => apiCreateVital(vital));
+            await Promise.all(savePromises);
+            
+            uiShowToast(getTranslation('vitals.quickSaveSuccess'), 'success');
+            event.target.reset();
+            
+            // Reload vitals and trends
+            await this.loadVitals();
+            await this.loadTrends();
+            
+        } catch (error) {
+            console.error('Failed to save vitals:', error);
+            uiShowToast(getTranslation('vitals.saveError'), 'error');
+        }
+    }
+
+    /**
+     * Handle detailed vital form submission (single vital with more details)
+     */
+    async handleDetailedVitalSubmit(event) {
         event.preventDefault();
         
         const formData = new FormData(event.target);
         const vitalData = {
             vital_type: formData.get('vital_type'),
-            value: parseFloat(formData.get('value')),
+            value: formData.get('value'),
             notes: formData.get('notes') || '',
             recorded_at: formData.get('recorded_at') || new Date().toISOString()
         };
 
+        // Validate the data
+        if (!vitalData.vital_type || !vitalData.value) {
+            uiShowToast(getTranslation('vitals.requiredFields'), 'error');
+            return;
+        }
+
+        if (!this.validateVitalValue(vitalData.vital_type, vitalData.value)) {
+            uiShowToast(getTranslation('vitals.invalidValue'), 'error');
+            return;
+        }
+
         try {
             await apiCreateVital(vitalData);
             uiShowToast(getTranslation('vitals.addSuccess'), 'success');
-            uiHideModal('add-vital-modal');
+            
+            // Close modal and reset form
+            document.getElementById('add-vital-modal').classList.remove('modal-open');
+            event.target.reset();
             
             // Reload vitals and trends
             await this.loadVitals();
@@ -242,6 +347,141 @@ class VitalsPage {
             console.error('Failed to add vital:', error);
             uiShowToast(getTranslation('vitals.addError'), 'error');
         }
+    }
+
+    /**
+     * Validate vital value based on type
+     */
+    validateVitalValue(type, value) {
+        switch (type) {
+            case 'blood_pressure':
+                return /^\d{2,3}\/\d{2,3}$/.test(value);
+            case 'heart_rate':
+                const hr = parseInt(value);
+                return hr >= 40 && hr <= 200;
+            case 'temperature':
+                const temp = parseFloat(value);
+                return temp >= 30 && temp <= 45;
+            case 'weight':
+                const weight = parseFloat(value);
+                return weight >= 20 && weight <= 300;
+            case 'blood_sugar':
+                const bs = parseInt(value);
+                return bs >= 50 && bs <= 500;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Validate blood pressure input
+     */
+    validateBloodPressure(input) {
+        const value = input.value;
+        const errorElement = document.getElementById('bp-error');
+        
+        if (value && !/^\d{2,3}\/\d{2,3}$/.test(value)) {
+            input.classList.add('input-error');
+            if (errorElement) errorElement.classList.remove('hidden');
+        } else {
+            input.classList.remove('input-error');
+            if (errorElement) errorElement.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Validate heart rate input
+     */
+    validateHeartRate(input) {
+        const value = parseInt(input.value);
+        const errorElement = document.getElementById('hr-error');
+        
+        if (input.value && (isNaN(value) || value < 40 || value > 200)) {
+            input.classList.add('input-error');
+            if (errorElement) errorElement.classList.remove('hidden');
+        } else {
+            input.classList.remove('input-error');
+            if (errorElement) errorElement.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Validate temperature input
+     */
+    validateTemperature(input) {
+        const value = parseFloat(input.value);
+        const errorElement = document.getElementById('temp-error');
+        
+        if (input.value && (isNaN(value) || value < 30 || value > 45)) {
+            input.classList.add('input-error');
+            if (errorElement) errorElement.classList.remove('hidden');
+        } else {
+            input.classList.remove('input-error');
+            if (errorElement) errorElement.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Validate weight input
+     */
+    validateWeight(input) {
+        const value = parseFloat(input.value);
+        const errorElement = document.getElementById('weight-error');
+        
+        if (input.value && (isNaN(value) || value < 20 || value > 300)) {
+            input.classList.add('input-error');
+            if (errorElement) errorElement.classList.remove('hidden');
+        } else {
+            input.classList.remove('input-error');
+            if (errorElement) errorElement.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Export chart data
+     */
+    exportChart() {
+        const chartType = document.getElementById('chart-type-select')?.value || 'blood_pressure';
+        const dateRange = document.getElementById('date-range-select')?.value || '30';
+        
+        if (!this.trends || !this.trends[chartType]) {
+            uiShowToast(getTranslation('vitals.noDataToExport'), 'warning');
+            return;
+        }
+
+        const data = this.trends[chartType];
+        const csvContent = this.generateCSV(data, chartType);
+        
+        // Create and download CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vitals_${chartType}_${dateRange}days.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        uiShowToast(getTranslation('vitals.exportSuccess'), 'success');
+    }
+
+    /**
+     * Generate CSV content from chart data
+     */
+    generateCSV(data, type) {
+        const headers = ['Date', this.getVitalTypeLabel(type), 'Unit'];
+        const unit = this.getVitalUnit(type);
+        
+        const rows = data.map(item => [
+            item.date,
+            item.value,
+            unit
+        ]);
+        
+        return [headers, ...rows]
+            .map(row => row.map(field => `"${field}"`).join(','))
+            .join('\n');
     }
 
     /**

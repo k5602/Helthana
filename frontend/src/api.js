@@ -451,86 +451,561 @@ class ApiClient {
 const api = new ApiClient();
 window.api = api;
 
-// Export individual API functions for module imports
+// Enhanced error handling with retry logic
+const withRetry = async (apiCall, maxRetries = 3, delay = 1000) => {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await apiCall();
+        } catch (error) {
+            lastError = error;
+            
+            // Don't retry on authentication errors or client errors (4xx)
+            if (error.status >= 400 && error.status < 500) {
+                throw error;
+            }
+            
+            // Don't retry on the last attempt
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            
+            // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt - 1)));
+        }
+    }
+    
+    throw lastError;
+};
+
+// Enhanced API response handler
+const handleApiResponse = async (response) => {
+    if (!response.ok) {
+        const errorData = await api.safeJsonParse(response);
+        const error = new Error(errorData.error?.message || `HTTP ${response.status}`);
+        error.status = response.status;
+        error.data = errorData;
+        throw error;
+    }
+    return api.safeJsonParse(response);
+};
+
+// Backend availability check
+let backendAvailable = null;
+const checkBackendAvailability = async () => {
+    if (backendAvailable !== null) return backendAvailable;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/health/`, { 
+            method: 'GET',
+            timeout: 2000,
+            signal: AbortSignal.timeout(2000)
+        });
+        backendAvailable = response.ok;
+    } catch (error) {
+        backendAvailable = false;
+    }
+    
+    return backendAvailable;
+};
+
+// Dashboard API functions with complete offline fallback
 export const apiGetDashboardStats = async () => {
-    // Placeholder implementation - will be replaced with real API call
-    return {
-        prescriptions: 5,
-        vitals: 12,
-        reports: 3,
-        emergencyContacts: 2
-    };
+    const isBackendAvailable = await checkBackendAvailability();
+    
+    if (!isBackendAvailable) {
+        console.info('Backend unavailable, using offline data for dashboard stats');
+        // Return demo data for offline experience
+        return {
+            prescriptions: 3,
+            vitals: 8,
+            reports: 2,
+            emergencyContacts: 1,
+            pendingPrescriptions: 1,
+            recentVitals: 2
+        };
+    }
+    
+    try {
+        // Try to get real data from API with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const [prescriptionStats, vitalStats, reportStats, emergencyStats] = await Promise.allSettled([
+            api.request('/prescriptions/statistics/').then(handleApiResponse).catch(() => ({ total_prescriptions: 0, pending_prescriptions: 0 })),
+            api.request('/vitals/types/').then(handleApiResponse).catch(() => ({ total_readings: 0, recent_count: 0 })),
+            api.request('/reports/?limit=1').then(handleApiResponse).catch(() => ({ count: 0 })),
+            api.request('/emergency/contacts/').then(handleApiResponse).catch(() => [])
+        ]);
+        
+        clearTimeout(timeoutId);
+        
+        // Extract values from settled promises
+        const prescriptionData = prescriptionStats.status === 'fulfilled' ? prescriptionStats.value : { total_prescriptions: 0, pending_prescriptions: 0 };
+        const vitalData = vitalStats.status === 'fulfilled' ? vitalStats.value : { total_readings: 0, recent_count: 0 };
+        const reportData = reportStats.status === 'fulfilled' ? reportStats.value : { count: 0 };
+        const emergencyData = emergencyStats.status === 'fulfilled' ? emergencyStats.value : [];
+        
+        return {
+            prescriptions: prescriptionData.total_prescriptions || 0,
+            vitals: vitalData.total_readings || 0,
+            reports: reportData.count || 0,
+            emergencyContacts: Array.isArray(emergencyData) ? emergencyData.length : 0,
+            pendingPrescriptions: prescriptionData.pending_prescriptions || 0,
+            recentVitals: vitalData.recent_count || 0
+        };
+    } catch (error) {
+        console.warn('Dashboard stats API failed, using offline fallback:', error);
+        backendAvailable = false; // Mark backend as unavailable
+        
+        // Return demo data for offline experience
+        return {
+            prescriptions: 3,
+            vitals: 8,
+            reports: 2,
+            emergencyContacts: 1,
+            pendingPrescriptions: 1,
+            recentVitals: 2
+        };
+    }
 };
 
 export const apiGetRecentActivity = async () => {
-    // Placeholder implementation - will be replaced with real API call
-    return [
-        {
-            title: 'Blood pressure logged',
-            timestamp: '2 hours ago'
-        },
-        {
-            title: 'Prescription uploaded',
-            timestamp: '1 day ago'
+    try {
+        // Try to get real data from API with graceful fallback
+        const [recentPrescriptions, recentVitals, recentReports] = await Promise.allSettled([
+            api.request('/prescriptions/recent/').then(handleApiResponse).catch(() => []),
+            api.request('/vitals/?limit=5').then(handleApiResponse).catch(() => ({ results: [] })),
+            api.request('/reports/?limit=3').then(handleApiResponse).catch(() => ({ results: [] }))
+        ]);
+        
+        const activities = [];
+        
+        // Extract values from settled promises
+        const prescriptionData = recentPrescriptions.status === 'fulfilled' ? recentPrescriptions.value : [];
+        const vitalData = recentVitals.status === 'fulfilled' ? recentVitals.value : { results: [] };
+        const reportData = recentReports.status === 'fulfilled' ? recentReports.value : { results: [] };
+        
+        // Add prescription activities
+        if (Array.isArray(prescriptionData)) {
+            prescriptionData.forEach(prescription => {
+                activities.push({
+                    id: `prescription-${prescription.id}`,
+                    type: 'prescription',
+                    title: `Prescription from Dr. ${prescription.doctor_name || 'Unknown'}`,
+                    timestamp: prescription.created_at,
+                    status: prescription.processing_status
+                });
+            });
         }
-    ];
+        
+        // Add vital activities
+        if (vitalData.results && Array.isArray(vitalData.results)) {
+            vitalData.results.forEach(vital => {
+                activities.push({
+                    id: `vital-${vital.id}`,
+                    type: 'vital',
+                    title: `${vital.vital_type} recorded: ${vital.value} ${vital.unit || ''}`,
+                    timestamp: vital.recorded_at
+                });
+            });
+        }
+        
+        // Add report activities
+        if (reportData.results && Array.isArray(reportData.results)) {
+            reportData.results.forEach(report => {
+                activities.push({
+                    id: `report-${report.id}`,
+                    type: 'report',
+                    title: `${report.report_type} report generated`,
+                    timestamp: report.created_at
+                });
+            });
+        }
+        
+        // Sort by timestamp and return latest 10
+        return activities
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 10);
+    } catch (error) {
+        console.warn('Recent activity API failed, returning empty activity:', error);
+        return [];
+    }
 };
 
-export const apiGetPrescriptions = () => api.getPrescriptions();
-export const apiUploadPrescription = (formData) => api.uploadPrescription(formData);
+// Prescription Management API Functions
+export const apiGetPrescriptions = (filters = {}) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+        });
+        const queryString = params.toString();
+        const endpoint = queryString ? `/prescriptions/?${queryString}` : '/prescriptions/';
+        return api.request(endpoint).then(handleApiResponse);
+    });
+};
+
+export const apiUploadPrescription = (formData) => {
+    return withRetry(async () => {
+        return api.uploadPrescription(formData);
+    });
+};
+
+export const apiGetPrescription = (id) => {
+    return withRetry(async () => {
+        return api.request(`/prescriptions/${id}/`).then(handleApiResponse);
+    });
+};
+
+export const apiUpdatePrescription = (id, data) => {
+    return withRetry(async () => {
+        const response = await api.request(`/prescriptions/${id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+        return handleApiResponse(response);
+    });
+};
+
 export const apiDeletePrescription = async (id) => {
-    const response = await api.request(`/prescriptions/${id}/`, { method: 'DELETE' });
-    return response.ok;
+    return withRetry(async () => {
+        const response = await api.request(`/prescriptions/${id}/`, { method: 'DELETE' });
+        return response.ok;
+    });
 };
 
-export const apiGetVitals = (type) => api.getVitals(type);
-export const apiCreateVital = (vitalData) => api.addVital(vitalData);
+export const apiProcessPrescriptionOCR = (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/prescriptions/${id}/process_ocr/`, {
+            method: 'POST'
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiSearchPrescriptions = (searchQuery, filters = {}) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams({ search: searchQuery, ...filters });
+        return api.request(`/prescriptions/search/?${params.toString()}`).then(handleApiResponse);
+    });
+};
+
+export const apiGetRecentPrescriptions = () => {
+    return withRetry(async () => {
+        return api.request('/prescriptions/recent/').then(handleApiResponse);
+    });
+};
+
+export const apiGetPrescriptionStatistics = () => {
+    return withRetry(async () => {
+        return api.request('/prescriptions/statistics/').then(handleApiResponse);
+    });
+};
+
+// Medication API Functions
+export const apiGetMedications = (prescriptionId = null) => {
+    return withRetry(async () => {
+        const endpoint = prescriptionId 
+            ? `/medications/?prescription_id=${prescriptionId}` 
+            : '/medications/';
+        return api.request(endpoint).then(handleApiResponse);
+    });
+};
+
+export const apiCreateMedication = (medicationData) => {
+    return withRetry(async () => {
+        const response = await api.request('/medications/', {
+            method: 'POST',
+            body: JSON.stringify(medicationData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiUpdateMedication = (id, medicationData) => {
+    return withRetry(async () => {
+        const response = await api.request(`/medications/${id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(medicationData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiDeleteMedication = (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/medications/${id}/`, { method: 'DELETE' });
+        return response.ok;
+    });
+};
+
+// Vitals Management API Functions
+export const apiGetVitals = (filters = {}) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+        });
+        const queryString = params.toString();
+        const endpoint = queryString ? `/vitals/?${queryString}` : '/vitals/';
+        return api.request(endpoint).then(handleApiResponse);
+    });
+};
+
+export const apiCreateVital = (vitalData) => {
+    return withRetry(async () => {
+        return api.addVital(vitalData);
+    });
+};
+
+export const apiGetVital = (id) => {
+    return withRetry(async () => {
+        return api.request(`/vitals/${id}/`).then(handleApiResponse);
+    });
+};
+
+export const apiUpdateVital = (id, vitalData) => {
+    return withRetry(async () => {
+        const response = await api.request(`/vitals/${id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(vitalData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
 export const apiDeleteVital = async (id) => {
-    const response = await api.request(`/vitals/${id}/`, { method: 'DELETE' });
-    return response.ok;
-};
-export const apiGetVitalsTrends = async (dateRange) => {
-    // Placeholder implementation
-    return {
-        blood_pressure: [
-            { date: '2024-01-01', value: 120 },
-            { date: '2024-01-02', value: 125 },
-            { date: '2024-01-03', value: 118 }
-        ]
-    };
+    return withRetry(async () => {
+        const response = await api.request(`/vitals/${id}/`, { method: 'DELETE' });
+        return response.ok;
+    });
 };
 
-export const apiGetReports = () => api.getReports();
-export const apiGenerateReport = (reportData) => api.generateReport(reportData);
+export const apiGetVitalsTrends = (vitalType, days = 30) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams({ type: vitalType, days: days.toString() });
+        return api.request(`/vitals/trends/?${params.toString()}`).then(handleApiResponse);
+    });
+};
+
+export const apiGetVitalsSummary = () => {
+    return withRetry(async () => {
+        return api.request('/vitals/summary/').then(handleApiResponse);
+    });
+};
+
+export const apiGetVitalsStatistics = (vitalType = null, days = 30) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams({ days: days.toString() });
+        if (vitalType) params.append('type', vitalType);
+        return api.request(`/vitals/statistics/?${params.toString()}`).then(handleApiResponse);
+    });
+};
+
+export const apiGetVitalTypes = () => {
+    return withRetry(async () => {
+        return api.request('/vitals/types/').then(handleApiResponse);
+    });
+};
+
+// Reports Management API Functions
+export const apiGetReports = (filters = {}) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+        });
+        const queryString = params.toString();
+        const endpoint = queryString ? `/reports/?${queryString}` : '/reports/';
+        return api.request(endpoint).then(handleApiResponse);
+    });
+};
+
+export const apiGetReport = (id) => {
+    return withRetry(async () => {
+        return api.request(`/reports/${id}/`).then(handleApiResponse);
+    });
+};
+
+export const apiGenerateReport = (reportData) => {
+    return withRetry(async () => {
+        const response = await api.request('/reports/generate/', {
+            method: 'POST',
+            body: JSON.stringify(reportData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
 export const apiDownloadReport = async (id) => {
-    const response = await api.request(`/reports/${id}/download/`);
-    return response.blob();
-};
-export const apiDeleteReport = async (id) => {
-    const response = await api.request(`/reports/${id}/`, { method: 'DELETE' });
-    return response.ok;
+    return withRetry(async () => {
+        const response = await api.request(`/reports/${id}/download/`);
+        if (!response.ok) {
+            throw new Error(`Failed to download report: ${response.status}`);
+        }
+        return response.blob();
+    });
 };
 
-export const apiGetEmergencyContacts = () => api.getEmergencyContacts();
-export const apiCreateEmergencyContact = async (contactData) => {
-    const response = await api.request('/emergency/contacts/', {
-        method: 'POST',
-        body: JSON.stringify(contactData)
+export const apiPreviewReport = async (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/reports/${id}/preview/`);
+        if (!response.ok) {
+            throw new Error(`Failed to preview report: ${response.status}`);
+        }
+        return response.blob();
     });
-    return api.safeJsonParse(response);
 };
-export const apiUpdateEmergencyContact = async (id, contactData) => {
-    const response = await api.request(`/emergency/contacts/${id}/`, {
-        method: 'PATCH',
-        body: JSON.stringify(contactData)
+
+export const apiShareReport = (id, shareOptions = {}) => {
+    return withRetry(async () => {
+        const response = await api.request(`/reports/${id}/share/`, {
+            method: 'POST',
+            body: JSON.stringify(shareOptions)
+        });
+        return handleApiResponse(response);
     });
-    return api.safeJsonParse(response);
 };
-export const apiDeleteEmergencyContact = async (id) => {
-    const response = await api.request(`/emergency/contacts/${id}/`, { method: 'DELETE' });
-    return response.ok;
+
+export const apiDeleteReport = async (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/reports/${id}/`, { method: 'DELETE' });
+        return response.ok;
+    });
 };
-export const apiSendEmergencyAlert = (alertData) => api.sendEmergencyAlert(alertData);
+
+export const apiGetReportTemplates = () => {
+    return withRetry(async () => {
+        return api.request('/reports/templates/').then(handleApiResponse);
+    });
+};
+
+export const apiScheduleReport = (scheduleData) => {
+    return withRetry(async () => {
+        const response = await api.request('/reports/schedule/', {
+            method: 'POST',
+            body: JSON.stringify(scheduleData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
+// Emergency Management API Functions
+export const apiGetEmergencyContacts = () => {
+    return withRetry(async () => {
+        return api.getEmergencyContacts();
+    });
+};
+
+export const apiGetEmergencyContact = (id) => {
+    return withRetry(async () => {
+        return api.request(`/emergency/contacts/${id}/`).then(handleApiResponse);
+    });
+};
+
+export const apiCreateEmergencyContact = (contactData) => {
+    return withRetry(async () => {
+        const response = await api.request('/emergency/contacts/', {
+            method: 'POST',
+            body: JSON.stringify(contactData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiUpdateEmergencyContact = (id, contactData) => {
+    return withRetry(async () => {
+        const response = await api.request(`/emergency/contacts/${id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(contactData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiDeleteEmergencyContact = (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/emergency/contacts/${id}/`, { method: 'DELETE' });
+        return response.ok;
+    });
+};
+
+export const apiSetPrimaryEmergencyContact = (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/emergency/contacts/${id}/set_primary/`, {
+            method: 'POST'
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiGetPrimaryEmergencyContact = () => {
+    return withRetry(async () => {
+        return api.request('/emergency/contacts/primary/').then(handleApiResponse);
+    });
+};
+
+// Emergency Alert API Functions
+export const apiGetEmergencyAlerts = (filters = {}) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) params.append(key, value);
+        });
+        const queryString = params.toString();
+        const endpoint = queryString ? `/emergency/alerts/?${queryString}` : '/emergency/alerts/';
+        return api.request(endpoint).then(handleApiResponse);
+    });
+};
+
+export const apiGetEmergencyAlert = (id) => {
+    return withRetry(async () => {
+        return api.request(`/emergency/alerts/${id}/`).then(handleApiResponse);
+    });
+};
+
+export const apiSendEmergencyAlert = (alertData) => {
+    return withRetry(async () => {
+        const response = await api.request('/emergency/alerts/send_alert/', {
+            method: 'POST',
+            body: JSON.stringify(alertData)
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiResolveEmergencyAlert = (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/emergency/alerts/${id}/resolve/`, {
+            method: 'POST'
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiCancelEmergencyAlert = (id) => {
+    return withRetry(async () => {
+        const response = await api.request(`/emergency/alerts/${id}/cancel/`, {
+            method: 'POST'
+        });
+        return handleApiResponse(response);
+    });
+};
+
+export const apiGetEmergencyStatus = () => {
+    return withRetry(async () => {
+        return api.request('/emergency/alerts/status/').then(handleApiResponse);
+    });
+};
+
+export const apiGetEmergencyAlertHistory = (days = 30) => {
+    return withRetry(async () => {
+        const params = new URLSearchParams({ days: days.toString() });
+        return api.request(`/emergency/alerts/history/?${params.toString()}`).then(handleApiResponse);
+    });
+};
 
 export const apiGetProfile = () => api.getProfile();
 export const apiUpdateProfile = (profileData) => api.updateProfile(profileData);

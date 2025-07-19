@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" {% if rtl %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.get_full_name|default:user.username }} - Health Report</title>
+    <style>
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #34495e;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .info-item strong {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .vital-reading {
+            background: #fff;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .vital-reading .date {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .vital-reading .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #bdc3c7;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 10px;
+        }
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+        .rtl th, .rtl td {
+            text-align: right;
+        }
+        .no-data {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body {% if rtl %}class="rtl"{% endif %}>
+    <div class="header">
+        <h1>{% if language == 'ar' %}التقرير الصحي{% else %}Health Report{% endif %}</h1>
+        <div class="subtitle">
+            {{ user.get_full_name|default:user.username }} | 
+            {{ date_from }} {% if language == 'ar' %}إلى{% else %}to{% endif %} {{ date_to }}
+        </div>
+        <div class="subtitle">
+            {% if language == 'ar' %}تم إنشاؤه في{% else %}Generated on{% endif %} {{ generated_at|date:"F d, Y H:i" }}
+        </div>
+    </div>
+
+    <!-- Report Summary -->
+    {% if include_summary %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}ملخص التقرير{% else %}Report Summary{% endif %}</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>{% if language == 'ar' %}نوع التقرير:{% else %}Report Type:{% endif %}</strong>
+                {{ report_type|title }}
+            </div>
+            <div class="info-item">
+                <strong>{% if language == 'ar' %}فترة التقرير:{% else %}Report Period:{% endif %}</strong>
+                {{ date_from }} - {{ date_to }}
+            </div>
+            {% if vitals %}
+            <div class="info-item">
+                <strong>{% if language == 'ar' %}إجمالي القراءات:{% else %}Total Readings:{% endif %}</strong>
+                {{ vitals.total_readings }}
+            </div>
+            <div class="info-item">
+                <strong>{% if language == 'ar' %}أنواع العلامات الحيوية:{% else %}Vital Types:{% endif %}</strong>
+                {{ vitals.by_type|length }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Vitals Section -->
+    {% if vitals and vitals.by_type %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}العلامات الحيوية{% else %}Vital Signs{% endif %}</h2>
+        
+        {% for vital_type, readings in vitals.by_type.items %}
+        <div class="section">
+            <h3>{{ vital_type|title|replace:"_":" " }}</h3>
+            
+            {% if readings %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>{% if language == 'ar' %}التاريخ{% else %}Date{% endif %}</th>
+                        <th>{% if language == 'ar' %}الوقت{% else %}Time{% endif %}</th>
+                        <th>{% if language == 'ar' %}القيمة{% else %}Value{% endif %}</th>
+                        <th>{% if language == 'ar' %}الوحدة{% else %}Unit{% endif %}</th>
+                        <th>{% if language == 'ar' %}ملاحظات{% else %}Notes{% endif %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reading in readings %}
+                    <tr>
+                        <td>{{ reading.date }}</td>
+                        <td>{{ reading.time }}</td>
+                        <td class="value">{{ reading.value }}</td>
+                        <td>{{ reading.unit }}</td>
+                        <td>{{ reading.notes|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                {% if language == 'ar' %}لا توجد قراءات متاحة{% else %}No readings available{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Prescriptions Section -->
+    {% if prescriptions and prescriptions.items %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}الوصفات الطبية{% else %}Prescriptions{% endif %}</h2>
+        
+        {% for prescription in prescriptions.items %}
+        <div class="vital-reading">
+            <div class="date">{{ prescription.date }}</div>
+            <div><strong>{% if language == 'ar' %}الطبيب:{% else %}Doctor:{% endif %}</strong> {{ prescription.doctor_name }}</div>
+            {% if prescription.medications %}
+            <div><strong>{% if language == 'ar' %}الأدوية:{% else %}Medications:{% endif %}</strong></div>
+            <ul>
+                {% for medication in prescription.medications %}
+                <li>{{ medication }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% if prescription.notes %}
+            <div><strong>{% if language == 'ar' %}ملاحظات:{% else %}Notes:{% endif %}</strong> {{ prescription.notes }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- No Data Message -->
+    {% if not vitals.by_type and not prescriptions.items %}
+    <div class="section">
+        <div class="no-data">
+            {% if language == 'ar' %}
+                لا توجد بيانات متاحة للفترة المحددة
+            {% else %}
+                No data available for the specified period
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        {% if language == 'ar' %}
+            هذا التقرير تم إنشاؤه تلقائياً من تطبيق دليلك الصحي
+        {% else %}
+            This report was automatically generated by Your Health Guide application
+        {% endif %}
+    </div>
+</body>
+</html>

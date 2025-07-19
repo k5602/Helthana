@@ -34,35 +34,55 @@ class PrescriptionsPage {
      * Set up event listeners for prescription interactions
      */
     setupEventListeners() {
-        // Scan prescription button
-        const scanBtn = document.getElementById('scan-prescription-btn');
+        // Main action buttons
+        const scanBtn = document.querySelector('[onclick="openPrescriptionScanner()"]');
         if (scanBtn) {
-            scanBtn.addEventListener('click', () => this.openScanner());
+            scanBtn.onclick = () => this.openScanner();
         }
 
-        // Upload prescription button
-        const uploadBtn = document.getElementById('upload-prescription-btn');
+        const uploadBtn = document.querySelector('[onclick="uploadFile()"]');
         if (uploadBtn) {
-            uploadBtn.addEventListener('click', () => this.openFileUpload());
+            uploadBtn.onclick = () => this.openFileUpload();
         }
 
-        // File input for manual upload
-        const fileInput = document.getElementById('prescription-file-input');
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-        }
+        // Scanner modal event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Capture button
+            const captureBtn = document.getElementById('capture-btn');
+            if (captureBtn) {
+                captureBtn.addEventListener('click', () => this.capturePhoto());
+            }
 
-        // Close scanner button
-        const closeScannerBtn = document.getElementById('close-scanner');
-        if (closeScannerBtn) {
-            closeScannerBtn.addEventListener('click', () => this.closeScanner());
-        }
+            // Switch camera button
+            const switchCameraBtn = document.getElementById('switch-camera-btn');
+            if (switchCameraBtn) {
+                switchCameraBtn.addEventListener('click', () => this.switchCamera());
+            }
 
-        // Capture photo button
-        const captureBtn = document.getElementById('capture-photo');
-        if (captureBtn) {
-            captureBtn.addEventListener('click', () => this.capturePhoto());
-        }
+            // File upload input
+            const fileUpload = document.getElementById('file-upload');
+            if (fileUpload) {
+                fileUpload.addEventListener('change', (e) => this.handleFileUpload(e));
+            }
+
+            // Close scanner button
+            const closeScannerBtn = document.getElementById('close-scanner-btn');
+            if (closeScannerBtn) {
+                closeScannerBtn.addEventListener('click', () => this.closeScanner());
+            }
+
+            // Edit OCR results button
+            const editOcrBtn = document.getElementById('edit-ocr-btn');
+            if (editOcrBtn) {
+                editOcrBtn.addEventListener('click', () => this.enableOcrEditing());
+            }
+
+            // Save prescription button
+            const savePrescriptionBtn = document.getElementById('save-prescription-btn');
+            if (savePrescriptionBtn) {
+                savePrescriptionBtn.addEventListener('click', () => this.savePrescriptionFromOcr());
+            }
+        });
 
         // Refresh prescriptions
         const refreshBtn = document.getElementById('refresh-prescriptions');
@@ -159,22 +179,92 @@ class PrescriptionsPage {
     }
 
     /**
-     * Initialize camera scanner
+     * Initialize camera scanner with device detection
      */
     async initializeScanner() {
         // Check if camera is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             console.warn('Camera not supported');
+            this.showCameraUnsupportedMessage();
             return;
         }
 
         try {
+            // Get available video devices
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            this.videoDevices = devices.filter(device => device.kind === 'videoinput');
+            this.currentDeviceIndex = 0;
+            
+            console.log(`Found ${this.videoDevices.length} camera(s)`);
+            
             // Request camera permission
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
             console.log('Camera permission granted');
+            
         } catch (error) {
             console.warn('Camera permission denied:', error);
+            this.handleCameraPermissionDenied(error);
+        }
+    }
+
+    /**
+     * Show camera unsupported message
+     */
+    showCameraUnsupportedMessage() {
+        const cameraView = document.getElementById('camera-view');
+        if (cameraView) {
+            cameraView.innerHTML = `
+                <div class="flex items-center justify-center h-full bg-base-200 rounded-lg">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">📷</div>
+                        <p class="text-base-content/70" data-i18n="prescriptions.camera.unsupported">
+                            Camera not supported on this device
+                        </p>
+                        <p class="text-sm text-base-content/50 mt-2" data-i18n="prescriptions.camera.uploadOnly">
+                            Please use the upload option instead
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Handle camera permission denied
+     */
+    handleCameraPermissionDenied(error) {
+        const cameraView = document.getElementById('camera-view');
+        if (cameraView) {
+            cameraView.innerHTML = `
+                <div class="flex items-center justify-center h-full bg-base-200 rounded-lg">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">🚫</div>
+                        <p class="text-base-content/70" data-i18n="prescriptions.camera.permissionDenied">
+                            Camera permission denied
+                        </p>
+                        <p class="text-sm text-base-content/50 mt-2" data-i18n="prescriptions.camera.enableInstructions">
+                            Please enable camera access in your browser settings
+                        </p>
+                        <button class="btn btn-sm btn-primary mt-3" onclick="prescriptionsPage.requestCameraPermission()">
+                            <span data-i18n="prescriptions.camera.tryAgain">Try Again</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Request camera permission again
+     */
+    async requestCameraPermission() {
+        try {
+            await this.initializeScanner();
+            uiShowToast(getTranslation('prescriptions.camera.permissionGranted'), 'success');
+        } catch (error) {
+            console.error('Failed to get camera permission:', error);
+            uiShowToast(getTranslation('prescriptions.camera.permissionFailed'), 'error');
         }
     }
 
@@ -274,25 +364,229 @@ class PrescriptionsPage {
     }
 
     /**
-     * Upload prescription image
+     * Switch between available cameras
+     */
+    async switchCamera() {
+        if (!this.videoDevices || this.videoDevices.length <= 1) {
+            uiShowToast(getTranslation('prescriptions.camera.noAlternative'), 'info');
+            return;
+        }
+
+        try {
+            // Stop current stream
+            if (this.currentStream) {
+                this.currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            // Switch to next camera
+            this.currentDeviceIndex = (this.currentDeviceIndex + 1) % this.videoDevices.length;
+            const deviceId = this.videoDevices[this.currentDeviceIndex].deviceId;
+
+            // Start new stream with selected camera
+            this.currentStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: deviceId } }
+            });
+
+            const video = document.getElementById('scanner-video');
+            if (video) {
+                video.srcObject = this.currentStream;
+                video.play();
+            }
+
+            uiShowToast(getTranslation('prescriptions.camera.switched'), 'success');
+
+        } catch (error) {
+            console.error('Failed to switch camera:', error);
+            uiShowToast(getTranslation('prescriptions.camera.switchError'), 'error');
+        }
+    }
+
+    /**
+     * Upload prescription image with OCR processing
      */
     async uploadPrescriptionImage(imageFile) {
         try {
-            uiShowLoading('upload-progress');
-            uiShowToast(getTranslation('prescriptions.uploading'), 'info');
+            // Show upload progress
+            this.showUploadProgress();
+            
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            formData.append('process_ocr', 'true');
 
-            const result = await apiUploadPrescription(imageFile);
+            // Upload and process
+            const result = await apiUploadPrescription(formData);
             
-            uiShowToast(getTranslation('prescriptions.uploadSuccess'), 'success');
-            
-            // Reload prescriptions to show the new one
-            await this.loadPrescriptions();
+            if (result.error) {
+                throw new Error(result.error.message || 'Upload failed');
+            }
+
+            // Show OCR results if available
+            if (result.ocr_result) {
+                this.displayOcrResults(result.ocr_result, result.id);
+            } else {
+                // If no OCR results, just show success and reload
+                uiShowToast(getTranslation('prescriptions.uploadSuccess'), 'success');
+                await this.loadPrescriptions();
+                this.closeScanner();
+            }
 
         } catch (error) {
             console.error('Failed to upload prescription:', error);
             uiShowToast(getTranslation('prescriptions.uploadError'), 'error');
         } finally {
-            uiHideLoading('upload-progress');
+            this.hideUploadProgress();
+        }
+    }
+
+    /**
+     * Show upload progress indicator
+     */
+    showUploadProgress() {
+        const progressContainer = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('upload-progress-bar');
+        
+        if (progressContainer) {
+            progressContainer.classList.remove('hidden');
+        }
+
+        // Simulate progress for better UX
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            
+            if (progressBar) {
+                progressBar.value = progress;
+            }
+        }, 200);
+
+        this.progressInterval = progressInterval;
+    }
+
+    /**
+     * Hide upload progress indicator
+     */
+    hideUploadProgress() {
+        const progressContainer = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('upload-progress-bar');
+        
+        if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+            this.progressInterval = null;
+        }
+
+        if (progressBar) {
+            progressBar.value = 100;
+        }
+
+        setTimeout(() => {
+            if (progressContainer) {
+                progressContainer.classList.add('hidden');
+            }
+            if (progressBar) {
+                progressBar.value = 0;
+            }
+        }, 500);
+    }
+
+    /**
+     * Display OCR results for user review
+     */
+    displayOcrResults(ocrResult, prescriptionId) {
+        const resultsContainer = document.getElementById('ocr-results');
+        if (!resultsContainer) return;
+
+        // Store prescription ID for saving
+        this.currentPrescriptionId = prescriptionId;
+
+        // Populate OCR result fields
+        document.getElementById('ocr-medication-name').value = ocrResult.medication_name || '';
+        document.getElementById('ocr-dosage').value = ocrResult.dosage || '';
+        document.getElementById('ocr-frequency').value = ocrResult.frequency || '';
+        document.getElementById('ocr-doctor-name').value = ocrResult.doctor_name || '';
+        document.getElementById('ocr-instructions').value = ocrResult.instructions || '';
+        
+        // Show confidence score
+        const confidenceElement = document.getElementById('ocr-confidence');
+        if (confidenceElement) {
+            const confidence = Math.round((ocrResult.confidence || 0) * 100);
+            confidenceElement.textContent = `${confidence}%`;
+            
+            // Color code confidence
+            confidenceElement.className = 'badge ' + 
+                (confidence >= 80 ? 'badge-success' : 
+                 confidence >= 60 ? 'badge-warning' : 'badge-error');
+        }
+
+        // Show OCR results section
+        resultsContainer.classList.remove('hidden');
+        
+        // Hide camera view
+        const cameraView = document.getElementById('camera-view');
+        if (cameraView) {
+            cameraView.style.display = 'none';
+        }
+
+        uiShowToast(getTranslation('prescriptions.ocr.completed'), 'success');
+    }
+
+    /**
+     * Enable editing of OCR results
+     */
+    enableOcrEditing() {
+        const fields = [
+            'ocr-medication-name',
+            'ocr-dosage', 
+            'ocr-frequency',
+            'ocr-doctor-name',
+            'ocr-instructions'
+        ];
+
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.readOnly = false;
+                field.classList.add('input-primary');
+            }
+        });
+
+        const editBtn = document.getElementById('edit-ocr-btn');
+        if (editBtn) {
+            editBtn.textContent = getTranslation('prescriptions.editing.enabled');
+            editBtn.disabled = true;
+        }
+
+        uiShowToast(getTranslation('prescriptions.ocr.editingEnabled'), 'info');
+    }
+
+    /**
+     * Save prescription from OCR results
+     */
+    async savePrescriptionFromOcr() {
+        try {
+            const prescriptionData = {
+                medication_name: document.getElementById('ocr-medication-name').value,
+                dosage: document.getElementById('ocr-dosage').value,
+                frequency: document.getElementById('ocr-frequency').value,
+                doctor_name: document.getElementById('ocr-doctor-name').value,
+                instructions: document.getElementById('ocr-instructions').value
+            };
+
+            // Update the prescription with OCR data
+            if (this.currentPrescriptionId) {
+                await apiUpdatePrescription(this.currentPrescriptionId, prescriptionData);
+            }
+
+            uiShowToast(getTranslation('prescriptions.saveSuccess'), 'success');
+            
+            // Reload prescriptions and close scanner
+            await this.loadPrescriptions();
+            this.closeScanner();
+
+        } catch (error) {
+            console.error('Failed to save prescription:', error);
+            uiShowToast(getTranslation('prescriptions.saveError'), 'error');
         }
     }
 

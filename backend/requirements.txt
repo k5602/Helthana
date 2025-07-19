@@ -19,3 +19,4 @@ django-hijack-admin == 2.1.10
 django-hijack==3.6.0
 requests==2.32.4
 user-agents==2.2.0
+weasyprint ==65.1
