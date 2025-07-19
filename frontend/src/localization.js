@@ -79,6 +79,7 @@ class LocalizationManager {
             'dashboard.checkup': 'Next Checkup',
             'dashboard.checkup.date': 'Jan 15',
             'dashboard.checkup.doctor': 'Dr. Ahmed',
+            'dashboard.noActivity': 'No recent activity',
 
             // Quick Actions
             'actions.title': 'Quick Actions',
@@ -200,6 +201,10 @@ class LocalizationManager {
             'common.submit': 'Submit',
             'common.edit': 'Edit',
             'common.delete': 'Delete',
+            'common.refresh': 'Refresh',
+
+            // Emergency
+            'emergency.alert': 'Emergency Alert',
 
             // Messages
             'msg.connection.restored': 'Connection restored',
@@ -294,6 +299,53 @@ class LocalizationManager {
             'vitals.table.weight': 'Weight',
             'vitals.empty.title': 'No Vitals Recorded',
             'vitals.empty.desc': 'Start tracking your health by logging your first vital signs',
+
+            // Vitals detailed
+            'vitals.blood_pressure': 'Blood Pressure',
+            'vitals.heart_rate': 'Heart Rate',
+            'vitals.temperature': 'Temperature',
+            'vitals.weight': 'Weight',
+            'vitals.blood_sugar': 'Blood Sugar',
+            'vitals.notes': 'Notes (Optional)',
+            'vitals.add.detailed': 'Add Detailed',
+            'vitals.add.detailed.title': 'Add Detailed Vital Signs',
+            'vitals.type': 'Vital Type',
+            'vitals.value': 'Value',
+            'vitals.date.time': 'Date & Time',
+            'vitals.save': 'Save Vital',
+            'vitals.select.type': 'Select vital type',
+            'vitals.trends.title': 'Vitals Trends',
+            'vitals.chart.type': 'Chart Type',
+            'vitals.chart.period': 'Period',
+            'vitals.chart.loading': 'Loading chart data...',
+            'vitals.period.week': 'Last 7 days',
+            'vitals.period.month': 'Last 30 days',
+            'vitals.period.quarter': 'Last 3 months',
+            'vitals.period.year': 'Last year',
+            'vitals.export': 'Export',
+            'vitals.filter': 'Filter',
+            'vitals.view.table': 'Table View',
+            'vitals.table.type': 'Type',
+            'vitals.table.value': 'Value',
+            'vitals.table.status': 'Status',
+            'vitals.stats.average': 'Average',
+            'vitals.stats.highest': 'Highest',
+            'vitals.stats.lowest': 'Lowest',
+            'vitals.stats.readings': 'Readings',
+            
+            // Vitals placeholders
+            'vitals.placeholder.blood_pressure': '120/80',
+            'vitals.placeholder.heart_rate': '75',
+            'vitals.placeholder.temperature': '36.5',
+            'vitals.placeholder.weight': '70.5',
+            'vitals.placeholder.notes': 'Any additional notes...',
+            'vitals.placeholder.value': 'Enter value',
+            
+            // Vitals errors
+            'vitals.error.blood_pressure': 'Invalid format (use 120/80)',
+            'vitals.error.heart_rate': 'Range: 40-200 BPM',
+            'vitals.error.temperature': 'Range: 30-45°C',
+            'vitals.error.weight': 'Range: 20-300 kg',
 
             // Prescriptions additional
             'prescriptions.scan.new': 'Scan New Prescription',
@@ -450,6 +502,7 @@ class LocalizationManager {
             'dashboard.checkup': 'الفحص القادم',
             'dashboard.checkup.date': '15 يناير',
             'dashboard.checkup.doctor': 'د. أحمد',
+            'dashboard.noActivity': 'لا يوجد نشاط حديث',
 
             // Quick Actions
             'actions.title': 'الإجراءات السريعة',
@@ -571,6 +624,10 @@ class LocalizationManager {
             'common.submit': 'إرسال',
             'common.edit': 'تعديل',
             'common.delete': 'حذف',
+            'common.refresh': 'تحديث',
+
+            // Emergency
+            'emergency.alert': 'تنبيه طوارئ',
 
             // Messages
             'msg.connection.restored': 'تم استعادة الاتصال',
@@ -661,6 +718,53 @@ class LocalizationManager {
             'vitals.table.actions': 'الإجراءات',
             'vitals.empty.title': 'لم يتم تسجيل علامات حيوية',
             'vitals.empty.desc': 'ابدأ بتتبع صحتك عن طريق تسجيل أول علاماتك الحيوية',
+
+            // Vitals detailed
+            'vitals.blood_pressure': 'ضغط الدم',
+            'vitals.heart_rate': 'معدل ضربات القلب',
+            'vitals.temperature': 'درجة الحرارة',
+            'vitals.weight': 'الوزن',
+            'vitals.blood_sugar': 'سكر الدم',
+            'vitals.notes': 'ملاحظات (اختيارية)',
+            'vitals.add.detailed': 'إضافة تفصيلية',
+            'vitals.add.detailed.title': 'إضافة علامات حيوية تفصيلية',
+            'vitals.type': 'نوع العلامة الحيوية',
+            'vitals.value': 'القيمة',
+            'vitals.date.time': 'التاريخ والوقت',
+            'vitals.save': 'حفظ العلامة الحيوية',
+            'vitals.select.type': 'اختر نوع العلامة الحيوية',
+            'vitals.trends.title': 'اتجاهات العلامات الحيوية',
+            'vitals.chart.type': 'نوع الرسم البياني',
+            'vitals.chart.period': 'الفترة',
+            'vitals.chart.loading': 'جاري تحميل بيانات الرسم البياني...',
+            'vitals.period.week': 'آخر 7 أيام',
+            'vitals.period.month': 'آخر 30 يوماً',
+            'vitals.period.quarter': 'آخر 3 أشهر',
+            'vitals.period.year': 'العام الماضي',
+            'vitals.export': 'تصدير',
+            'vitals.filter': 'تصفية',
+            'vitals.view.table': 'عرض جدولي',
+            'vitals.table.type': 'النوع',
+            'vitals.table.value': 'القيمة',
+            'vitals.table.status': 'الحالة',
+            'vitals.stats.average': 'المتوسط',
+            'vitals.stats.highest': 'الأعلى',
+            'vitals.stats.lowest': 'الأدنى',
+            'vitals.stats.readings': 'القراءات',
+            
+            // Vitals placeholders
+            'vitals.placeholder.blood_pressure': '120/80',
+            'vitals.placeholder.heart_rate': '75',
+            'vitals.placeholder.temperature': '36.5',
+            'vitals.placeholder.weight': '70.5',
+            'vitals.placeholder.notes': 'أي ملاحظات إضافية...',
+            'vitals.placeholder.value': 'أدخل القيمة',
+            
+            // Vitals errors
+            'vitals.error.blood_pressure': 'تنسيق غير صحيح (استخدم 120/80)',
+            'vitals.error.heart_rate': 'النطاق: 40-200 نبضة/دقيقة',
+            'vitals.error.temperature': 'النطاق: 30-45°م',
+            'vitals.error.weight': 'النطاق: 20-300 كغ',
 
             // Prescriptions additional
             'prescriptions.scan.new': 'مسح وصفة طبية جديدة',
