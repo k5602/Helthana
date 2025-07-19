@@ -1,11 +1,13 @@
 import './style.css'
 import './error-handler.js'  // Load error handler first
 import './navigation.js'
+import './navigation-updater.js'  // Navigation enhancement
 import './localization.js'
 import './api.js'
 import './auth.js'
 import './ui.js'
 import './offline.js'
+import { router } from './router.js'  // Import hybrid router
 
 /**
  * Main Application Entry Point
@@ -14,34 +16,53 @@ import './offline.js'
 
 class HealthGuideApp {
     constructor() {
+        this.router = router;
         this.init();
     }
 
     init() {
-        // Check if user is authenticated and redirect accordingly
-        if (window.auth && window.auth.isAuthenticated() && window.location.pathname === '/') {
-            window.location.href = '/dashboard.html';
-            return;
-        }
+        // Initialize router first
+        console.log('Initializing Health Guide App with hybrid routing');
         
-        if (window.auth && !window.auth.isAuthenticated() && window.location.pathname.includes('dashboard')) {
-            window.location.href = '/';
-            return;
-        }
+        // Check authentication and handle redirects
+        this.handleAuthentication();
 
         // Initialize hijack indicator if user is authenticated
         if (window.auth && window.auth.isAuthenticated()) {
             window.auth.initializeHijackIndicator();
         }
-
-        // Initialize page-specific functionality
-        this.initializePage();
         
         // Set up global event listeners
         this.setupGlobalListeners();
         
         // Initialize PWA features
         this.initializePWA();
+        
+        // Router is already initialized in its constructor
+        console.log('App initialization complete');
+    }
+
+    /**
+     * Handle authentication redirects
+     */
+    handleAuthentication() {
+        if (!window.auth) return;
+        
+        const currentPath = this.router.getCurrentPath();
+        const isAuthenticated = window.auth.isAuthenticated();
+        
+        // Redirect authenticated users from login/signup pages
+        if (isAuthenticated && (currentPath === '/login' || currentPath === '/signup' || currentPath === '/')) {
+            this.router.navigate('/dashboard');
+            return;
+        }
+        
+        // Redirect unauthenticated users from protected pages
+        const protectedPages = ['/dashboard', '/prescriptions', '/vitals', '/reports', '/emergency', '/profile'];
+        if (!isAuthenticated && protectedPages.includes(currentPath)) {
+            this.router.navigate('/login');
+            return;
+        }
     }
 
     initializePage() {
@@ -271,13 +292,34 @@ window.logout = function() {
 }
 
 window.showProfile = function() {
-    window.location.href = '/profile.html';
+    if (window.router) {
+        window.router.navigate('/profile');
+    } else {
+        window.location.href = '/profile.html';
+    }
 }
 
 window.generateReport = function() {
-    if (window.ui) window.ui.showToast('Report generation feature coming soon!', 'info');
+    if (window.router) {
+        window.router.navigate('/reports');
+    } else {
+        window.location.href = '/reports.html';
+    }
 }
 
 window.showEmergencyContacts = function() {
-    if (window.ui) window.ui.showToast('Emergency contacts feature coming soon!', 'info');
+    if (window.router) {
+        window.router.navigate('/emergency');
+    } else {
+        window.location.href = '/emergency.html';
+    }
+}
+
+// Additional navigation helpers
+window.navigateTo = function(path) {
+    if (window.router) {
+        window.router.navigate(path);
+    } else {
+        window.location.href = path + '.html';
+    }
 }

@@ -213,7 +213,27 @@ class UIManager {
 }
 
 // Global UI manager instance
-window.ui = new UIManager();
+const ui = new UIManager();
+window.ui = ui;
+
+// Export individual functions for module imports
+export const uiShowToast = (message, type) => ui.showToast(message, type);
+export const uiShowLoading = (element, text) => ui.showLoading(element, text);
+export const uiHideLoading = (element) => {
+    if (typeof element === 'string') {
+        element = document.getElementById(element);
+    }
+    if (element) {
+        element.innerHTML = '';
+    }
+};
+export const uiShowModal = (id) => ui.showModal(id);
+export const uiHideModal = (id) => ui.closeModal(id);
+export const uiShowError = (element, message) => ui.showError(element, message);
+export const uiShowSuccess = (message) => ui.showSuccess(message);
+
+// Export the UI manager class and instance
+export { UIManager, ui };
 
 // Global UI functions
 window.showPrescriptionScanner = function() {

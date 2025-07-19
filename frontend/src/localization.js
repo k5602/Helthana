@@ -761,12 +761,21 @@ class LocalizationManager {
 }
 
 // Global localization manager instance
-window.i18n = new LocalizationManager();
+const i18n = new LocalizationManager();
+window.i18n = i18n;
 
 // Global translation function
-window.t = (key, fallback) => window.i18n.t(key, fallback);
+window.t = (key, fallback) => i18n.t(key, fallback);
 
-// Export for module usage
+// Export individual functions for module imports
+export const getTranslation = (key, fallback) => i18n.t(key, fallback);
+export const setLanguage = (language) => i18n.setLanguage(language);
+export const getCurrentLanguage = () => i18n.currentLanguage;
+
+// Export the localization manager class and instance
+export { LocalizationManager, i18n };
+
+// Legacy CommonJS export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = LocalizationManager;
 }

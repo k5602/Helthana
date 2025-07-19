@@ -448,4 +448,94 @@ class ApiClient {
 }
 
 // Global API client instance
-window.api = new ApiClient();
+const api = new ApiClient();
+window.api = api;
+
+// Export individual API functions for module imports
+export const apiGetDashboardStats = async () => {
+    // Placeholder implementation - will be replaced with real API call
+    return {
+        prescriptions: 5,
+        vitals: 12,
+        reports: 3,
+        emergencyContacts: 2
+    };
+};
+
+export const apiGetRecentActivity = async () => {
+    // Placeholder implementation - will be replaced with real API call
+    return [
+        {
+            title: 'Blood pressure logged',
+            timestamp: '2 hours ago'
+        },
+        {
+            title: 'Prescription uploaded',
+            timestamp: '1 day ago'
+        }
+    ];
+};
+
+export const apiGetPrescriptions = () => api.getPrescriptions();
+export const apiUploadPrescription = (formData) => api.uploadPrescription(formData);
+export const apiDeletePrescription = async (id) => {
+    const response = await api.request(`/prescriptions/${id}/`, { method: 'DELETE' });
+    return response.ok;
+};
+
+export const apiGetVitals = (type) => api.getVitals(type);
+export const apiCreateVital = (vitalData) => api.addVital(vitalData);
+export const apiDeleteVital = async (id) => {
+    const response = await api.request(`/vitals/${id}/`, { method: 'DELETE' });
+    return response.ok;
+};
+export const apiGetVitalsTrends = async (dateRange) => {
+    // Placeholder implementation
+    return {
+        blood_pressure: [
+            { date: '2024-01-01', value: 120 },
+            { date: '2024-01-02', value: 125 },
+            { date: '2024-01-03', value: 118 }
+        ]
+    };
+};
+
+export const apiGetReports = () => api.getReports();
+export const apiGenerateReport = (reportData) => api.generateReport(reportData);
+export const apiDownloadReport = async (id) => {
+    const response = await api.request(`/reports/${id}/download/`);
+    return response.blob();
+};
+export const apiDeleteReport = async (id) => {
+    const response = await api.request(`/reports/${id}/`, { method: 'DELETE' });
+    return response.ok;
+};
+
+export const apiGetEmergencyContacts = () => api.getEmergencyContacts();
+export const apiCreateEmergencyContact = async (contactData) => {
+    const response = await api.request('/emergency/contacts/', {
+        method: 'POST',
+        body: JSON.stringify(contactData)
+    });
+    return api.safeJsonParse(response);
+};
+export const apiUpdateEmergencyContact = async (id, contactData) => {
+    const response = await api.request(`/emergency/contacts/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(contactData)
+    });
+    return api.safeJsonParse(response);
+};
+export const apiDeleteEmergencyContact = async (id) => {
+    const response = await api.request(`/emergency/contacts/${id}/`, { method: 'DELETE' });
+    return response.ok;
+};
+export const apiSendEmergencyAlert = (alertData) => api.sendEmergencyAlert(alertData);
+
+export const apiGetProfile = () => api.getProfile();
+export const apiUpdateProfile = (profileData) => api.updateProfile(profileData);
+export const apiChangePassword = (passwordData) => api.changePassword(passwordData.current_password, passwordData.new_password, passwordData.new_password);
+export const apiDeleteAccount = () => api.deleteAccount();
+
+// Export the API client class and instance
+export { ApiClient, api };
