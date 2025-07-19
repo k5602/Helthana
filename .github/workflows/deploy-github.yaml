@@ -218,19 +218,19 @@ jobs:
     
     - name: Start services
       run: |
-        echo "Starting services with docker-compose..."
-        docker-compose -f docker-compose.github.yml up -d
+        echo "Starting services with docker compose..."
+        docker compose -f docker-compose.github.yml up -d
         
         echo "Waiting for services to be healthy..."
-        timeout 300 bash -c 'until docker-compose -f docker-compose.github.yml ps | grep -q "healthy"; do echo "Waiting for services..."; sleep 10; done'
+        timeout 300 bash -c 'until docker compose -f docker-compose.github.yml ps | grep -q "healthy"; do echo "Waiting for services..."; sleep 10; done'
         
         echo "Services status:"
-        docker-compose -f docker-compose.github.yml ps
+        docker compose -f docker-compose.github.yml ps
     
     - name: Run database migrations
       run: |
         echo "Running database migrations..."
-        docker-compose -f docker-compose.github.yml exec -T backend python manage.py migrate --noinput
+        docker compose -f docker-compose.github.yml exec -T backend python manage.py migrate --noinput
     
     - name: Run integration tests
       run: |
@@ -269,13 +269,13 @@ jobs:
         echo "🐳 To run locally:"
         echo "docker pull ${{ needs.build-and-push.outputs.backend-image }}"
         echo "docker pull ${{ needs.build-and-push.outputs.frontend-image }}"
-        echo "docker-compose -f docker-compose.github.yml up"
+        echo "docker compose -f docker-compose.github.yml up"
     
     - name: Cleanup
       if: always()
       run: |
         echo "Cleaning up..."
-        docker-compose -f docker-compose.github.yml down -v
+        docker compose -f docker-compose.github.yml down -v
         docker system prune -f
 
   deploy-to-railway:
@@ -342,7 +342,7 @@ jobs:
           ```bash
           docker pull ${{ needs.build-and-push.outputs.backend-image }}
           docker pull ${{ needs.build-and-push.outputs.frontend-image }}
-          docker-compose -f docker-compose.github.yml up
+          docker compose -f docker-compose.github.yml up
           ```
         draft: false
         prerelease: false
