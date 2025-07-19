@@ -255,7 +255,7 @@ window.logout = function() {
 }
 
 window.showProfile = function() {
-    if (window.ui) window.ui.showToast('Profile feature coming soon!', 'info');
+    window.location.href = '/profile.html';
 }
 
 window.generateReport = function() {

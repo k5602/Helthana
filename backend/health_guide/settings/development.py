@@ -52,6 +52,9 @@ CACHES = {
 # Email backend for development - use console backend
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Frontend URL for development
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
 # Disable security settings for development
 SECURE_BROWSER_XSS_FILTER = False
 SECURE_CONTENT_TYPE_NOSNIFF = False

@@ -257,9 +257,10 @@
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
 
-      // Validate password confirmation
-      if (data.password !== data.password_confirm) {
-        showMessage("Passwords don't match", 'error');
+      // Client-side validation
+      const validationErrors = window.auth.validateRegistrationForm(data);
+      if (validationErrors.length > 0) {
+        showMessage(validationErrors[0], 'error');
         return;
       }
 
@@ -271,14 +272,22 @@
         const result = await window.auth.register(data);
 
         if (result.success) {
-          showMessage('Account created successfully! Redirecting...', 'success');
-          setTimeout(() => {
-            window.location.href = '/dashboard.html';
-          }, 2000);
+          if (result.emailVerificationSent) {
+            showMessage('Account created successfully! Please check your email to verify your account before logging in.', 'success');
+            setTimeout(() => {
+              window.location.href = '/login.html';
+            }, 3000);
+          } else {
+            showMessage('Account created successfully! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = '/dashboard.html';
+            }, 2000);
+          }
         } else {
           showMessage(result.error, 'error');
         }
       } catch (error) {
+        console.error('Registration error:', error);
         showMessage('Registration failed. Please try again.', 'error');
       } finally {
         submitBtn.disabled = false;

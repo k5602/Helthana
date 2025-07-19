@@ -1,77 +1,425 @@
 /**
- * Authentication Module
- * Handles user authentication and session management
+ * Enhanced Authentication Module
+ * Handles user authentication, session management, password reset, and email verification
  */
 
 class AuthManager {
     constructor() {
         this.currentUser = null;
+        this.rememberMe = false;
+        this.tokenRefreshTimer = null;
         this.checkAuthStatus();
+        this.setupTokenRefresh();
     }
 
     // Check if user is authenticated
     isAuthenticated() {
-        return !!localStorage.getItem('access_token');
+        const token = this.getStoredToken();
+        return !!token && !this.isTokenExpired(token);
+    }
+
+    // Get stored token from appropriate storage
+    getStoredToken() {
+        return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    }
+
+    // Check if JWT token is expired
+    isTokenExpired(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            return payload.exp < currentTime;
+        } catch (error) {
+            return true;
+        }
+    }
+
+    // Setup automatic token refresh
+    setupTokenRefresh() {
+        const refreshToken = this.getRefreshToken();
+        if (refreshToken) {
+            // Set up refresh timer for 5 minutes before token expires
+            const token = this.getStoredToken();
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const expiryTime = payload.exp * 1000;
+                    const refreshTime = expiryTime - (5 * 60 * 1000); // 5 minutes before expiry
+                    const timeUntilRefresh = refreshTime - Date.now();
+                    
+                    if (timeUntilRefresh > 0) {
+                        this.tokenRefreshTimer = setTimeout(() => {
+                            this.refreshAccessToken();
+                        }, timeUntilRefresh);
+                    }
+                } catch (error) {
+                    console.error('Error setting up token refresh:', error);
+                }
+            }
+        }
+    }
+
+    // Get refresh token
+    getRefreshToken() {
+        return localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
     }
 
     // Check authentication status on page load
     checkAuthStatus() {
         if (this.isAuthenticated()) {
             this.loadUserProfile();
+        } else {
+            // Try to refresh token if available
+            const refreshToken = this.getRefreshToken();
+            if (refreshToken) {
+                this.refreshAccessToken();
+            }
         }
     }
 
-    // Login user
-    async login(username, password) {
+    // Enhanced login with remember me functionality
+    async login(username, password, rememberMe = false) {
         try {
+            this.rememberMe = rememberMe;
             const response = await window.api.login(username, password);
             
             if (response.access) {
-                window.api.setToken(response.access);
-                localStorage.setItem('refresh_token', response.refresh);
+                this.storeTokens(response.access, response.refresh, rememberMe);
+                this.currentUser = response.user;
+                this.setupTokenRefresh();
                 
-                await this.loadUserProfile();
-                this.redirectToDashboard();
-                return { success: true };
+                return { 
+                    success: true, 
+                    user: response.user,
+                    emailVerified: response.user.email_verified 
+                };
             } else {
-                // Handle specific error messages from backend
-                const errorMessage = response.detail || response.non_field_errors?.[0] || 'Invalid credentials';
-                return { success: false, error: errorMessage };
+                return this.handleAuthError(response);
             }
         } catch (error) {
             console.error('Login error:', error);
-            const errorMessage = error.message || 'Login failed. Please try again.';
-            return { success: false, error: errorMessage };
+            return this.handleNetworkError(error, 'Login failed. Please try again.');
         }
     }
 
-    // Register new user
+    // Enhanced registration with email verification
     async register(userData) {
         try {
+            // Validate passwords match
+            if (userData.password !== userData.password_confirm) {
+                return { success: false, error: "Passwords don't match" };
+            }
+
             const response = await window.api.register(userData);
             
-            if (response.id) {
-                // Auto-login after successful registration
-                return await this.login(userData.username, userData.password);
+            if (response.user || response.message) {
+                return { 
+                    success: true, 
+                    user: response.user,
+                    message: response.message || 'Registration successful! Please check your email to verify your account.',
+                    emailVerificationSent: response.email_verification_sent
+                };
             } else {
-                // Handle validation errors from backend
-                let errorMessage = 'Registration failed';
-                if (response.username) {
-                    errorMessage = `Username: ${response.username[0]}`;
-                } else if (response.email) {
-                    errorMessage = `Email: ${response.email[0]}`;
-                } else if (response.password) {
-                    errorMessage = `Password: ${response.password[0]}`;
-                } else if (response.non_field_errors) {
-                    errorMessage = response.non_field_errors[0];
-                }
-                return { success: false, error: errorMessage };
+                return this.handleAuthError(response);
             }
         } catch (error) {
             console.error('Registration error:', error);
-            const errorMessage = error.message || 'Registration failed. Please try again.';
-            return { success: false, error: errorMessage };
+            return this.handleNetworkError(error, 'Registration failed. Please try again.');
         }
+    }
+
+    // Password reset request
+    async requestPasswordReset(email) {
+        try {
+            const response = await window.api.requestPasswordReset(email);
+            
+            if (response.message) {
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Password reset request error:', error);
+            return this.handleNetworkError(error, 'Failed to send password reset email.');
+        }
+    }
+
+    // Password reset confirmation
+    async confirmPasswordReset(token, newPassword, confirmPassword) {
+        try {
+            if (newPassword !== confirmPassword) {
+                return { success: false, error: "Passwords don't match" };
+            }
+
+            const response = await window.api.confirmPasswordReset(token, newPassword);
+            
+            if (response.message) {
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Password reset confirmation error:', error);
+            return this.handleNetworkError(error, 'Failed to reset password.');
+        }
+    }
+
+    // Email verification
+    async verifyEmail(token) {
+        try {
+            const response = await window.api.verifyEmail(token);
+            
+            if (response.message) {
+                // Update current user if logged in
+                if (this.currentUser) {
+                    this.currentUser.email_verified = true;
+                }
+                
+                return { 
+                    success: true, 
+                    message: response.message,
+                    user: response.user 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Email verification error:', error);
+            return this.handleNetworkError(error, 'Failed to verify email.');
+        }
+    }
+
+    // Resend email verification
+    async resendEmailVerification(email) {
+        try {
+            const response = await window.api.resendEmailVerification(email);
+            
+            if (response.message) {
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Resend email verification error:', error);
+            return this.handleNetworkError(error, 'Failed to resend verification email.');
+        }
+    }
+
+    // Refresh access token
+    async refreshAccessToken() {
+        try {
+            const refreshToken = this.getRefreshToken();
+            if (!refreshToken) {
+                this.logout();
+                return false;
+            }
+
+            const response = await window.api.refreshToken(refreshToken);
+            
+            if (response.access) {
+                this.storeTokens(response.access, refreshToken, this.rememberMe);
+                window.api.setToken(response.access);
+                this.setupTokenRefresh();
+                return true;
+            } else {
+                this.logout();
+                return false;
+            }
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            this.logout();
+            return false;
+        }
+    }
+
+    // Store tokens in appropriate storage
+    storeTokens(accessToken, refreshToken, rememberMe) {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        
+        // Clear tokens from both storages first
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        
+        // Store in appropriate storage
+        storage.setItem('access_token', accessToken);
+        storage.setItem('refresh_token', refreshToken);
+        
+        // Always store remember me preference in localStorage
+        localStorage.setItem('remember_me', rememberMe.toString());
+        
+        window.api.setToken(accessToken);
+    }
+
+    // Handle authentication errors with proper error extraction
+    handleAuthError(response) {
+        let errorMessage = 'Authentication failed';
+        
+        if (response.error) {
+            // New standardized error format
+            errorMessage = response.error.message || errorMessage;
+            if (response.error.details) {
+                const details = response.error.details;
+                if (details.username) {
+                    errorMessage = `Username: ${Array.isArray(details.username) ? details.username[0] : details.username}`;
+                } else if (details.email) {
+                    errorMessage = `Email: ${Array.isArray(details.email) ? details.email[0] : details.email}`;
+                } else if (details.password) {
+                    errorMessage = `Password: ${Array.isArray(details.password) ? details.password[0] : details.password}`;
+                } else if (details.non_field_errors) {
+                    errorMessage = Array.isArray(details.non_field_errors) ? details.non_field_errors[0] : details.non_field_errors;
+                }
+            }
+        } else {
+            // Legacy error format handling
+            if (response.username) {
+                errorMessage = `Username: ${Array.isArray(response.username) ? response.username[0] : response.username}`;
+            } else if (response.email) {
+                errorMessage = `Email: ${Array.isArray(response.email) ? response.email[0] : response.email}`;
+            } else if (response.password) {
+                errorMessage = `Password: ${Array.isArray(response.password) ? response.password[0] : response.password}`;
+            } else if (response.non_field_errors) {
+                errorMessage = Array.isArray(response.non_field_errors) ? response.non_field_errors[0] : response.non_field_errors;
+            } else if (response.detail) {
+                errorMessage = response.detail;
+            }
+        }
+        
+        return { success: false, error: errorMessage };
+    }
+
+    // Handle network errors
+    handleNetworkError(error, defaultMessage) {
+        let errorMessage = defaultMessage;
+        
+        if (error.message) {
+            if (error.message.includes('fetch')) {
+                errorMessage = 'Unable to connect to server. Please check your connection.';
+            } else if (error.message.includes('CORS')) {
+                errorMessage = 'Connection blocked. Please try again later.';
+            } else {
+                errorMessage = error.message;
+            }
+        }
+        
+        return { success: false, error: errorMessage };
+    }
+
+    // Validate form data
+    validateLoginForm(username, password) {
+        const errors = [];
+        
+        if (!username || username.trim().length === 0) {
+            errors.push('Username is required');
+        }
+        
+        if (!password || password.length === 0) {
+            errors.push('Password is required');
+        }
+        
+        return errors;
+    }
+
+    // Validate registration form
+    validateRegistrationForm(userData) {
+        const errors = [];
+        
+        if (!userData.first_name || userData.first_name.trim().length === 0) {
+            errors.push('First name is required');
+        }
+        
+        if (!userData.last_name || userData.last_name.trim().length === 0) {
+            errors.push('Last name is required');
+        }
+        
+        if (!userData.username || userData.username.trim().length === 0) {
+            errors.push('Username is required');
+        } else if (userData.username.length < 3) {
+            errors.push('Username must be at least 3 characters long');
+        }
+        
+        if (!userData.email || userData.email.trim().length === 0) {
+            errors.push('Email is required');
+        } else if (!this.isValidEmail(userData.email)) {
+            errors.push('Please enter a valid email address');
+        }
+        
+        if (!userData.password || userData.password.length === 0) {
+            errors.push('Password is required');
+        } else if (userData.password.length < 8) {
+            errors.push('Password must be at least 8 characters long');
+        } else if (!this.isStrongPassword(userData.password)) {
+            errors.push('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+        }
+        
+        if (userData.password !== userData.password_confirm) {
+            errors.push("Passwords don't match");
+        }
+        
+        return errors;
+    }
+
+    // Email validation
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // Strong password validation
+    isStrongPassword(password) {
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        
+        return hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
+    }
+
+    // Clear authentication data
+    clearAuthData() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('remember_me');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        
+        if (this.tokenRefreshTimer) {
+            clearTimeout(this.tokenRefreshTimer);
+            this.tokenRefreshTimer = null;
+        }
+        
+        window.api.clearToken();
+        this.currentUser = null;
+    }
+
+    // Enhanced logout with proper cleanup
+    logout() {
+        this.clearAuthData();
+        
+        // Redirect to login page if not already there
+        if (!window.location.pathname.includes('login') && !window.location.pathname.includes('index')) {
+            window.location.href = '/';
+        }
+    }
+
+    // Check if email verification is required
+    requiresEmailVerification() {
+        return this.currentUser && !this.currentUser.email_verified;
+    }
+
+    // Get user's email for verification
+    getUserEmail() {
+        return this.currentUser ? this.currentUser.email : null;
     }
 
     // Load user profile
@@ -98,13 +446,6 @@ class AuthManager {
         }
     }
 
-    // Logout user
-    logout() {
-        window.api.clearToken();
-        this.currentUser = null;
-        window.location.href = '/';
-    }
-
     // Redirect to dashboard
     redirectToDashboard() {
         window.location.href = '/dashboard.html';
@@ -114,160 +455,213 @@ class AuthManager {
     getCurrentUser() {
         return this.currentUser;
     }
+
+    // Profile management methods
+    async updateProfile(profileData) {
+        try {
+            const response = await window.api.updateProfile(profileData);
+            
+            if (response.id) {
+                // Update current user data
+                this.currentUser = { ...this.currentUser, ...response };
+                return { 
+                    success: true, 
+                    user: response,
+                    message: 'Profile updated successfully!'
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Profile update error:', error);
+            return this.handleNetworkError(error, 'Failed to update profile.');
+        }
+    }
+
+    // Change password
+    async changePassword(currentPassword, newPassword, confirmPassword) {
+        try {
+            if (newPassword !== confirmPassword) {
+                return { success: false, error: "New passwords don't match" };
+            }
+
+            const response = await window.api.changePassword(currentPassword, newPassword, confirmPassword);
+            
+            if (response.message) {
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Password change error:', error);
+            return this.handleNetworkError(error, 'Failed to change password.');
+        }
+    }
+
+    // Update email address
+    async updateEmail(newEmail, password) {
+        try {
+            const response = await window.api.updateEmail(newEmail, password);
+            
+            if (response.message) {
+                // Update current user email (but mark as unverified)
+                if (this.currentUser) {
+                    this.currentUser.email = response.new_email;
+                    this.currentUser.email_verified = false;
+                }
+                
+                return { 
+                    success: true, 
+                    message: response.message,
+                    newEmail: response.new_email
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Email update error:', error);
+            return this.handleNetworkError(error, 'Failed to update email address.');
+        }
+    }
+
+    // Delete account
+    async deleteAccount(password, confirmation) {
+        try {
+            if (confirmation.toLowerCase() !== 'delete my account') {
+                return { success: false, error: "Please type 'DELETE MY ACCOUNT' to confirm" };
+            }
+
+            const response = await window.api.deleteAccount(password, confirmation);
+            
+            if (response.message) {
+                // Clear all auth data and redirect
+                this.clearAuthData();
+                
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Account deletion error:', error);
+            return this.handleNetworkError(error, 'Failed to delete account.');
+        }
+    }
+
+    // Get security logs
+    async getSecurityLogs() {
+        try {
+            const response = await window.api.getSecurityLogs();
+            
+            if (Array.isArray(response)) {
+                return { 
+                    success: true, 
+                    logs: response 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Security logs error:', error);
+            return this.handleNetworkError(error, 'Failed to load security logs.');
+        }
+    }
+
+    // Validate profile form
+    validateProfileForm(profileData) {
+        const errors = [];
+        
+        if (profileData.first_name && profileData.first_name.trim().length < 2) {
+            errors.push('First name must be at least 2 characters long');
+        }
+        
+        if (profileData.last_name && profileData.last_name.trim().length < 2) {
+            errors.push('Last name must be at least 2 characters long');
+        }
+        
+        if (profileData.phone_number && !this.isValidPhoneNumber(profileData.phone_number)) {
+            errors.push('Please enter a valid phone number');
+        }
+        
+        if (profileData.emergency_contact_phone && !this.isValidPhoneNumber(profileData.emergency_contact_phone)) {
+            errors.push('Please enter a valid emergency contact phone number');
+        }
+        
+        if (profileData.date_of_birth && !this.isValidDateOfBirth(profileData.date_of_birth)) {
+            errors.push('Please enter a valid date of birth');
+        }
+        
+        return errors;
+    }
+
+    // Phone number validation
+    isValidPhoneNumber(phone) {
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+        return phoneRegex.test(phone.replace(/\s/g, ''));
+    }
+
+    // Date of birth validation
+    isValidDateOfBirth(dateString) {
+        const date = new Date(dateString);
+        const today = new Date();
+        const age = today.getFullYear() - date.getFullYear();
+        
+        if (date > today) return false; // Future date
+        if (age < 13 || age > 120) return false; // Age limits
+        
+        return true;
+    }
 }
 
 // Global auth manager instance
 window.auth = new AuthManager();
 
-// Auth form handlers
-window.showLoginForm = function() {
-    const modal = document.getElementById('auth-modal');
-    const title = document.getElementById('modal-title');
-    const fields = document.getElementById('auth-fields');
-    
-    if (!modal || !title || !fields) return;
-    
-    title.textContent = 'Login';
-    fields.innerHTML = `
-        <div class="form-control">
-            <label class="label">Username</label>
-            <input type="text" name="username" class="input input-bordered" required>
-        </div>
-        <div class="form-control">
-            <label class="label">Password</label>
-            <input type="password" name="password" class="input input-bordered" required>
-        </div>
-    `;
-    
-    modal.classList.add('modal-open');
+// Utility functions for backward compatibility
+window.showMessage = function(message, type = 'info') {
+    if (window.ui && window.ui.showToast) {
+        window.ui.showToast(message, type);
+    } else {
+        // Fallback for pages without UI manager
+        console.log(`${type.toUpperCase()}: ${message}`);
+        alert(message);
+    }
 }
 
-window.showRegisterForm = function() {
-    const modal = document.getElementById('auth-modal');
-    const title = document.getElementById('modal-title');
-    const fields = document.getElementById('auth-fields');
+// Enhanced error display function
+window.displayAuthError = function(containerId, message) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
     
-    if (!modal || !title || !fields) return;
-    
-    title.textContent = 'Register';
-    fields.innerHTML = `
-        <div class="grid md:grid-cols-2 gap-4">
-            <div class="form-control">
-                <label class="label">First Name</label>
-                <input type="text" name="first_name" class="input input-bordered" required>
-            </div>
-            <div class="form-control">
-                <label class="label">Last Name</label>
-                <input type="text" name="last_name" class="input input-bordered" required>
-            </div>
-        </div>
-        <div class="form-control">
-            <label class="label">Username</label>
-            <input type="text" name="username" class="input input-bordered" required>
-        </div>
-        <div class="form-control">
-            <label class="label">Email</label>
-            <input type="email" name="email" class="input input-bordered" required>
-        </div>
-        <div class="form-control">
-            <label class="label">Phone Number</label>
-            <input type="tel" name="phone_number" class="input input-bordered">
-        </div>
-        <div class="form-control">
-            <label class="label">Password</label>
-            <input type="password" name="password" class="input input-bordered" required>
-        </div>
-        <div class="form-control">
-            <label class="label">Confirm Password</label>
-            <input type="password" name="password_confirm" class="input input-bordered" required>
-        </div>
-    `;
-    
-    modal.classList.add('modal-open');
-}
-
-window.closeAuthModal = function() {
-    const modal = document.getElementById('auth-modal');
-    if (modal) modal.classList.remove('modal-open');
-}
-
-// Display error message in modal
-window.showAuthError = function(message) {
-    let errorDiv = document.getElementById('auth-error');
+    let errorDiv = container.querySelector('.auth-error');
     if (!errorDiv) {
         errorDiv = document.createElement('div');
-        errorDiv.id = 'auth-error';
-        errorDiv.className = 'alert alert-error mb-4';
-        const authFields = document.getElementById('auth-fields');
-        if (authFields && authFields.parentNode) {
-            authFields.parentNode.insertBefore(errorDiv, authFields);
-        }
+        errorDiv.className = 'auth-error alert alert-error mb-4';
+        container.insertBefore(errorDiv, container.firstChild);
     }
+    
     errorDiv.innerHTML = `<span>${message}</span>`;
     errorDiv.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+    }, 5000);
 }
 
-// Hide error message
-window.hideAuthError = function() {
-    const errorDiv = document.getElementById('auth-error');
+// Clear error messages
+window.clearAuthError = function(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const errorDiv = container.querySelector('.auth-error');
     if (errorDiv) {
         errorDiv.style.display = 'none';
     }
 }
-
-// Handle auth form submission
-document.addEventListener('DOMContentLoaded', () => {
-    const authForm = document.getElementById('auth-form');
-    if (authForm) {
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Hide any previous errors
-            window.hideAuthError();
-            
-            // Show loading state
-            const submitBtn = authForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Loading...';
-            submitBtn.disabled = true;
-            
-            try {
-                const formData = new FormData(authForm);
-                const data = Object.fromEntries(formData);
-                const isLogin = document.getElementById('modal-title').textContent === 'Login';
-                
-                let result;
-                if (isLogin) {
-                    result = await window.auth.login(data.username, data.password);
-                } else {
-                    result = await window.auth.register(data);
-                }
-                
-                if (result.success) {
-                    window.closeAuthModal();
-                } else {
-                    window.showAuthError(result.error);
-                }
-            } catch (error) {
-                window.showAuthError('An unexpected error occurred. Please try again.');
-            } finally {
-                // Reset button state
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-    }
-    
-    // Button event listeners
-    const loginBtn = document.getElementById('login-btn');
-    const registerBtn = document.getElementById('register-btn');
-    
-    if (loginBtn) loginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.showLoginForm();
-    });
-    if (registerBtn) registerBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.showRegisterForm();
-    });
-});

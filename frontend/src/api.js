@@ -102,8 +102,10 @@ class ApiClient {
         return response.json();
     }
 
-    async refreshToken() {
-        const refreshToken = localStorage.getItem('refresh_token');
+    async refreshToken(refreshToken) {
+        if (!refreshToken) {
+            refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+        }
         if (!refreshToken) return false;
 
         try {
@@ -115,12 +117,166 @@ class ApiClient {
             if (response.ok) {
                 const data = await response.json();
                 this.setToken(data.access);
-                return true;
+                return data;
             }
         } catch (error) {
             console.error('Token refresh failed:', error);
         }
         return false;
+    }
+
+    // Password reset request
+    async requestPasswordReset(email) {
+        const response = await this.request('/auth/password-reset/', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Password reset confirmation
+    async confirmPasswordReset(token, password) {
+        const response = await this.request('/auth/password-reset-confirm/', {
+            method: 'POST',
+            body: JSON.stringify({ token, password })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Email verification
+    async verifyEmail(token) {
+        const response = await this.request('/auth/verify-email/', {
+            method: 'POST',
+            body: JSON.stringify({ token })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Resend email verification
+    async resendEmailVerification(email) {
+        const response = await this.request('/auth/resend-verification/', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Change password
+    async changePassword(currentPassword, newPassword, confirmPassword) {
+        const response = await this.request('/auth/change-password/', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                current_password: currentPassword,
+                new_password: newPassword,
+                new_password_confirm: confirmPassword
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Get user profile
+    async getProfile() {
+        const response = await this.request('/auth/profile/');
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Update user profile
+    async updateProfile(profileData) {
+        const response = await this.request('/auth/profile/', {
+            method: 'PATCH',
+            body: JSON.stringify(profileData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Update email address
+    async updateEmail(newEmail, password) {
+        const response = await this.request('/auth/update-email/', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                new_email: newEmail,
+                password: password
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Delete account
+    async deleteAccount(password, confirmation) {
+        const response = await this.request('/auth/delete-account/', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                password: password,
+                confirmation: confirmation
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
+    }
+
+    // Get security logs
+    async getSecurityLogs() {
+        const response = await this.request('/auth/security-logs/');
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            return errorData;
+        }
+        
+        return response.json();
     }
 
     // Prescription methods

@@ -37,8 +37,8 @@ ghcr.io/[username]/[repository]/frontend:latest
 # Set your GitHub repository
 export GITHUB_REPOSITORY="username/repository-name"
 
-# Pull and run with docker-compose
-docker-compose -f docker-compose.github.yml up
+# Pull and run with docker compose
+docker compose -f docker-compose.github.yml up
 ```
 
 ### Access URLs
@@ -119,17 +119,17 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 **Services not starting:**
 ```bash
 # Check logs
-docker-compose -f docker-compose.github.yml logs
+docker compose -f docker-compose.github.yml logs
 
 # Check specific service
-docker-compose -f docker-compose.github.yml logs backend
+docker compose -f docker-compose.github.yml logs backend
 ```
 
 ### Manual Cleanup
 
 ```bash
 # Stop and remove containers
-docker-compose -f docker-compose.github.yml down -v
+docker compose -f docker-compose.github.yml down -v
 
 # Remove images
 docker rmi ghcr.io/username/repository/backend:latest

@@ -48,17 +48,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Email configuration for production
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_TIMEOUT = 30  # Timeout for SMTP connections
+EMAIL_USE_LOCALTIME = False  # Use UTC for email timestamps
+
+# Frontend URL for production
+FRONTEND_URL = config('FRONTEND_URL', default='https://healthguide.com')
 
 # Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': '/var/log/health_guide/django.log',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -66,12 +66,12 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
         'apps.authentication': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },

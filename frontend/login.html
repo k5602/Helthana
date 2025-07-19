@@ -127,10 +127,10 @@
 
               <div class="flex items-center justify-between">
                 <label class="cursor-pointer label">
-                  <input type="checkbox" class="checkbox checkbox-primary checkbox-sm" />
+                  <input type="checkbox" name="remember_me" class="checkbox checkbox-primary checkbox-sm" />
                   <span class="label-text ml-2" data-i18n="auth.remember">Remember me</span>
                 </label>
-                <a href="#" class="link link-primary text-sm" data-i18n="auth.forgot">Forgot password?</a>
+                <a href="#" id="forgot-password-link" class="link link-primary text-sm" data-i18n="auth.forgot">Forgot password?</a>
               </div>
 
               <button type="submit" class="btn btn-primary w-full" id="login-submit">
@@ -155,27 +155,77 @@
     <!-- Error/Success Messages -->
     <div id="message-container" class="fixed top-4 right-4 z-50"></div>
 
+    <!-- Password Reset Modal -->
+    <div id="password-reset-modal" class="modal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Reset Password</h3>
+        <form id="password-reset-form" class="space-y-4">
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Email Address</span>
+            </label>
+            <input type="email" name="email" placeholder="Enter your email address" class="input input-bordered w-full" required />
+          </div>
+          <div class="modal-action">
+            <button type="button" class="btn" onclick="closePasswordResetModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="reset-submit">Send Reset Link</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Email Verification Banner -->
+    <div id="email-verification-banner" class="alert alert-warning fixed top-0 left-0 right-0 z-50 hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+      </svg>
+      <span>Please verify your email address to access all features.</span>
+      <div>
+        <button class="btn btn-sm btn-ghost" onclick="resendVerificationEmail()">Resend Email</button>
+        <button class="btn btn-sm" onclick="hideEmailVerificationBanner()">Dismiss</button>
+      </div>
+    </div>
+
     <script>
+      // Enhanced login form handler
       document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const formData = new FormData(e.target);
         const username = formData.get('username');
         const password = formData.get('password');
+        const rememberMe = formData.get('remember_me') === 'on';
+        
+        // Client-side validation
+        const validationErrors = window.auth.validateLoginForm(username, password);
+        if (validationErrors.length > 0) {
+          showMessage(validationErrors[0], 'error');
+          return;
+        }
         
         const submitBtn = document.getElementById('login-submit');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Signing In...';
         
         try {
-          const result = await window.auth.login(username, password);
+          const result = await window.auth.login(username, password, rememberMe);
           
           if (result.success) {
-            window.location.href = '/dashboard.html';
+            showMessage('Login successful! Redirecting...', 'success');
+            
+            // Check if email verification is required
+            if (!result.emailVerified) {
+              showEmailVerificationBanner();
+            }
+            
+            setTimeout(() => {
+              window.location.href = '/dashboard.html';
+            }, 1000);
           } else {
             showMessage(result.error, 'error');
           }
         } catch (error) {
+          console.error('Login error:', error);
           showMessage('Login failed. Please try again.', 'error');
         } finally {
           submitBtn.disabled = false;
@@ -187,17 +237,127 @@
           `;
         }
       });
-      
+
+      // Password reset form handler
+      document.getElementById('password-reset-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const email = formData.get('email');
+        
+        if (!email || !window.auth.isValidEmail(email)) {
+          showMessage('Please enter a valid email address', 'error');
+          return;
+        }
+        
+        const submitBtn = document.getElementById('reset-submit');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Sending...';
+        
+        try {
+          const result = await window.auth.requestPasswordReset(email);
+          
+          if (result.success) {
+            showMessage(result.message, 'success');
+            closePasswordResetModal();
+            document.getElementById('password-reset-form').reset();
+          } else {
+            showMessage(result.error, 'error');
+          }
+        } catch (error) {
+          console.error('Password reset error:', error);
+          showMessage('Failed to send reset email. Please try again.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Send Reset Link';
+        }
+      });
+
+      // Forgot password link handler
+      document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        showPasswordResetModal();
+      });
+
+      // Utility functions
       function showMessage(message, type) {
         const container = document.getElementById('message-container');
         const alert = document.createElement('div');
-        alert.className = `alert alert-${type} mb-2`;
+        alert.className = `alert alert-${type} mb-2 shadow-lg`;
         alert.innerHTML = `<span>${message}</span>`;
         container.appendChild(alert);
         
         setTimeout(() => {
           alert.remove();
         }, 5000);
+      }
+
+      function showPasswordResetModal() {
+        document.getElementById('password-reset-modal').classList.add('modal-open');
+      }
+
+      function closePasswordResetModal() {
+        document.getElementById('password-reset-modal').classList.remove('modal-open');
+      }
+
+      function showEmailVerificationBanner() {
+        document.getElementById('email-verification-banner').classList.remove('hidden');
+      }
+
+      function hideEmailVerificationBanner() {
+        document.getElementById('email-verification-banner').classList.add('hidden');
+      }
+
+      async function resendVerificationEmail() {
+        const email = window.auth.getUserEmail();
+        if (!email) {
+          showMessage('Unable to get user email', 'error');
+          return;
+        }
+
+        try {
+          const result = await window.auth.resendEmailVerification(email);
+          if (result.success) {
+            showMessage(result.message, 'success');
+          } else {
+            showMessage(result.error, 'error');
+          }
+        } catch (error) {
+          console.error('Resend verification error:', error);
+          showMessage('Failed to resend verification email', 'error');
+        }
+      }
+
+      // Handle URL parameters for password reset and email verification
+      document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const action = urlParams.get('action');
+
+        if (token && action === 'verify-email') {
+          handleEmailVerification(token);
+        } else if (token && action === 'reset-password') {
+          handlePasswordResetRedirect(token);
+        }
+      });
+
+      async function handleEmailVerification(token) {
+        try {
+          const result = await window.auth.verifyEmail(token);
+          if (result.success) {
+            showMessage(result.message, 'success');
+          } else {
+            showMessage(result.error, 'error');
+          }
+        } catch (error) {
+          console.error('Email verification error:', error);
+          showMessage('Email verification failed', 'error');
+        }
+      }
+
+      function handlePasswordResetRedirect(token) {
+        // Redirect to a dedicated password reset page with the token
+        window.location.href = `/password-reset.html?token=${token}`;
       }
     </script>
 

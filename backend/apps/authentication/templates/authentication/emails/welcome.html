@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Your Health Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 10px;
+        }
+        .logo-ar {
+            font-size: 20px;
+            color: #6b7280;
+        }
+        .welcome-banner {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #059669;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #047857;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .feature {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">{{ site_name }}</div>
+            <div class="logo-ar">{{ site_name_ar }}</div>
+        </div>
+        
+        <div class="welcome-banner">
+            <h1>Welcome to Your Health Guide!</h1>
+            <p>أهلاً بك في دليلك الصحي</p>
+        </div>
+        
+        <p>Hello {{ user.first_name|default:user.username }},</p>
+        
+        <p>Welcome to Your Health Guide! We're excited to help you take control of your health journey with our comprehensive digital health management platform.</p>
+        
+        <div style="text-align: center;">
+            <a href="{{ dashboard_url }}" class="button">Get Started</a>
+        </div>
+        
+        <h2>What you can do with Your Health Guide:</h2>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <h3>Prescription Scanner</h3>
+                <p>Convert handwritten prescriptions to digital records with AI-powered accuracy</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Vitals Tracking</h3>
+                <p>Monitor your blood pressure, glucose levels, and other vital signs over time</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📋</div>
+                <h3>Health Reports</h3>
+                <p>Generate comprehensive PDF reports for your doctor visits</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🆘</div>
+                <h3>Emergency SOS</h3>
+                <p>Quick access to emergency contacts and medical information</p>
+            </div>
+        </div>
+        
+        <h2>Getting Started Tips:</h2>
+        <ol>
+            <li><strong>Complete your profile:</strong> Add your basic health information and emergency contacts</li>
+            <li><strong>Scan your first prescription:</strong> Use our AI-powered scanner to digitize your medications</li>
+            <li><strong>Set up vitals tracking:</strong> Start logging your daily health measurements</li>
+            <li><strong>Explore offline features:</strong> Your Health Guide works even without internet connection</li>
+        </ol>
+        
+        <p>Your health data is encrypted and secure. We follow strict privacy guidelines to protect your personal information.</p>
+        
+        <p>If you have any questions or need assistance getting started, our support team is here to help.</p>
+        
+        <p>Thank you for choosing Your Health Guide. Here's to your health!</p>
+        
+        <p>Best regards,<br>The Your Health Guide Team</p>
+        
+        <div class="footer">
+            <p>This welcome email was sent to {{ user.email }}.</p>
+            <p>&copy; 2025 Your Health Guide. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

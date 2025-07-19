@@ -48,6 +48,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.authentication.middleware.SecurityAuditMiddleware',
+    'apps.authentication.middleware.RateLimitMiddleware',
+    'apps.authentication.middleware.IPTrackingMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -156,6 +159,9 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@healthguide.com')
 
+# Frontend URL for email links
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
 # Django-Hijack Configuration
 HIJACK_LOGIN_REDIRECT_URL = '/dashboard.html'
 HIJACK_LOGOUT_REDIRECT_URL = '/admin/'
@@ -168,6 +174,23 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Rate Limiting Settings (for future implementation => TODO)
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Rate Limiting Settings
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
+
+# Security Audit Settings
+SECURITY_AUDIT_LOG_RETENTION_DAYS = 90
+FAILED_LOGIN_ATTEMPT_LIMIT = 7
+ACCOUNT_LOCKOUT_DURATION_MINUTES = 15
