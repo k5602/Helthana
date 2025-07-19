@@ -19,7 +19,7 @@ import { aiInsights } from '../ai-insights.js';
 import { secureFileUpload } from '../file-upload.js';
 
 class PrescriptionsPage {
-        constructor() {
+    constructor() {
         this.prescriptions = [];
         this.scanner = null;
         this.currentStream = null;
@@ -822,29 +822,6 @@ class PrescriptionsPage {
             uiShowToast('File validation failed', 'error');
             return false;
         }
-    }Upload(formData);
-            
-            if (!validation.valid) {
-                // Show validation errors
-                validation.errors.forEach(error => {
-                    uiShowToast(error, 'error');
-                });
-                return false;
-            }
-            
-            // Show validation warnings
-            if (validation.warnings && validation.warnings.length > 0) {
-                validation.warnings.forEach(warning => {
-                    uiShowToast(warning, 'warning');
-                });
-            }
-            
-            return true;
-        } catch (error) {
-            console.error('Pre-validation failed:', error);
-            uiShowToast('File validation failed', 'error');
-            return false;
-        }
     }
 
     /**
@@ -858,151 +835,52 @@ class PrescriptionsPage {
             if (medications.length === 0) return;
 
             // Get AI medication interaction warnings
-            this.medicationInteractions = await aiInsights.checkMedicationInteractions(medications);
-            
-            // Render medication interaction warnings
-            this.renderMedicationInteractions();
-            
+            if (window.aiInsights) {
+                this.medicationInteractions = await window.aiInsights.checkMedicationInteractions(medications);
+                this.renderMedicationInteractions();
+            }
         } catch (error) {
             console.warn('Failed to load medication interactions:', error);
-            // Continue without AI insights - they're supplementary
         }
     }
 
     /**
-     * Render medication interaction warnings
+     * Render medication interactions
      */
     renderMedicationInteractions() {
         if (!this.medicationInteractions || this.medicationInteractions.length === 0) return;
 
-        const interactionsContainer = this.getOrCreateInsightsSection('medication-interactions', 'AI Medication Safety', '💊');
-        
-        const interactionsHTML = `
-            <div class="space-y-3">
-                ${this.medicationInteractions.map(interaction => `
-                    <div class="alert ${this.getInteractionAlertClass(interaction.severity)}">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-medium">${interaction.type.replace('_', ' ').toUpperCase()}</span>
-                                <span class="badge badge-sm ${this.getSeverityBadgeClass(interaction.severity)}">${interaction.severity}</span>
-                                ${interaction.confidence ? `
-                                    <span class="text-xs text-base-content/50">${Math.round(interaction.confidence * 100)}% confidence</span>
-                                ` : ''}
-                            </div>
-                            <p class="text-sm">${interaction.warning}</p>
-                            ${interaction.medications ? `
-                                <p class="text-xs mt-1 opacity-75"><strong>Medications:</strong> ${interaction.medications.join(', ')}</p>
-                            ` : ''}
-                            ${interaction.medication ? `
-                                <p class="text-xs mt-1 opacity-75"><strong>Medication:</strong> ${interaction.medication}</p>
-                            ` : ''}
-                            ${interaction.recommendation ? `
-                                <p class="text-xs mt-1 opacity-75"><strong>Recommendation:</strong> ${interaction.recommendation}</p>
-                            ` : ''}
-                        </div>
-                    </div>
-                `).join('')}
-                
-                <div class="mt-4 p-3 bg-info/10 rounded-lg border border-info/20">
-                    <h4 class="font-medium text-info mb-2 flex items-center gap-2">
-                        <span>ℹ️</span>
-                        Important Note
-                    </h4>
-                    <p class="text-sm text-base-content/70">
-                        These are AI-generated suggestions based on common medication interactions. 
-                        Always consult with your healthcare provider before making any changes to your medications.
-                    </p>
+        const interactionsContainer = document.getElementById('medication-interactions');
+        if (!interactionsContainer) return;
+
+        const interactionsHTML = this.medicationInteractions.map(interaction => `
+            <div class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold">${interaction.type}</h3>
+                    <div class="text-xs">${interaction.warning}</div>
                 </div>
             </div>
-        `;
+        `).join('');
 
         interactionsContainer.innerHTML = interactionsHTML;
-    }
-
-    /**
-     * Get or create insights section in prescriptions page
-     */
-    getOrCreateInsightsSection(id, title, icon) {
-        let section = document.getElementById(id);
-        
-        if (!section) {
-            // Create insights container if it doesn't exist
-            let insightsContainer = document.getElementById('prescriptions-ai-insights-container');
-            if (!insightsContainer) {
-                insightsContainer = document.createElement('div');
-                insightsContainer.id = 'prescriptions-ai-insights-container';
-                insightsContainer.className = 'mt-8 space-y-6';
-                
-                // Insert after prescriptions list section
-                const prescriptionsList = document.getElementById('prescriptions-list')?.closest('.card');
-                if (prescriptionsList) {
-                    prescriptionsList.parentNode.insertBefore(insightsContainer, prescriptionsList.nextSibling);
-                } else {
-                    // Fallback: append to main content
-                    const mainContent = document.querySelector('main');
-                    if (mainContent) mainContent.appendChild(insightsContainer);
-                }
-            }
-
-            // Create section card
-            section = document.createElement('div');
-            section.className = 'card bg-base-100 shadow-lg';
-            section.innerHTML = `
-                <div class="card-body">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <span class="text-2xl">${icon}</span>
-                        ${title}
-                    </h3>
-                    <div id="${id}-content">
-                        <div class="flex items-center justify-center py-8">
-                            <span class="loading loading-spinner loading-lg text-primary"></span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            insightsContainer.appendChild(section);
-            section = document.getElementById(`${id}-content`);
-        } else {
-            section = document.getElementById(`${id}-content`);
-        }
-
-        return section;
-    }
-
-    /**
-     * Get CSS class for interaction alert
-     */
-    getInteractionAlertClass(severity) {
-        switch (severity) {
-            case 'high': return 'alert-error';
-            case 'moderate': return 'alert-warning';
-            case 'low': return 'alert-info';
-            case 'info': return 'alert-info';
-            default: return 'alert-info';
-        }
-    }
-
-    /**
-     * Get CSS class for severity badge
-     */
-    getSeverityBadgeClass(severity) {
-        switch (severity) {
-            case 'high': return 'badge-error';
-            case 'moderate': return 'badge-warning';
-            case 'low': return 'badge-info';
-            case 'info': return 'badge-info';
-            default: return 'badge-neutral';
-        }
     }
 
     /**
      * Cleanup prescriptions page
      */
     destroy() {
+        // Close scanner if open
         this.closeScanner();
+        
+        // Clear intervals
+        if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+        }
     }
 }
 
-// Export for use in main.js
+// Export for use in router
 export { PrescriptionsPage };
