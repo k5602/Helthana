@@ -292,11 +292,15 @@ window.logout = function() {
 }
 
 window.showProfile = function() {
+<<<<<<< HEAD
     if (window.router) {
         window.router.navigate('/profile');
     } else {
         window.location.href = '/profile.html';
     }
+=======
+    window.location.href = 'profile.html';
+>>>>>>> 06cf30c (feat: Implement comprehensive profile management module)
 }
 
 window.generateReport = function() {

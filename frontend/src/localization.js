@@ -338,7 +338,64 @@ class LocalizationManager {
             'emergency.medical.medications': 'Current Medications:',
             'emergency.medical.update': 'Update Medical Information',
             'emergency.contacts.empty': 'No emergency contacts added yet',
-            'emergency.contacts.call': 'Call'
+            'emergency.contacts.call': 'Call',
+            
+            // Profile Management
+            'profile.title': 'Profile Settings',
+            'profile.subtitle': 'Manage your personal information and account settings',
+            'profile.tab.personal': 'Personal Info',
+            'profile.tab.security': 'Security',
+            'profile.tab.medical': 'Medical Info',
+            'profile.tab.preferences': 'Preferences',
+            
+            // Personal Information
+            'profile.personal.title': 'Personal Information',
+            
+            // Security
+            'profile.security.password.title': 'Change Password',
+            'profile.security.current.password': 'Current Password',
+            'profile.security.new.password': 'New Password',
+            'profile.security.confirm.password': 'Confirm New Password',
+            'profile.security.update.password': 'Update Password',
+            'profile.security.account.title': 'Account Management',
+            'profile.security.email.title': 'Email Address',
+            'profile.security.email.desc': 'Update your email address',
+            'profile.security.delete.title': 'Delete Account',
+            'profile.security.delete.desc': 'Permanently delete your account and all data',
+            'profile.security.log.title': 'Recent Security Activity',
+            
+            // Medical Information
+            'profile.medical.title': 'Medical Information',
+            'profile.medical.emergency.contact.name': 'Emergency Contact Name',
+            'profile.medical.emergency.contact.phone': 'Emergency Contact Phone',
+            'profile.medical.conditions': 'Medical Conditions',
+            'profile.medical.conditions.note': 'This information will be available to emergency responders',
+            
+            // Preferences
+            'profile.preferences.appearance': 'Appearance & Language',
+            'profile.preferences.language': 'Language',
+            'profile.preferences.theme': 'Theme',
+            'profile.preferences.notifications': 'Notification Settings',
+            'profile.preferences.medication.reminders': 'Medication Reminders',
+            'profile.preferences.vitals.reminders': 'Vitals Tracking Reminders',
+            'profile.preferences.appointment.reminders': 'Appointment Reminders',
+            'profile.preferences.emergency.alerts': 'Emergency Alerts',
+            'profile.preferences.privacy': 'Privacy Settings',
+            'profile.preferences.data.sharing': 'Share Anonymous Health Data',
+            'profile.preferences.data.sharing.desc': 'Help improve healthcare by sharing anonymized data for research',
+            'profile.preferences.location.tracking': 'Location Tracking',
+            'profile.preferences.location.tracking.desc': 'Required for emergency services and location-based features',
+            
+            // Profile Modals
+            'profile.modal.email.title': 'Update Email Address',
+            'profile.modal.email.new': 'New Email Address',
+            'profile.modal.email.password': 'Current Password',
+            'profile.modal.email.update': 'Update Email',
+            'profile.modal.delete.title': 'Delete Account',
+            'profile.modal.delete.warning': 'This action cannot be undone. All your data will be permanently deleted.',
+            'profile.modal.delete.password': 'Enter your password to confirm',
+            'profile.modal.delete.confirm': 'Type "DELETE" to confirm',
+            'profile.modal.delete.button': 'Delete Account'
         };
 
         // Arabic translations
@@ -648,7 +705,64 @@ class LocalizationManager {
             'emergency.medical.medications': 'الأدوية الحالية:',
             'emergency.medical.update': 'تحديث المعلومات الطبية',
             'emergency.contacts.empty': 'لم يتم إضافة جهات اتصال طارئة بعد',
-            'emergency.contacts.call': 'اتصال'
+            'emergency.contacts.call': 'اتصال',
+            
+            // Profile Management
+            'profile.title': 'إعدادات الملف الشخصي',
+            'profile.subtitle': 'إدارة معلوماتك الشخصية وإعدادات الحساب',
+            'profile.tab.personal': 'المعلومات الشخصية',
+            'profile.tab.security': 'الأمان',
+            'profile.tab.medical': 'المعلومات الطبية',
+            'profile.tab.preferences': 'التفضيلات',
+            
+            // Personal Information
+            'profile.personal.title': 'المعلومات الشخصية',
+            
+            // Security
+            'profile.security.password.title': 'تغيير كلمة المرور',
+            'profile.security.current.password': 'كلمة المرور الحالية',
+            'profile.security.new.password': 'كلمة المرور الجديدة',
+            'profile.security.confirm.password': 'تأكيد كلمة المرور الجديدة',
+            'profile.security.update.password': 'تحديث كلمة المرور',
+            'profile.security.account.title': 'إدارة الحساب',
+            'profile.security.email.title': 'عنوان البريد الإلكتروني',
+            'profile.security.email.desc': 'تحديث عنوان بريدك الإلكتروني',
+            'profile.security.delete.title': 'حذف الحساب',
+            'profile.security.delete.desc': 'حذف حسابك وجميع البيانات نهائياً',
+            'profile.security.log.title': 'النشاط الأمني الأخير',
+            
+            // Medical Information
+            'profile.medical.title': 'المعلومات الطبية',
+            'profile.medical.emergency.contact.name': 'اسم جهة الاتصال الطارئة',
+            'profile.medical.emergency.contact.phone': 'هاتف جهة الاتصال الطارئة',
+            'profile.medical.conditions': 'الحالات الطبية',
+            'profile.medical.conditions.note': 'ستكون هذه المعلومات متاحة للمسعفين الأوليين',
+            
+            // Preferences
+            'profile.preferences.appearance': 'المظهر واللغة',
+            'profile.preferences.language': 'اللغة',
+            'profile.preferences.theme': 'المظهر',
+            'profile.preferences.notifications': 'إعدادات الإشعارات',
+            'profile.preferences.medication.reminders': 'تذكيرات الأدوية',
+            'profile.preferences.vitals.reminders': 'تذكيرات تتبع العلامات الحيوية',
+            'profile.preferences.appointment.reminders': 'تذكيرات المواعيد',
+            'profile.preferences.emergency.alerts': 'تنبيهات الطوارئ',
+            'profile.preferences.privacy': 'إعدادات الخصوصية',
+            'profile.preferences.data.sharing': 'مشاركة البيانات الصحية المجهولة',
+            'profile.preferences.data.sharing.desc': 'ساعد في تحسين الرعاية الصحية من خلال مشاركة البيانات المجهولة للبحث',
+            'profile.preferences.location.tracking': 'تتبع الموقع',
+            'profile.preferences.location.tracking.desc': 'مطلوب لخدمات الطوارئ والميزات المعتمدة على الموقع',
+            
+            // Profile Modals
+            'profile.modal.email.title': 'تحديث عنوان البريد الإلكتروني',
+            'profile.modal.email.new': 'عنوان البريد الإلكتروني الجديد',
+            'profile.modal.email.password': 'كلمة المرور الحالية',
+            'profile.modal.email.update': 'تحديث البريد الإلكتروني',
+            'profile.modal.delete.title': 'حذف الحساب',
+            'profile.modal.delete.warning': 'لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع بياناتك نهائياً.',
+            'profile.modal.delete.password': 'أدخل كلمة المرور للتأكيد',
+            'profile.modal.delete.confirm': 'اكتب "DELETE" للتأكيد',
+            'profile.modal.delete.button': 'حذف الحساب'
         };
     }
 
