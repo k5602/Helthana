@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db.models import Q
 from .models import HealthReport
+from .chart_generator import ChartGenerator
 from apps.vitals.models import VitalReading
 from apps.prescriptions.models import Prescription
 
@@ -147,17 +148,32 @@ class ReportGenerationService:
         prescription_items = []
         
         for prescription in prescriptions:
+            # Get medications for this prescription
+            medications = []
+            if hasattr(prescription, 'medications'):
+                for medication in prescription.medications.filter(is_active=True):
+                    medications.append({
+                        'name': medication.name,
+                        'dosage': medication.dosage,
+                        'frequency': medication.frequency,
+                        'duration': medication.duration,
+                        'instructions': medication.instructions
+                    })
+            
             prescription_items.append({
-                'date': prescription.created_at.date(),
-                'medications': prescription.medications if hasattr(prescription, 'medications') else [],
-                'doctor_name': getattr(prescription, 'doctor_name', 'N/A'),
-                'notes': getattr(prescription, 'notes', '')
+                'date': prescription.prescription_date if hasattr(prescription, 'prescription_date') else prescription.created_at.date(),
+                'medications': medications,
+                'doctor_name': prescription.doctor_name,
+                'clinic_name': getattr(prescription, 'clinic_name', ''),
+                'notes': getattr(prescription, 'ocr_text', ''),
+                'confidence_score': getattr(prescription, 'ai_confidence_score', 0.0)
             })
         
         return {
             'items': prescription_items,
             'summary': {
                 'total_prescriptions': len(prescription_items),
+                'total_medications': sum(len(item['medications']) for item in prescription_items),
                 'date_range': {
                     'first': prescription_items[0]['date'] if prescription_items else None,
                     'last': prescription_items[-1]['date'] if prescription_items else None
@@ -177,17 +193,34 @@ class ReportGenerationService:
         
         template_name = f"reports/{report_type}_report.html"
         
+        # Generate charts if requested
+        charts = {}
+        if include_charts:
+            charts = ReportGenerationService._generate_charts(data, language)
+        
+        # Generate health insights
+        insights = []
+        if include_summary:
+            insights = ChartGenerator.generate_health_insights(
+                data.get('vitals', {}),
+                data.get('prescriptions', {}),
+                language
+            )
+        
         context = {
             **data,
             'include_charts': include_charts,
             'include_summary': include_summary,
             'language': language,
-            'rtl': language == 'ar'
+            'rtl': language == 'ar',
+            'charts': charts,
+            'health_insights': insights
         }
         
         try:
             return render_to_string(template_name, context)
-        except:
+        except Exception as e:
+            print(f"Template rendering error: {e}")
             # Fallback to basic template
             return render_to_string("reports/basic_report.html", context)
 
@@ -202,47 +235,120 @@ class ReportGenerationService:
             # Configure fonts for Arabic support
             font_config = FontConfiguration()
             
-            # Basic CSS for PDF styling
+            # Enhanced CSS for better PDF styling
             css_content = """
             @page {
                 size: A4;
                 margin: 2cm;
+                @bottom-center {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-size: 10px;
+                    color: #666;
+                }
             }
             body {
                 font-family: 'DejaVu Sans', Arial, sans-serif;
                 font-size: 12px;
                 line-height: 1.4;
+                color: #2c3e50;
             }
             .header {
                 text-align: center;
-                border-bottom: 2px solid #333;
-                padding-bottom: 10px;
-                margin-bottom: 20px;
+                border-bottom: 3px solid #3498db;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
             }
             .section {
-                margin-bottom: 20px;
+                margin-bottom: 25px;
+                page-break-inside: avoid;
             }
-            .vital-reading {
-                border: 1px solid #ddd;
-                padding: 10px;
-                margin-bottom: 10px;
+            .section h2 {
+                color: #2c3e50;
+                border-bottom: 2px solid #3498db;
+                padding-bottom: 8px;
+                margin-bottom: 15px;
+                page-break-after: avoid;
+            }
+            .vital-reading, .prescription-item {
+                border: 1px solid #e1e8ed;
+                padding: 12px;
+                margin-bottom: 12px;
+                border-radius: 4px;
+                page-break-inside: avoid;
             }
             table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 15px;
+                page-break-inside: avoid;
             }
             th, td {
                 border: 1px solid #ddd;
                 padding: 8px;
                 text-align: left;
+                font-size: 11px;
             }
             th {
-                background-color: #f5f5f5;
+                background-color: #3498db;
+                color: white;
+                font-weight: bold;
+            }
+            tr:nth-child(even) {
+                background-color: #f8f9fa;
+            }
+            .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            .summary-card {
+                background: #fff;
+                border: 1px solid #e1e8ed;
+                border-radius: 6px;
+                padding: 15px;
+                text-align: center;
+                page-break-inside: avoid;
+            }
+            .chart-placeholder {
+                background: #f8f9fa;
+                border: 2px dashed #3498db;
+                height: 150px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 15px 0;
+                color: #3498db;
+                font-style: italic;
+                border-radius: 6px;
+                page-break-inside: avoid;
             }
             .rtl {
                 direction: rtl;
                 text-align: right;
+            }
+            .rtl th, .rtl td {
+                text-align: right;
+            }
+            .no-data {
+                text-align: center;
+                color: #7f8c8d;
+                font-style: italic;
+                padding: 30px;
+                background: #f8f9fa;
+                border-radius: 6px;
+                border: 2px dashed #dee2e6;
+            }
+            .footer {
+                margin-top: 30px;
+                padding-top: 15px;
+                border-top: 1px solid #bdc3c7;
+                text-align: center;
+                color: #7f8c8d;
+                font-size: 10px;
             }
             """
             
@@ -251,8 +357,13 @@ class ReportGenerationService:
             
             return html_doc.write_pdf(stylesheets=[css], font_config=font_config)
             
-        except ImportError:
+        except ImportError as e:
+            print(f"WeasyPrint not available: {e}")
             # Fallback: Generate a simple text-based PDF placeholder
+            return ReportGenerationService._generate_fallback_pdf(html_content)
+        except Exception as e:
+            print(f"PDF generation error: {e}")
+            # Fallback on any other error
             return ReportGenerationService._generate_fallback_pdf(html_content)
 
     @staticmethod
@@ -406,3 +517,36 @@ class ReportGenerationService:
             next_run = timezone.make_aware(next_run)
         
         return next_run
+
+    @staticmethod
+    def _generate_charts(data: Dict[str, Any], language: str = 'en') -> Dict[str, str]:
+        """Generate charts for the report"""
+        charts = {}
+        
+        # Generate vitals charts
+        if data.get('vitals') and data['vitals'].get('by_type'):
+            vitals_data = data['vitals']['by_type']
+            
+            # Generate individual vital type charts
+            for vital_type, readings in vitals_data.items():
+                if readings:
+                    chart_key = f"vitals_{vital_type}"
+                    charts[chart_key] = ChartGenerator.generate_vitals_trend_chart(
+                        vital_type, readings, language
+                    )
+            
+            # Generate summary chart
+            if len(vitals_data) > 1:
+                charts['vitals_summary'] = ChartGenerator.generate_vitals_summary_chart(
+                    vitals_data, language
+                )
+        
+        # Generate prescription charts
+        if data.get('prescriptions') and data['prescriptions'].get('items'):
+            prescription_items = data['prescriptions']['items']
+            if prescription_items:
+                charts['prescriptions_timeline'] = ChartGenerator.generate_prescription_timeline_chart(
+                    prescription_items, language
+                )
+        
+        return charts

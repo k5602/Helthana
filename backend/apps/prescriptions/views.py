@@ -243,6 +243,142 @@ class PrescriptionViewSet(ModelViewSet):
             'status': prescription.processing_status,
             'manual_verification_required': prescription.manual_verification_required
         })
+    
+    @action(detail=True, methods=['post'])
+    def upload_image(self, request, pk=None):
+        """Upload or replace prescription image with progress tracking"""
+        prescription = self.get_object()
+        
+        if 'image' not in request.FILES:
+            return Response(
+                {'error': 'No image file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        uploaded_file = request.FILES['image']
+        
+        try:
+            # Process and save image with comprehensive validation
+            result = PrescriptionService.process_and_save_image(request.user.id, uploaded_file)
+            
+            if not result['success']:
+                return Response({
+                    'error': 'Image upload failed',
+                    'details': result.get('errors', [result.get('error', 'Unknown error')]),
+                    'warnings': result.get('warnings', [])
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Delete old image if exists
+            if prescription.image:
+                PrescriptionService.delete_prescription_image(prescription)
+            
+            # Update prescription with new image
+            prescription.image = result['file_path']
+            prescription.processing_status = 'pending'  # Reset processing status
+            prescription.is_processed = False
+            prescription.ocr_text = ''
+            prescription.ai_confidence_score = 0.0
+            prescription.manual_verification_required = False
+            prescription.save()
+            
+            return Response({
+                'success': True,
+                'message': 'Image uploaded successfully',
+                'prescription_id': prescription.id,
+                'file_info': {
+                    'file_url': result['file_url'],
+                    'file_size': result['file_size'],
+                    'content_type': result['content_type'],
+                    'compression_ratio': result.get('compression_ratio', 0)
+                },
+                'warnings': result.get('warnings', [])
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Image upload failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['delete'])
+    def delete_image(self, request, pk=None):
+        """Delete prescription image"""
+        prescription = self.get_object()
+        
+        result = PrescriptionService.delete_prescription_image(prescription)
+        
+        if result['success']:
+            return Response({
+                'success': True,
+                'message': 'Image deleted successfully'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': result['error']
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'])
+    def storage_usage(self, request):
+        """Get user's storage usage statistics"""
+        usage = PrescriptionService.get_user_storage_usage(request.user.id)
+        
+        if usage['success']:
+            return Response({
+                'storage_usage': {
+                    'total_size_bytes': usage['total_size_bytes'],
+                    'total_size_formatted': usage['total_size_formatted'],
+                    'file_count': usage['file_count']
+                }
+            })
+        else:
+            return Response({
+                'error': usage['error']
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def cleanup_files(self, request):
+        """Clean up old prescription files"""
+        days_old = request.data.get('days_old', 30)
+        
+        if not isinstance(days_old, int) or days_old < 1:
+            return Response({
+                'error': 'days_old must be a positive integer'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        result = PrescriptionService.cleanup_user_files(request.user.id, days_old)
+        
+        if result['success']:
+            return Response({
+                'success': True,
+                'message': f'Cleanup completed. Deleted {result["deleted_count"]} files.',
+                'deleted_files': result['deleted_files'],
+                'errors': result.get('errors', [])
+            })
+        else:
+            return Response({
+                'error': result['error']
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def validate_upload(self, request):
+        """Validate file before upload (pre-upload validation)"""
+        if 'image' not in request.FILES:
+            return Response({
+                'error': 'No image file provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        uploaded_file = request.FILES['image']
+        validation_result = PrescriptionService.validate_image_upload(uploaded_file)
+        
+        return Response({
+            'valid': validation_result['valid'],
+            'errors': validation_result.get('errors', []),
+            'warnings': validation_result.get('warnings', []),
+            'file_info': {
+                'filename': validation_result.get('safe_filename', uploaded_file.name),
+                'size': validation_result.get('file_size', uploaded_file.size),
+                'content_type': validation_result.get('content_type', uploaded_file.content_type)
+            }
+        })
 
 
 class MedicationViewSet(ModelViewSet):

@@ -3,15 +3,27 @@
  * Handles prescription management and scanning functionality
  */
 
-import { apiGetPrescriptions, apiUploadPrescription, apiDeletePrescription } from '../api.js';
+import { 
+    apiGetPrescriptions, 
+    apiUploadPrescription, 
+    apiDeletePrescription,
+    apiUploadPrescriptionImage,
+    apiValidateFileUpload,
+    apiDeletePrescriptionImage,
+    apiGetStorageUsage,
+    apiCleanupFiles
+} from '../api.js';
 import { uiShowToast, uiShowLoading, uiHideLoading, uiShowModal, uiHideModal } from '../ui.js';
 import { getTranslation } from '../localization.js';
+import { aiInsights } from '../ai-insights.js';
+import { secureFileUpload } from '../file-upload.js';
 
 class PrescriptionsPage {
-    constructor() {
+        constructor() {
         this.prescriptions = [];
         this.scanner = null;
         this.currentStream = null;
+        this.medicationInteractions = [];
     }
 
     /**
@@ -100,6 +112,9 @@ class PrescriptionsPage {
             
             this.prescriptions = await apiGetPrescriptions();
             this.renderPrescriptions();
+            
+            // Load AI medication interaction warnings
+            await this.loadMedicationInteractions();
             
         } catch (error) {
             console.error('Failed to load prescriptions:', error);
@@ -402,20 +417,39 @@ class PrescriptionsPage {
     }
 
     /**
-     * Upload prescription image with OCR processing
+     * Upload prescription image with secure file handling and OCR processing
      */
     async uploadPrescriptionImage(imageFile) {
         try {
-            // Show upload progress
-            this.showUploadProgress();
+            // Create progress UI
+            const progressUI = secureFileUpload.createProgressUI('prescriptions-container');
             
-            // Create FormData for file upload
-            const formData = new FormData();
-            formData.append('image', imageFile);
-            formData.append('process_ocr', 'true');
-
-            // Upload and process
-            const result = await apiUploadPrescription(formData);
+            // Upload with secure file handling
+            const result = await secureFileUpload.uploadFile(
+                imageFile,
+                '/api/v1/prescriptions/',
+                {
+                    onProgress: (progressData) => {
+                        secureFileUpload.updateProgressUI(progressUI, progressData);
+                    },
+                    onValidation: (validation) => {
+                        if (!validation.valid) {
+                            // Show validation errors
+                            validation.errors.forEach(error => {
+                                uiShowToast(error, 'error');
+                            });
+                        }
+                        
+                        // Show validation warnings
+                        validation.warnings.forEach(warning => {
+                            uiShowToast(warning, 'warning');
+                        });
+                    },
+                    additionalData: {
+                        process_ocr: 'true'
+                    }
+                }
+            );
             
             if (result.error) {
                 throw new Error(result.error.message || 'Upload failed');
@@ -435,7 +469,13 @@ class PrescriptionsPage {
             console.error('Failed to upload prescription:', error);
             uiShowToast(getTranslation('prescriptions.uploadError'), 'error');
         } finally {
-            this.hideUploadProgress();
+            // Hide progress UI after a delay
+            setTimeout(() => {
+                const progressContainer = document.getElementById('upload-progress-container');
+                if (progressContainer) {
+                    progressContainer.remove();
+                }
+            }, 2000);
         }
     }
 
@@ -629,6 +669,330 @@ class PrescriptionsPage {
         } catch (error) {
             console.error('Failed to delete prescription:', error);
             uiShowToast(getTranslation('prescriptions.deleteError'), 'error');
+        }
+    }
+
+    /**
+     * Show storage usage information
+     */
+    async showStorageUsage() {
+        try {
+            const usage = await apiGetStorageUsage();
+            
+            if (usage.storage_usage) {
+                const { total_size_formatted, file_count } = usage.storage_usage;
+                
+                uiShowToast(`Storage: ${total_size_formatted} (${file_count} files)`, 'info');
+                
+                // Create storage info modal if needed
+                this.createStorageInfoModal(usage.storage_usage);
+            }
+        } catch (error) {
+            console.error('Failed to get storage usage:', error);
+            uiShowToast('Failed to get storage information', 'error');
+        }
+    }
+
+    /**
+     * Clean up old files
+     */
+    async cleanupOldFiles(daysOld = 30) {
+        if (!confirm(`Delete files older than ${daysOld} days?`)) {
+            return;
+        }
+
+        try {
+            uiShowLoading('cleanup-btn');
+            
+            const result = await apiCleanupFiles(daysOld);
+            
+            if (result.success) {
+                uiShowToast(`Cleanup completed. Deleted ${result.deleted_count} files.`, 'success');
+                
+                if (result.errors && result.errors.length > 0) {
+                    console.warn('Cleanup errors:', result.errors);
+                }
+                
+                // Refresh storage usage
+                await this.showStorageUsage();
+            } else {
+                throw new Error(result.error || 'Cleanup failed');
+            }
+        } catch (error) {
+            console.error('Failed to cleanup files:', error);
+            uiShowToast('File cleanup failed', 'error');
+        } finally {
+            uiHideLoading('cleanup-btn');
+        }
+    }
+
+    /**
+     * Create storage information modal
+     */
+    createStorageInfoModal(storageData) {
+        const modalHTML = `
+            <div id="storage-info-modal" class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg mb-4">Storage Information</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="stats shadow">
+                            <div class="stat">
+                                <div class="stat-title">Total Storage Used</div>
+                                <div class="stat-value text-primary">${storageData.total_size_formatted}</div>
+                                <div class="stat-desc">${storageData.file_count} files</div>
+                            </div>
+                        </div>
+                        
+                        <div class="divider">File Management</div>
+                        
+                        <div class="space-y-2">
+                            <button id="cleanup-30-btn" class="btn btn-outline btn-sm w-full">
+                                Clean up files older than 30 days
+                            </button>
+                            <button id="cleanup-60-btn" class="btn btn-outline btn-sm w-full">
+                                Clean up files older than 60 days
+                            </button>
+                            <button id="cleanup-90-btn" class="btn btn-outline btn-sm w-full">
+                                Clean up files older than 90 days
+                            </button>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-sm">Only inactive prescription files will be deleted. Active prescriptions are protected.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-action">
+                        <button class="btn" onclick="document.getElementById('storage-info-modal').close()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if present
+        const existingModal = document.getElementById('storage-info-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Add event listeners
+        document.getElementById('cleanup-30-btn').addEventListener('click', () => this.cleanupOldFiles(30));
+        document.getElementById('cleanup-60-btn').addEventListener('click', () => this.cleanupOldFiles(60));
+        document.getElementById('cleanup-90-btn').addEventListener('click', () => this.cleanupOldFiles(90));
+        
+        // Show modal
+        document.getElementById('storage-info-modal').showModal();
+    }
+
+    /**
+     * Pre-validate file before upload
+     */
+    async preValidateFile(file) {
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            const validation = await apiValidateFileUpload(formData);
+            
+            if (!validation.valid) {
+                // Show validation errors
+                validation.errors.forEach(error => {
+                    uiShowToast(error, 'error');
+                });
+                return false;
+            }
+            
+            // Show validation warnings
+            if (validation.warnings && validation.warnings.length > 0) {
+                validation.warnings.forEach(warning => {
+                    uiShowToast(warning, 'warning');
+                });
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Pre-validation failed:', error);
+            uiShowToast('File validation failed', 'error');
+            return false;
+        }
+    }Upload(formData);
+            
+            if (!validation.valid) {
+                // Show validation errors
+                validation.errors.forEach(error => {
+                    uiShowToast(error, 'error');
+                });
+                return false;
+            }
+            
+            // Show validation warnings
+            if (validation.warnings && validation.warnings.length > 0) {
+                validation.warnings.forEach(warning => {
+                    uiShowToast(warning, 'warning');
+                });
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Pre-validation failed:', error);
+            uiShowToast('File validation failed', 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Load AI medication interaction warnings
+     */
+    async loadMedicationInteractions() {
+        try {
+            // Extract medication names from prescriptions
+            const medications = this.prescriptions.map(p => p.medication_name || p.name).filter(Boolean);
+            
+            if (medications.length === 0) return;
+
+            // Get AI medication interaction warnings
+            this.medicationInteractions = await aiInsights.checkMedicationInteractions(medications);
+            
+            // Render medication interaction warnings
+            this.renderMedicationInteractions();
+            
+        } catch (error) {
+            console.warn('Failed to load medication interactions:', error);
+            // Continue without AI insights - they're supplementary
+        }
+    }
+
+    /**
+     * Render medication interaction warnings
+     */
+    renderMedicationInteractions() {
+        if (!this.medicationInteractions || this.medicationInteractions.length === 0) return;
+
+        const interactionsContainer = this.getOrCreateInsightsSection('medication-interactions', 'AI Medication Safety', '💊');
+        
+        const interactionsHTML = `
+            <div class="space-y-3">
+                ${this.medicationInteractions.map(interaction => `
+                    <div class="alert ${this.getInteractionAlertClass(interaction.severity)}">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-medium">${interaction.type.replace('_', ' ').toUpperCase()}</span>
+                                <span class="badge badge-sm ${this.getSeverityBadgeClass(interaction.severity)}">${interaction.severity}</span>
+                                ${interaction.confidence ? `
+                                    <span class="text-xs text-base-content/50">${Math.round(interaction.confidence * 100)}% confidence</span>
+                                ` : ''}
+                            </div>
+                            <p class="text-sm">${interaction.warning}</p>
+                            ${interaction.medications ? `
+                                <p class="text-xs mt-1 opacity-75"><strong>Medications:</strong> ${interaction.medications.join(', ')}</p>
+                            ` : ''}
+                            ${interaction.medication ? `
+                                <p class="text-xs mt-1 opacity-75"><strong>Medication:</strong> ${interaction.medication}</p>
+                            ` : ''}
+                            ${interaction.recommendation ? `
+                                <p class="text-xs mt-1 opacity-75"><strong>Recommendation:</strong> ${interaction.recommendation}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+                
+                <div class="mt-4 p-3 bg-info/10 rounded-lg border border-info/20">
+                    <h4 class="font-medium text-info mb-2 flex items-center gap-2">
+                        <span>ℹ️</span>
+                        Important Note
+                    </h4>
+                    <p class="text-sm text-base-content/70">
+                        These are AI-generated suggestions based on common medication interactions. 
+                        Always consult with your healthcare provider before making any changes to your medications.
+                    </p>
+                </div>
+            </div>
+        `;
+
+        interactionsContainer.innerHTML = interactionsHTML;
+    }
+
+    /**
+     * Get or create insights section in prescriptions page
+     */
+    getOrCreateInsightsSection(id, title, icon) {
+        let section = document.getElementById(id);
+        
+        if (!section) {
+            // Create insights container if it doesn't exist
+            let insightsContainer = document.getElementById('prescriptions-ai-insights-container');
+            if (!insightsContainer) {
+                insightsContainer = document.createElement('div');
+                insightsContainer.id = 'prescriptions-ai-insights-container';
+                insightsContainer.className = 'mt-8 space-y-6';
+                
+                // Insert after prescriptions list section
+                const prescriptionsList = document.getElementById('prescriptions-list')?.closest('.card');
+                if (prescriptionsList) {
+                    prescriptionsList.parentNode.insertBefore(insightsContainer, prescriptionsList.nextSibling);
+                } else {
+                    // Fallback: append to main content
+                    const mainContent = document.querySelector('main');
+                    if (mainContent) mainContent.appendChild(insightsContainer);
+                }
+            }
+
+            // Create section card
+            section = document.createElement('div');
+            section.className = 'card bg-base-100 shadow-lg';
+            section.innerHTML = `
+                <div class="card-body">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">${icon}</span>
+                        ${title}
+                    </h3>
+                    <div id="${id}-content">
+                        <div class="flex items-center justify-center py-8">
+                            <span class="loading loading-spinner loading-lg text-primary"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            insightsContainer.appendChild(section);
+            section = document.getElementById(`${id}-content`);
+        } else {
+            section = document.getElementById(`${id}-content`);
+        }
+
+        return section;
+    }
+
+    /**
+     * Get CSS class for interaction alert
+     */
+    getInteractionAlertClass(severity) {
+        switch (severity) {
+            case 'high': return 'alert-error';
+            case 'moderate': return 'alert-warning';
+            case 'low': return 'alert-info';
+            case 'info': return 'alert-info';
+            default: return 'alert-info';
+        }
+    }
+
+    /**
+     * Get CSS class for severity badge
+     */
+    getSeverityBadgeClass(severity) {
+        switch (severity) {
+            case 'high': return 'badge-error';
+            case 'moderate': return 'badge-warning';
+            case 'low': return 'badge-info';
+            case 'info': return 'badge-info';
+            default: return 'badge-neutral';
         }
     }
 

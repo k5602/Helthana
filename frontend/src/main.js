@@ -7,6 +7,11 @@ import './api.js'
 import './auth.js'
 import './ui.js'
 import './offline.js'
+import './permissions.js'  // Comprehensive permission management
+import './voice-commands.js'  // Enhanced voice command system
+import './ai-insights.js'  // AI health insights service
+import './push-notifications.js'  // Push notification manager
+import './pwa-installer.js'  // PWA installation manager
 import { router } from './router.js'  // Import hybrid router
 
 /**
@@ -192,16 +197,40 @@ class HealthGuideApp {
         }
 
         try {
-            // Get user's location if available
+            // Get user's location using PermissionManager if available
             let location = {};
-            if (navigator.geolocation) {
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject);
-                });
-                location = {
-                    location_lat: position.coords.latitude,
-                    location_lng: position.coords.longitude
-                };
+            if (window.permissions) {
+                const hasLocationPermission = await window.permissions.requestLocationPermission();
+                if (hasLocationPermission && navigator.geolocation) {
+                    try {
+                        const position = await new Promise((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                timeout: 10000,
+                                maximumAge: 300000,
+                                enableHighAccuracy: false
+                            });
+                        });
+                        location = {
+                            location_lat: position.coords.latitude,
+                            location_lng: position.coords.longitude
+                        };
+                    } catch (locationError) {
+                        console.warn('Failed to get location for emergency alert:', locationError);
+                    }
+                }
+            } else if (navigator.geolocation) {
+                // Fallback to direct geolocation if PermissionManager not available
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+                    location = {
+                        location_lat: position.coords.latitude,
+                        location_lng: position.coords.longitude
+                    };
+                } catch (locationError) {
+                    console.warn('Failed to get location for emergency alert:', locationError);
+                }
             }
 
             if (window.api) {
@@ -228,55 +257,17 @@ class HealthGuideApp {
         }
     }
 
-    handleVoiceCommand() {
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            if (window.ui) window.ui.showToast(window.t ? window.t('msg.voice.not.supported') : 'Voice recognition not supported in this browser', 'error');
-            return;
-        }
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        
-        recognition.lang = 'ar-EG'; // Egyptian Arabic
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        recognition.onstart = () => {
-            if (window.ui) window.ui.showToast(window.t ? window.t('msg.voice.listening') : 'Listening... Speak now', 'info');
-            const voiceBtn = document.getElementById('voice-btn');
-            if (voiceBtn) voiceBtn.textContent = '🔴';
-        };
-
-        recognition.onresult = (event) => {
-            const command = event.results[0][0].transcript.toLowerCase();
-            this.processVoiceCommand(command);
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            if (window.ui) window.ui.showToast(window.t ? window.t('msg.voice.failed') : 'Voice recognition failed', 'error');
-        };
-
-        recognition.onend = () => {
-            const voiceBtn = document.getElementById('voice-btn');
-            if (voiceBtn) voiceBtn.textContent = '🎤';
-        };
-
-        recognition.start();
-    }
-
-    processVoiceCommand(command) {
-        console.log('Voice command:', command);
-        
-        // Simple command processing (can be enhanced with NLP)
-        if (command.includes('scan') || command.includes('prescription')) {
-            if (window.showPrescriptionScanner) window.showPrescriptionScanner();
-        } else if (command.includes('vital') || command.includes('blood')) {
-            if (window.showVitalsForm) window.showVitalsForm();
-        } else if (command.includes('emergency') || command.includes('help')) {
-            this.handleEmergencyAlert();
+    async handleVoiceCommand() {
+        // Use the enhanced voice command processor
+        if (window.voiceCommands) {
+            if (window.voiceCommands.isListeningActive()) {
+                window.voiceCommands.stopListening();
+            } else {
+                await window.voiceCommands.startListening();
+            }
         } else {
-            if (window.ui) window.ui.showToast(window.t ? window.t('msg.command.not.recognized') : 'Command not recognized. Try "scan prescription" or "log vitals"', 'info');
+            // Fallback to basic implementation
+            if (window.ui) window.ui.showToast('Voice commands not available', 'error');
         }
     }
 }

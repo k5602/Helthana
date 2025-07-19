@@ -229,3 +229,20 @@ ACCOUNT_LOCKOUT_DURATION_MINUTES = 15
 
 # Email Verification Settings
 REQUIRE_EMAIL_VERIFICATION = True  # Default to requiring email verification
+
+# File Upload Security Settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
+
+# Secure file upload settings
+SECURE_FILE_UPLOAD = {
+    'MAX_FILE_SIZE': 10 * 1024 * 1024,  # 10MB
+    'ALLOWED_IMAGE_TYPES': ['image/jpeg', 'image/png', 'image/webp'],
+    'IMAGE_COMPRESSION_QUALITY': 85,
+    'MAX_IMAGE_DIMENSION': 2048,
+    'ENABLE_VIRUS_SCANNING': False,  # Set to True in production with antivirus
+    'CLEANUP_ORPHANED_FILES_DAYS': 7,
+    'USER_STORAGE_QUOTA': 100 * 1024 * 1024,  # 100MB per user
+}

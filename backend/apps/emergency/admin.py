@@ -11,6 +11,12 @@ class EmergencyContactAdmin(admin.ModelAdmin):
 
 @admin.register(EmergencyAlert)
 class EmergencyAlertAdmin(admin.ModelAdmin):
-    list_display = ('user', 'is_resolved', 'created_at')
-    list_filter = ('is_resolved', 'created_at')
+    list_display = ('user', 'alert_type', 'status', 'created_at')
+    list_filter = ('status', 'alert_type', 'created_at')
     search_fields = ('user__username',)
+    readonly_fields = ('is_resolved', 'duration_minutes', 'location_url')
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # editing an existing object
+            return self.readonly_fields + ('user', 'created_at')
+        return self.readonly_fields

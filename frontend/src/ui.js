@@ -236,7 +236,16 @@ export const uiShowSuccess = (message) => ui.showSuccess(message);
 export { UIManager, ui };
 
 // Global UI functions
-window.showPrescriptionScanner = function() {
+window.showPrescriptionScanner = async function() {
+    // Request camera permission if PermissionManager is available
+    if (window.permissions) {
+        const hasCameraPermission = await window.permissions.requestCameraPermission();
+        if (!hasCameraPermission) {
+            // Permission denied, but still allow file upload as fallback
+            console.log('Camera permission denied, using file upload fallback');
+        }
+    }
+    
     if (!window.ui.modals.has('prescription-scanner')) {
         window.ui.createPrescriptionScanner();
     }

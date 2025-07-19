@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" {% if rtl %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.get_full_name|default:user.username }} - Prescription History Report</title>
+    <style>
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #fdf2f2 0%, #fce4e4 100%);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .header h1 {
+            color: #e74c3c;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #e74c3c;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .section h3 {
+            color: #c0392b;
+            border-bottom: 1px solid #fadbd8;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .summary-card {
+            background: #fff;
+            border: 1px solid #fadbd8;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(231, 76, 60, 0.1);
+        }
+        .summary-card h4 {
+            color: #e74c3c;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #c0392b;
+            margin-bottom: 5px;
+        }
+        .summary-card .label {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        .prescription-item {
+            background: #fff;
+            border-left: 4px solid #e74c3c;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .prescription-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #fadbd8;
+        }
+        .prescription-date {
+            font-weight: bold;
+            color: #e74c3c;
+            font-size: 16px;
+        }
+        .prescription-id {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        .doctor-info {
+            background: #fdf2f2;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .doctor-name {
+            font-weight: bold;
+            color: #c0392b;
+            font-size: 14px;
+        }
+        .medication-list {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .medication-list h5 {
+            color: #e74c3c;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        .medication-item {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        .medication-item:last-child {
+            margin-bottom: 0;
+        }
+        .medication-name {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+        .medication-details {
+            color: #6c757d;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+        .prescription-notes {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        .prescription-notes h5 {
+            color: #856404;
+            margin: 0 0 8px 0;
+            font-size: 13px;
+        }
+        .prescription-notes p {
+            color: #856404;
+            margin: 0;
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #fadbd8;
+            padding: 12px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #e74c3c;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #fdf2f2;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #fadbd8;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 10px;
+        }
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+        .rtl th, .rtl td {
+            text-align: right;
+        }
+        .rtl .prescription-header {
+            flex-direction: row-reverse;
+        }
+        .no-data {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 40px;
+            background: #fdf2f2;
+            border-radius: 8px;
+            border: 2px dashed #fadbd8;
+        }
+        .medication-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .medication-timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e74c3c;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -23px;
+            top: 5px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box h4 {
+            color: #856404;
+            margin: 0 0 10px 0;
+        }
+        .warning-box p {
+            color: #856404;
+            margin: 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body {% if rtl %}class="rtl"{% endif %}>
+    <div class="header">
+        <h1>{% if language == 'ar' %}تقرير الوصفات الطبية{% else %}Prescription History Report{% endif %}</h1>
+        <div class="subtitle">
+            <strong>{{ user.get_full_name|default:user.username }}</strong>
+        </div>
+        <div class="subtitle">
+            {% if language == 'ar' %}الفترة:{% else %}Period:{% endif %} {{ date_from }} {% if language == 'ar' %}إلى{% else %}to{% endif %} {{ date_to }}
+        </div>
+        <div class="subtitle">
+            {% if language == 'ar' %}تم إنشاؤه في{% else %}Generated on{% endif %} {{ generated_at|date:"F d, Y H:i" }}
+        </div>
+    </div>
+
+    <!-- Important Medical Disclaimer -->
+    <div class="warning-box">
+        <h4>{% if language == 'ar' %}تنبيه طبي مهم{% else %}Important Medical Disclaimer{% endif %}</h4>
+        <p>
+            {% if language == 'ar' %}
+                هذا التقرير للمراجعة الشخصية فقط ولا يغني عن استشارة الطبيب المختص. يرجى عدم تغيير أو إيقاف أي دواء دون استشارة طبية.
+            {% else %}
+                This report is for personal review only and does not replace professional medical consultation. Please do not change or stop any medication without medical advice.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Prescription Summary -->
+    {% if include_summary and prescriptions %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}ملخص الوصفات{% else %}Prescription Summary{% endif %}</h2>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h4>{% if language == 'ar' %}إجمالي الوصفات{% else %}Total Prescriptions{% endif %}</h4>
+                <div class="value">{{ prescriptions.summary.total_prescriptions }}</div>
+                <div class="label">{% if language == 'ar' %}وصفة طبية{% else %}prescriptions{% endif %}</div>
+            </div>
+            <div class="summary-card">
+                <h4>{% if language == 'ar' %}فترة التقرير{% else %}Report Period{% endif %}</h4>
+                <div class="value">{{ date_from|timesince:date_to }}</div>
+                <div class="label">{{ date_from }} - {{ date_to }}</div>
+            </div>
+            {% if prescriptions.summary.date_range.first %}
+            <div class="summary-card">
+                <h4>{% if language == 'ar' %}أول وصفة{% else %}First Prescription{% endif %}</h4>
+                <div class="value" style="font-size: 16px;">{{ prescriptions.summary.date_range.first }}</div>
+                <div class="label">{% if language == 'ar' %}تاريخ أول وصفة{% else %}Date of first prescription{% endif %}</div>
+            </div>
+            <div class="summary-card">
+                <h4>{% if language == 'ar' %}أحدث وصفة{% else %}Latest Prescription{% endif %}</h4>
+                <div class="value" style="font-size: 16px;">{{ prescriptions.summary.date_range.last }}</div>
+                <div class="label">{% if language == 'ar' %}تاريخ أحدث وصفة{% else %}Date of latest prescription{% endif %}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Detailed Prescriptions -->
+    {% if prescriptions and prescriptions.items %}
+    <div class="section">
+        <h2>{% if language == 'ar' %}تفاصيل الوصفات الطبية{% else %}Detailed Prescription History{% endif %}</h2>
+        
+        <div class="medication-timeline">
+            {% for prescription in prescriptions.items %}
+            <div class="timeline-item">
+                <div class="prescription-item">
+                    <div class="prescription-header">
+                        <div class="prescription-date">{{ prescription.date }}</div>
+                        <div class="prescription-id">#{{ forloop.counter }}</div>
+                    </div>
+                    
+                    <div class="doctor-info">
+                        <div class="doctor-name">
+                            {% if language == 'ar' %}الطبيب:{% else %}Doctor:{% endif %} {{ prescription.doctor_name }}
+                        </div>
+                    </div>
+                    
+                    {% if prescription.medications %}
+                    <div class="medication-list">
+                        <h5>{% if language == 'ar' %}الأدوية الموصوفة{% else %}Prescribed Medications{% endif %}</h5>
+                        {% for medication in prescription.medications %}
+                        <div class="medication-item">
+                            <div class="medication-name">{{ medication.name|default:medication }}</div>
+                            {% if medication.dosage %}
+                            <div class="medication-details">
+                                {% if language == 'ar' %}الجرعة:{% else %}Dosage:{% endif %} {{ medication.dosage }}
+                                {% if medication.frequency %} | {% if language == 'ar' %}التكرار:{% else %}Frequency:{% endif %} {{ medication.frequency }}{% endif %}
+                                {% if medication.duration %} | {% if language == 'ar' %}المدة:{% else %}Duration:{% endif %} {{ medication.duration }}{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if prescription.notes %}
+                    <div class="prescription-notes">
+                        <h5>{% if language == 'ar' %}ملاحظات الطبيب{% else %}Doctor's Notes{% endif %}</h5>
+                        <p>{{ prescription.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Medication Summary Table -->
+    <div class="section">
+        <h2>{% if language == 'ar' %}جدول ملخص الأدوية{% else %}Medication Summary Table{% endif %}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>{% if language == 'ar' %}التاريخ{% else %}Date{% endif %}</th>
+                    <th>{% if language == 'ar' %}الطبيب{% else %}Doctor{% endif %}</th>
+                    <th>{% if language == 'ar' %}عدد الأدوية{% else %}Medication Count{% endif %}</th>
+                    <th>{% if language == 'ar' %}الأدوية الرئيسية{% else %}Main Medications{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prescription in prescriptions.items %}
+                <tr>
+                    <td>{{ prescription.date }}</td>
+                    <td>{{ prescription.doctor_name }}</td>
+                    <td>{{ prescription.medications|length|default:0 }}</td>
+                    <td>
+                        {% for medication in prescription.medications|slice:":3" %}
+                            {{ medication.name|default:medication }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if prescription.medications|length > 3 %}
+                            {% if language == 'ar' %}... و {{ prescription.medications|length|add:"-3" }} أخرى{% else %}... and {{ prescription.medications|length|add:"-3" }} more{% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="section">
+        <div class="no-data">
+            {% if language == 'ar' %}
+                لا توجد وصفات طبية متاحة للفترة المحددة.<br>
+                يرجى التأكد من إدخال الوصفات الطبية في التطبيق.
+            {% else %}
+                No prescriptions available for the specified period.<br>
+                Please ensure you're logging your prescriptions in the application.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Medical Advice Section -->
+    <div class="section">
+        <h2>{% if language == 'ar' %}نصائح طبية عامة{% else %}General Medical Advice{% endif %}</h2>
+        <div class="warning-box">
+            <h4>{% if language == 'ar' %}تذكير مهم{% else %}Important Reminder{% endif %}</h4>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                <li>
+                    {% if language == 'ar' %}
+                        احتفظ بهذا التقرير لمراجعته مع طبيبك في الزيارات القادمة
+                    {% else %}
+                        Keep this report to review with your doctor during future visits
+                    {% endif %}
+                </li>
+                <li>
+                    {% if language == 'ar' %}
+                        تأكد من تناول الأدوية في المواعيد المحددة وبالجرعات الصحيحة
+                    {% else %}
+                        Ensure medications are taken at prescribed times and correct dosages
+                    {% endif %}
+                </li>
+                <li>
+                    {% if language == 'ar' %}
+                        أبلغ طبيبك عن أي أعراض جانبية أو تفاعلات دوائية
+                    {% else %}
+                        Report any side effects or drug interactions to your doctor
+                    {% endif %}
+                </li>
+                <li>
+                    {% if language == 'ar' %}
+                        لا تتوقف عن تناول الأدوية دون استشارة طبية
+                    {% else %}
+                        Do not stop taking medications without medical consultation
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>
+            {% if language == 'ar' %}
+                تقرير الوصفات الطبية هذا تم إنشاؤه تلقائياً من تطبيق "دليلك الصحي"
+            {% else %}
+                This prescription report was automatically generated by Your Health Guide application
+            {% endif %}
+        </p>
+        <p>
+            {% if language == 'ar' %}
+                للاستفسارات الطبية، يرجى استشارة طبيبك المختص أو الصيدلي
+            {% else %}
+                For medical inquiries, please consult with your healthcare provider or pharmacist
+            {% endif %}
+        </p>
+    </div>
+</body>
+</html>

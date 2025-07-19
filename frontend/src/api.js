@@ -403,6 +403,44 @@ class ApiClient {
         return this.safeJsonParse(response);
     }
 
+    async uploadPrescriptionImage(prescriptionId, formData) {
+        const response = await this.request(`/prescriptions/${prescriptionId}/upload_image/`, {
+            method: 'POST',
+            headers: {}, // Let browser set Content-Type for FormData
+            body: formData
+        });
+        return this.safeJsonParse(response);
+    }
+
+    async validateFileUpload(formData) {
+        const response = await this.request('/prescriptions/validate_upload/', {
+            method: 'POST',
+            headers: {}, // Let browser set Content-Type for FormData
+            body: formData
+        });
+        return this.safeJsonParse(response);
+    }
+
+    async deletePrescriptionImage(prescriptionId) {
+        const response = await this.request(`/prescriptions/${prescriptionId}/delete_image/`, {
+            method: 'DELETE'
+        });
+        return this.safeJsonParse(response);
+    }
+
+    async getStorageUsage() {
+        const response = await this.request('/prescriptions/storage_usage/');
+        return this.safeJsonParse(response);
+    }
+
+    async cleanupFiles(daysOld = 30) {
+        const response = await this.request('/prescriptions/cleanup_files/', {
+            method: 'POST',
+            body: JSON.stringify({ days_old: daysOld })
+        });
+        return this.safeJsonParse(response);
+    }
+
     // Vitals methods
     async getVitals(type = null) {
         const endpoint = type ? `/vitals/?type=${type}` : '/vitals/';
@@ -873,6 +911,37 @@ export const apiDeleteReport = async (id) => {
     return withRetry(async () => {
         const response = await api.request(`/reports/${id}/`, { method: 'DELETE' });
         return response.ok;
+    });
+};
+
+// Secure File Upload API Functions
+export const apiUploadPrescriptionImage = (prescriptionId, formData) => {
+    return withRetry(async () => {
+        return api.uploadPrescriptionImage(prescriptionId, formData);
+    });
+};
+
+export const apiValidateFileUpload = (formData) => {
+    return withRetry(async () => {
+        return api.validateFileUpload(formData);
+    });
+};
+
+export const apiDeletePrescriptionImage = (prescriptionId) => {
+    return withRetry(async () => {
+        return api.deletePrescriptionImage(prescriptionId);
+    });
+};
+
+export const apiGetStorageUsage = () => {
+    return withRetry(async () => {
+        return api.getStorageUsage();
+    });
+};
+
+export const apiCleanupFiles = (daysOld = 30) => {
+    return withRetry(async () => {
+        return api.cleanupFiles(daysOld);
     });
 };
 

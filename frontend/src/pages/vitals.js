@@ -6,12 +6,15 @@
 import { apiGetVitals, apiCreateVital, apiDeleteVital, apiGetVitalsTrends } from '../api.js';
 import { uiShowToast, uiShowLoading, uiHideLoading, uiShowModal, uiHideModal } from '../ui.js';
 import { getTranslation } from '../localization.js';
+import { aiInsights } from '../ai-insights.js';
 
 class VitalsPage {
     constructor() {
         this.vitals = [];
         this.trends = null;
         this.currentChart = null;
+        this.aiInsights = null;
+        this.healthGoals = [];
     }
 
     /**
@@ -128,6 +131,9 @@ class VitalsPage {
             const dateRange = document.getElementById('date-range-select')?.value || '30';
             this.trends = await apiGetVitalsTrends(dateRange);
             this.renderChart();
+            
+            // Load AI insights based on vitals data
+            await this.loadAIInsights();
             
         } catch (error) {
             console.error('Failed to load vitals trends:', error);
@@ -579,6 +585,240 @@ class VitalsPage {
         if (status === getTranslation('vitals.high')) return 'badge-error';
         if (status === getTranslation('vitals.elevated')) return 'badge-warning';
         return 'badge-success';
+    }
+
+    /**
+     * Load AI insights based on vitals data
+     */
+    async loadAIInsights() {
+        try {
+            // Get user data for AI analysis
+            const userData = {
+                vitals: this.vitals,
+                profile: await this.getMockUserProfile()
+            };
+
+            // Generate health goals based on vitals
+            this.healthGoals = await aiInsights.generateHealthGoals(this.vitals, userData.profile);
+            
+            // Analyze health trends
+            const trendAnalysis = await aiInsights.analyzeHealthTrends(this.vitals);
+            
+            // Render AI insights
+            this.renderHealthGoals();
+            this.renderVitalsTrendInsights(trendAnalysis);
+            
+        } catch (error) {
+            console.warn('Failed to load AI insights for vitals:', error);
+            // Continue without AI insights - they're supplementary
+        }
+    }
+
+    /**
+     * Get mock user profile for AI analysis
+     */
+    async getMockUserProfile() {
+        return {
+            age: 45,
+            height: 175,
+            conditions: ['diabetes', 'hypertension'],
+            medications: ['metformin', 'lisinopril']
+        };
+    }
+
+    /**
+     * Render health goals based on vitals
+     */
+    renderHealthGoals() {
+        if (!this.healthGoals || this.healthGoals.length === 0) return;
+
+        const goalsContainer = this.getOrCreateInsightsSection('vitals-health-goals', 'AI Health Goals', '🎯');
+        
+        const goalsHTML = `
+            <div class="space-y-4">
+                ${this.healthGoals.map(goal => `
+                    <div class="card bg-base-200 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium">${goal.title}</h4>
+                                <span class="badge ${this.getPriorityBadgeClass(goal.priority)}">${goal.priority}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-3 text-sm">
+                                <div>
+                                    <span class="text-base-content/60">Current:</span>
+                                    <span class="font-medium ml-1">${goal.current}</span>
+                                </div>
+                                <div>
+                                    <span class="text-base-content/60">Target:</span>
+                                    <span class="font-medium ml-1">${goal.target}</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <span class="text-xs text-base-content/60">Timeframe: ${goal.timeframe}</span>
+                            </div>
+                            <details class="collapse collapse-arrow bg-base-100">
+                                <summary class="collapse-title text-sm font-medium">Action Steps</summary>
+                                <div class="collapse-content">
+                                    <ul class="text-sm space-y-1">
+                                        ${goal.steps.map(step => `<li class="flex items-start gap-2"><span class="text-primary">•</span>${step}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </details>
+                            <div class="mt-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-base-content/50">AI Confidence:</span>
+                                    <div class="w-16 bg-base-300 rounded-full h-1">
+                                        <div class="bg-primary h-1 rounded-full" style="width: ${goal.confidence * 100}%"></div>
+                                    </div>
+                                    <span class="text-xs text-base-content/50">${Math.round(goal.confidence * 100)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        goalsContainer.innerHTML = goalsHTML;
+    }
+
+    /**
+     * Render vitals trend insights
+     */
+    renderVitalsTrendInsights(trendAnalysis) {
+        if (!trendAnalysis || !trendAnalysis.trends) return;
+
+        const trendsContainer = this.getOrCreateInsightsSection('vitals-trend-insights', 'AI Trend Analysis', '📈');
+        
+        const trendsHTML = `
+            <div class="space-y-3">
+                ${trendAnalysis.trends.map(trend => `
+                    <div class="bg-base-200 p-3 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium capitalize">${trend.type.replace('_', ' ')}</span>
+                            <span class="badge ${this.getTrendBadgeClass(trend.direction)}">${trend.direction}</span>
+                        </div>
+                        <p class="text-sm text-base-content/70">${trend.insight}</p>
+                        <div class="mt-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-base-content/50">Confidence:</span>
+                                <div class="w-16 bg-base-300 rounded-full h-1">
+                                    <div class="bg-primary h-1 rounded-full" style="width: ${trend.confidence * 100}%"></div>
+                                </div>
+                                <span class="text-xs text-base-content/50">${Math.round(trend.confidence * 100)}%</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+                
+                ${trendAnalysis.alerts && trendAnalysis.alerts.length > 0 ? `
+                    <div class="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                        <h4 class="font-medium text-warning mb-2 flex items-center gap-2">
+                            <span>⚠️</span>
+                            Health Alerts
+                        </h4>
+                        <div class="space-y-2">
+                            ${trendAnalysis.alerts.map(alert => `
+                                <div class="text-sm">
+                                    <span class="badge badge-${alert.priority === 'high' ? 'error' : alert.priority === 'medium' ? 'warning' : 'info'} badge-sm mr-2">${alert.priority}</span>
+                                    ${alert.message}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${trendAnalysis.recommendations && trendAnalysis.recommendations.length > 0 ? `
+                    <div class="mt-4 p-3 bg-info/10 rounded-lg border border-info/20">
+                        <h4 class="font-medium text-info mb-2 flex items-center gap-2">
+                            <span>💡</span>
+                            AI Recommendations
+                        </h4>
+                        <ul class="text-sm space-y-1">
+                            ${trendAnalysis.recommendations.map(rec => `<li class="flex items-start gap-2"><span class="text-info">•</span>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        trendsContainer.innerHTML = trendsHTML;
+    }
+
+    /**
+     * Get or create insights section in vitals page
+     */
+    getOrCreateInsightsSection(id, title, icon) {
+        let section = document.getElementById(id);
+        
+        if (!section) {
+            // Create insights container if it doesn't exist
+            let insightsContainer = document.getElementById('vitals-ai-insights-container');
+            if (!insightsContainer) {
+                insightsContainer = document.createElement('div');
+                insightsContainer.id = 'vitals-ai-insights-container';
+                insightsContainer.className = 'mt-8 space-y-6';
+                
+                // Insert after vitals chart section
+                const chartSection = document.getElementById('vitals-chart')?.closest('.card');
+                if (chartSection) {
+                    chartSection.parentNode.insertBefore(insightsContainer, chartSection.nextSibling);
+                } else {
+                    // Fallback: append to main content
+                    const mainContent = document.querySelector('main');
+                    if (mainContent) mainContent.appendChild(insightsContainer);
+                }
+            }
+
+            // Create section card
+            section = document.createElement('div');
+            section.className = 'card bg-base-100 shadow-lg';
+            section.innerHTML = `
+                <div class="card-body">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">${icon}</span>
+                        ${title}
+                    </h3>
+                    <div id="${id}-content">
+                        <div class="flex items-center justify-center py-8">
+                            <span class="loading loading-spinner loading-lg text-primary"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            insightsContainer.appendChild(section);
+            section = document.getElementById(`${id}-content`);
+        } else {
+            section = document.getElementById(`${id}-content`);
+        }
+
+        return section;
+    }
+
+    /**
+     * Get CSS class for trend badge
+     */
+    getTrendBadgeClass(direction) {
+        switch (direction) {
+            case 'improving': return 'badge-success';
+            case 'decreasing': return 'badge-success';
+            case 'increasing': return 'badge-warning';
+            case 'stable': return 'badge-info';
+            default: return 'badge-neutral';
+        }
+    }
+
+    /**
+     * Get CSS class for priority badge
+     */
+    getPriorityBadgeClass(priority) {
+        switch (priority) {
+            case 'high': return 'badge-error';
+            case 'medium': return 'badge-warning';
+            case 'low': return 'badge-info';
+            default: return 'badge-neutral';
+        }
     }
 
     /**

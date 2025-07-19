@@ -5,6 +5,13 @@ import time
 import random
 from typing import Dict, Any, List
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.base import ContentFile
+from health_guide.utils.file_upload import (
+    FileUploadValidator, 
+    ImageProcessor, 
+    SecureFileStorage,
+    FileCleanupManager
+)
 from .models import Prescription, Medication
 
 
@@ -237,9 +244,78 @@ class PrescriptionService:
     
     @staticmethod
     def create_prescription(user, validated_data: Dict[str, Any]) -> Prescription:
-        """Create a new prescription"""
+        """Create a new prescription with secure file handling"""
+        # Handle image upload if present
+        if 'image' in validated_data:
+            uploaded_file = validated_data['image']
+            
+            # Process and save image securely
+            image_result = PrescriptionService.process_and_save_image(user.id, uploaded_file)
+            if not image_result['success']:
+                raise ValueError(f"Image upload failed: {'; '.join(image_result.get('errors', [image_result.get('error', 'Unknown error')]))}")
+            
+            # Replace uploaded file with processed image path
+            validated_data['image'] = image_result['file_path']
+        
         validated_data['user'] = user
         return Prescription.objects.create(**validated_data)
+    
+    @staticmethod
+    def process_and_save_image(user_id: int, uploaded_file) -> Dict[str, Any]:
+        """
+        Process and securely save uploaded prescription image
+        
+        Args:
+            user_id: ID of the user uploading the file
+            uploaded_file: Django uploaded file object
+            
+        Returns:
+            Dict with processing results
+        """
+        try:
+            # Validate uploaded file
+            validation_result = FileUploadValidator.validate_file(uploaded_file, 'image')
+            if not validation_result['valid']:
+                return {
+                    'success': False,
+                    'errors': validation_result['errors'],
+                    'warnings': validation_result.get('warnings', [])
+                }
+            
+            # Process and compress image
+            processed_bytes, content_type = ImageProcessor.process_image(uploaded_file, 'JPEG')
+            
+            # Generate secure filename
+            secure_filename = SecureFileStorage.generate_secure_filename(
+                user_id, 
+                validation_result['safe_filename'], 
+                'prescription'
+            )
+            
+            # Save processed image
+            save_result = SecureFileStorage.save_file(processed_bytes, secure_filename, content_type)
+            if not save_result['success']:
+                return {
+                    'success': False,
+                    'error': save_result['error']
+                }
+            
+            return {
+                'success': True,
+                'file_path': save_result['file_path'],
+                'file_url': save_result['file_url'],
+                'file_size': save_result['file_size'],
+                'content_type': save_result['content_type'],
+                'original_size': uploaded_file.size,
+                'compression_ratio': round((1 - save_result['file_size'] / uploaded_file.size) * 100, 1),
+                'warnings': validation_result.get('warnings', [])
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"Image processing failed: {str(e)}"
+            }
     
     @staticmethod
     def process_prescription_ocr(prescription: Prescription) -> Dict[str, Any]:
@@ -317,19 +393,69 @@ class PrescriptionService:
     
     @staticmethod
     def validate_image_upload(image: InMemoryUploadedFile) -> Dict[str, Any]:
-        """Validate uploaded prescription image"""
-        errors = []
+        """Validate uploaded prescription image using comprehensive validation"""
+        return FileUploadValidator.validate_file(image, 'image')
+    
+    @staticmethod
+    def delete_prescription_image(prescription: Prescription) -> Dict[str, Any]:
+        """Securely delete prescription image"""
+        if not prescription.image:
+            return {'success': False, 'error': 'No image to delete'}
         
-        # Check file size (max 10MB)
-        if image.size > 10 * 1024 * 1024:
-            errors.append("Image size must be less than 10MB")
+        # Check user access
+        if not SecureFileStorage.check_user_access(prescription.user.id, prescription.image.name):
+            return {'success': False, 'error': 'Access denied'}
         
-        # Check file type
-        allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
-        if image.content_type not in allowed_types:
-            errors.append("Only JPEG and PNG images are allowed")
+        # Delete file
+        result = SecureFileStorage.delete_file(prescription.image.name)
         
-        return {
-            'valid': len(errors) == 0,
-            'errors': errors
-        }
+        if result['success']:
+            # Clear image field in database
+            prescription.image = None
+            prescription.save()
+        
+        return result
+    
+    @staticmethod
+    def get_user_storage_usage(user_id: int) -> Dict[str, Any]:
+        """Get storage usage for a specific user"""
+        return FileCleanupManager.get_storage_usage(user_id)
+    
+    @staticmethod
+    def cleanup_user_files(user_id: int, days_old: int = 30) -> Dict[str, Any]:
+        """Clean up old files for a specific user"""
+        try:
+            # Get user's inactive prescriptions older than specified days
+            from datetime import timedelta
+            from django.utils import timezone
+            
+            cleanup_date = timezone.now() - timedelta(days=days_old)
+            old_prescriptions = Prescription.objects.filter(
+                user_id=user_id,
+                is_active=False,
+                updated_at__lt=cleanup_date
+            )
+            
+            deleted_files = []
+            errors = []
+            
+            for prescription in old_prescriptions:
+                if prescription.image:
+                    delete_result = PrescriptionService.delete_prescription_image(prescription)
+                    if delete_result['success']:
+                        deleted_files.append(prescription.image.name)
+                    else:
+                        errors.append(f"Failed to delete {prescription.image.name}: {delete_result['error']}")
+            
+            return {
+                'success': True,
+                'deleted_files': deleted_files,
+                'deleted_count': len(deleted_files),
+                'errors': errors
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"Cleanup failed: {str(e)}"
+            }

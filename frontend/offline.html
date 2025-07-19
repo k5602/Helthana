@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Health Guide</title>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body class="bg-base-100 min-h-screen flex items-center justify-center">
+    <div class="container mx-auto px-4 text-center">
+        <div class="max-w-md mx-auto">
+            <!-- Offline Icon -->
+            <div class="mb-8">
+                <svg class="w-24 h-24 mx-auto text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728m0-12.728l12.728 12.728M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"></path>
+                </svg>
+            </div>
+            
+            <!-- Offline Message -->
+            <h1 class="text-3xl font-bold text-base-content mb-4">You're Offline</h1>
+            <p class="text-base-content/70 mb-8">
+                It looks like you're not connected to the internet. Don't worry - you can still access your saved health data and use core features.
+            </p>
+            
+            <!-- Network Status -->
+            <div class="alert alert-warning mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <span id="network-status">No internet connection detected</span>
+            </div>
+            
+            <!-- Available Actions -->
+            <div class="space-y-4">
+                <button onclick="goToDashboard()" class="btn btn-primary btn-block">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h2a2 2 0 012 2v0H8v0z"></path>
+                    </svg>
+                    View Offline Dashboard
+                </button>
+                
+                <button onclick="viewOfflineData()" class="btn btn-outline btn-block">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    View Saved Data
+                </button>
+                
+                <button onclick="checkConnection()" class="btn btn-ghost btn-block">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Try Again
+                </button>
+            </div>
+            
+            <!-- Sync Status -->
+            <div id="sync-status" class="mt-8 p-4 bg-base-200 rounded-lg hidden">
+                <h3 class="font-semibold mb-2">Sync Status</h3>
+                <div class="text-sm text-base-content/70">
+                    <div id="pending-sync-count">0 items waiting to sync</div>
+                    <div id="last-sync-time">Last sync: Never</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check network status
+        function updateNetworkStatus() {
+            const statusElement = document.getElementById('network-status');
+            const syncStatusElement = document.getElementById('sync-status');
+            
+            if (navigator.onLine) {
+                statusElement.textContent = 'Connection restored! Syncing data...';
+                statusElement.parentElement.className = 'alert alert-success mb-6';
+                syncStatusElement.classList.remove('hidden');
+                
+                // Trigger sync
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SYNC_NOW'
+                    });
+                }
+                
+                // Redirect to dashboard after a moment
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 2000);
+            } else {
+                statusElement.textContent = 'No internet connection detected';
+                statusElement.parentElement.className = 'alert alert-warning mb-6';
+                syncStatusElement.classList.add('hidden');
+            }
+        }
+        
+        function goToDashboard() {
+            window.location.href = '/dashboard.html';
+        }
+        
+        function viewOfflineData() {
+            window.location.href = '/prescriptions.html';
+        }
+        
+        function checkConnection() {
+            updateNetworkStatus();
+            
+            // Try to fetch a small resource to test connectivity
+            fetch('/manifest.json', { cache: 'no-cache' })
+                .then(() => {
+                    updateNetworkStatus();
+                })
+                .catch(() => {
+                    const statusElement = document.getElementById('network-status');
+                    statusElement.textContent = 'Still offline. Please check your connection.';
+                });
+        }
+        
+        // Listen for online/offline events
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        
+        // Initial status check
+        updateNetworkStatus();
+        
+        // Check for pending sync items
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data.type === 'SYNC_STATUS') {
+                    const pendingCount = document.getElementById('pending-sync-count');
+                    const lastSync = document.getElementById('last-sync-time');
+                    
+                    pendingCount.textContent = `${event.data.pendingItems} items waiting to sync`;
+                    lastSync.textContent = `Last sync: ${event.data.lastSync || 'Never'}`;
+                }
+            });
+            
+            // Request sync status
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'GET_SYNC_STATUS'
+                });
+            }
+        }
+    </script>
+</body>
+</html>
