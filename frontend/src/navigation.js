@@ -4,7 +4,7 @@
  */
 
 // Navigation helper for different environments
-function navigateToPage(pageName) {
+export function navigateToPage(pageName) {
   if (window.router) {
     // Use hybrid router if available
     const path = pageName.replace('.html', '');

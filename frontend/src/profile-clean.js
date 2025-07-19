@@ -2,6 +2,7 @@
  * Profile Management Module
  * Handles user profile updates, password changes, email updates, and account deletion
  */
+import { navigateToPage } from './navigation.js';
 
 class ProfileManager {
     constructor() {
@@ -850,7 +851,7 @@ window.savePreferences = function() {
 };
 
 window.showSettings = function() {
-    window.location.href = 'profile.html?tab=preferences';
+    navigateToPage('profile.html?tab=preferences');
 };
 
 // Initialize when DOM is loaded
