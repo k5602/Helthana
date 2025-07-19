@@ -1,0 +1,93 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Compose
+      run: |
+        # Create a simple docker-compose for testing
+        cat > docker-compose.test.yml << 'EOF'
+        version: '3.8'
+        
+        services:
+          backend:
+            build:
+              context: ./backend
+              dockerfile: Dockerfile
+            ports:
+              - "8000:8000"
+            environment:
+              - DEBUG=True
+              - SECRET_KEY=test-secret-key
+              - DATABASE_URL=sqlite:///test.db
+            healthcheck:
+              test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+        
+          frontend:
+            image: ghcr.io/${{ github.repository_owner }}/health_guide/frontend:latest
+            ports:
+              - "3000:80"
+            depends_on:
+              - backend
+            healthcheck:
+              test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+        EOF
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Start services
+      run: |
+        docker-compose -f docker-compose.test.yml up -d --build
+        
+        # Wait for services to be healthy
+        echo "Waiting for services to start..."
+        sleep 60
+        
+        # Check backend health
+        timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8000/health/)" != "200" ]]; do echo "Waiting for backend..."; sleep 5; done'
+        
+        # Check frontend health
+        timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:3000/health)" != "200" ]]; do echo "Waiting for frontend..."; sleep 5; done'
+    
+    - name: Run basic integration tests
+      run: |
+        # Test backend health
+        curl -f http://localhost:8000/health/ || exit 1
+        echo "✅ Backend health check passed"
+        
+        # Test frontend health
+        curl -f http://localhost:3000/health || exit 1
+        echo "✅ Frontend health check passed"
+        
+        # Test if backend API is accessible
+        if curl -f http://localhost:8000/api/ 2>/dev/null; then
+          echo "✅ Backend API is accessible"
+        else
+          echo "⚠️  Backend API not accessible (may not be implemented yet)"
+        fi
+    
+    - name: Cleanup
+      if: always()
+      run: docker-compose -f docker-compose.test.yml down -v

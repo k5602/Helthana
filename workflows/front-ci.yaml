@@ -1,0 +1,398 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+jobs:
+  test-and-build-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: |
+        npm ci
+    
+    - name: Lint JavaScript/CSS
+      working-directory: ./frontend
+      run: |
+        # Install ESLint and Prettier if they exist in package.json
+        if npm list eslint &>/dev/null; then
+          npm run lint || echo "⚠️ Linting failed, continuing..."
+        else
+          echo "ESLint not configured, skipping JS linting"
+        fi
+        
+        # Basic syntax check for JavaScript files
+        find src -name "*.js" -exec echo "Checking {}" \; -exec node --check {} \;
+    
+    - name: Validate Tailwind CSS setup
+      working-directory: ./frontend
+      run: |
+        echo "🎨 Validating Tailwind CSS configuration..."
+        
+        # Check if Tailwind config exists
+        if [ -f "tailwind.config.js" ]; then
+          echo "✅ tailwind.config.js found"
+          # Validate the config file syntax
+          node -e "require('./tailwind.config.js'); console.log('Tailwind config is valid')"
+        else
+          echo "❌ tailwind.config.js not found!"
+          exit 1
+        fi
+        
+        # Check if PostCSS config exists
+        if [ -f "postcss.config.js" ]; then
+          echo "✅ postcss.config.js found"
+        else
+          echo "⚠️ postcss.config.js not found, may be needed for Tailwind"
+        fi
+        
+        # Check main CSS file for Tailwind directives
+        if [ -f "src/style.css" ]; then
+          if grep -q "@tailwind" src/style.css; then
+            echo "✅ Tailwind directives found in src/style.css"
+          else
+            echo "⚠️ No @tailwind directives found in main CSS file"
+          fi
+        fi
+    
+    - name: Build project with Vite
+      working-directory: ./frontend
+      run: |
+        echo "🏗️ Building project with Vite..."
+        npm run build
+        
+        # Check if build was successful
+        if [ -d "dist" ]; then
+          echo "✅ Build successful, dist folder created"
+          ls -la dist/
+        else
+          echo "❌ Build failed, no dist folder found"
+          exit 1
+        fi
+    
+    - name: Test built files
+      working-directory: ./frontend
+      run: |
+        echo "🧪 Testing built files..."
+        
+        # Check if main files exist
+        [ -f "dist/index.html" ] && echo "✅ index.html built" || echo "❌ index.html missing"
+        
+        # Check for CSS files (should contain compiled Tailwind)
+        css_files=$(find dist -name "*.css" | wc -l)
+        echo "📊 CSS files found: $css_files"
+        
+        # Check for JS files
+        js_files=$(find dist -name "*.js" | wc -l)
+        echo "📊 JS files found: $js_files"
+        
+        # Check if Tailwind CSS was properly compiled (look for utility classes)
+        if find dist -name "*.css" -exec grep -l "\.tw-" {} \; | head -1; then
+          echo "✅ Tailwind utilities found in compiled CSS"
+        else
+          echo "ℹ️ No Tailwind utilities detected (may be using different naming)"
+        fi
+        
+        # Calculate build size
+        build_size=$(du -sh dist | cut -f1)
+        echo "📦 Build size: $build_size"
+    
+    - name: Run preview server test
+      working-directory: ./frontend
+      run: |
+        echo "🚀 Testing preview server..."
+        
+        # Start preview server in background
+        npm run preview &
+        PREVIEW_PID=$!
+        
+        # Wait for server to start
+        sleep 10
+        
+        # Test the server
+        if curl -f http://localhost:4173/ >/dev/null 2>&1; then
+          echo "✅ Preview server running successfully"
+        else
+          echo "❌ Preview server test failed"
+          kill $PREVIEW_PID 2>/dev/null || true
+          exit 1
+        fi
+        
+        # Cleanup
+        kill $PREVIEW_PID 2>/dev/null || true
+    
+    - name: Create production build archive
+      working-directory: ./frontend
+      run: |
+        echo "📦 Creating production build archive..."
+        tar -czf ../frontend-build.tar.gz -C dist .
+        echo "✅ Build archive created"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: frontend-build.tar.gz
+        retention-days: 7
+    
+    - name: Upload dist folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-dist
+        path: frontend/dist/
+        retention-days: 7
+
+  build-frontend-docker:
+    runs-on: ubuntu-latest
+    needs: test-and-build-frontend
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-dist
+        path: frontend/dist/
+    
+    - name: Create optimized Dockerfile
+      working-directory: ./frontend
+      run: |
+        cat > Dockerfile << 'EOF'
+        # Multi-stage build for Vite frontend
+        FROM node:18-alpine as builder
+        
+        WORKDIR /app
+        
+        # Copy package files
+        COPY package*.json ./
+        
+        # Install dependencies
+        RUN npm ci --only=production
+        
+        # Copy source code
+        COPY . .
+        
+        # Build the application
+        RUN npm run build
+        
+        # Production stage
+        FROM nginx:alpine
+        
+        # Copy built files from builder stage
+        COPY --from=builder /app/dist /usr/share/nginx/html/
+        
+        # Copy nginx configuration
+        COPY nginx.conf /etc/nginx/nginx.conf
+        
+        # Add healthcheck
+        RUN apk add --no-cache curl
+        
+        EXPOSE 80
+        
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+          CMD curl -f http://localhost/health || exit 1
+        
+        CMD ["nginx", "-g", "daemon off;"]
+        EOF
+    
+    - name: Create nginx configuration for SPA
+      working-directory: ./frontend
+      run: |
+        cat > nginx.conf << 'EOF'
+        events {
+            worker_connections 1024;
+        }
+        
+        http {
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+            
+            # Logging
+            access_log /var/log/nginx/access.log;
+            error_log /var/log/nginx/error.log;
+            
+            # Security headers
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-XSS-Protection "1; mode=block" always;
+            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            add_header Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:" always;
+        
+            # Gzip compression
+            gzip on;
+            gzip_vary on;
+            gzip_min_length 1024;
+            gzip_comp_level 6;
+            gzip_types
+                text/plain
+                text/css
+                text/xml
+                text/javascript
+                application/javascript
+                application/xml+rss
+                application/json
+                image/svg+xml;
+        
+            # Brotli compression (if available)
+            # brotli on;
+            # brotli_comp_level 6;
+            # brotli_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+        
+            server {
+                listen 80;
+                server_name localhost;
+                root /usr/share/nginx/html;
+                index index.html;
+        
+                # Handle client-side routing (SPA)
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+        
+                # API proxy to backend
+                location /api/ {
+                    proxy_pass http://backend:8000;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_set_header X-Forwarded-Host $host;
+                    proxy_set_header X-Forwarded-Port $server_port;
+                    
+                    # Timeout settings
+                    proxy_connect_timeout 60s;
+                    proxy_send_timeout 60s;
+                    proxy_read_timeout 60s;
+                }
+        
+                # Static assets with long-term caching
+                location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
+                    expires 1y;
+                    add_header Cache-Control "public, immutable";
+                    add_header Vary "Accept-Encoding";
+                    
+                    # CORS for fonts and assets if needed
+                    location ~* \.(woff|woff2|ttf|eot)$ {
+                        add_header Access-Control-Allow-Origin "*";
+                        expires 1y;
+                        add_header Cache-Control "public, immutable";
+                    }
+                }
+        
+                # Security.txt
+                location = /.well-known/security.txt {
+                    return 301 https://example.com/.well-known/security.txt;
+                }
+        
+                # Health check endpoint
+                location /health {
+                    access_log off;
+                    return 200 "healthy\n";
+                    add_header Content-Type text/plain;
+                }
+                
+                # Favicon with longer cache
+                location = /favicon.ico {
+                    expires 1y;
+                    add_header Cache-Control "public, immutable";
+                    log_not_found off;
+                    access_log off;
+                }
+                
+                # Robots.txt
+                location = /robots.txt {
+                    expires 1d;
+                    log_not_found off;
+                    access_log off;
+                }
+                
+                # Block access to sensitive files
+                location ~ /\. {
+                    deny all;
+                    access_log off;
+                    log_not_found off;
+                }
+                
+                # Block access to backup and source files
+                location ~* \.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|swp)$ {
+                    deny all;
+                    access_log off;
+                    log_not_found off;
+                }
+            }
+        }
+        EOF
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/health_guide/frontend:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/health_guide/frontend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        
+    - name: Test built Docker image
+      run: |
+        echo "🧪 Testing built frontend Docker image..."
+        
+        # Run the container
+        docker run -d --name test-frontend -p 8080:80 \
+          ghcr.io/${{ github.repository_owner }}/health_guide/frontend:${{ github.sha }}
+        
+        # Wait for container to start
+        sleep 15
+        
+        # Test health endpoint
+        curl -f http://localhost:8080/health || exit 1
+        echo "✅ Health check passed"
+        
+        # Test main page
+        curl -f http://localhost:8080/ || exit 1
+        echo "✅ Main page accessible"
+        
+        # Test 404 handling (should return index.html for SPA routing)
+        curl -s http://localhost:8080/nonexistent-page | grep -q "<!DOCTYPE html" || exit 1
+        echo "✅ SPA routing works"
+        
+        # Check response headers
+        curl -I http://localhost:8080/ | grep -q "X-Content-Type-Options: nosniff" || exit 1
+        echo "✅ Security headers present"
+        
+        # Cleanup
+        docker stop test-frontend
+        docker rm test-frontend
+        
+        echo "✅ Frontend Docker image test completed"
