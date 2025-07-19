@@ -82,34 +82,262 @@ Egyptian patients with chronic diseases face significant challenges:
 
 ## 🔧 Technical Architecture
 
-### Frontend (Vanilla JavaScript PWA)
-- **Framework**: Vanilla JavaScript (ES6+) with Vite
+### System Architecture Overview
+
+```mermaid
+graph TD
+    A[User Devices] -->|HTTPS| B[Cloud CDN]
+    B --> C[Cloud Storage - Frontend]
+    B --> D[Cloud Run - Backend]
+    D --> E[Cloud SQL - PostgreSQL]
+    D --> F[Cloud Vision AI]
+    D --> G[Vertex AI - MedGemma]
+    D --> H[Twilio API]
+    subgraph "Frontend (PWA)"
+        I[HTML/CSS/JS]
+        J[Service Worker]
+        K[IndexedDB]
+        L[PWA Manifest]
+    end
+    subgraph "Backend (Django)"
+        M[Django REST Framework]
+        N[JWT Authentication]
+        O[ViewSets]
+        P[Service Layer]
+        Q[Serializers]
+    end
+    I --> J
+    I --> K
+    I --> L
+    M --> N
+    M --> O
+    O --> P
+    O --> Q
+</mermaid>
+
+### Frontend Architecture (Vanilla JavaScript PWA)
+
+```mermaid
+graph TD
+    A[index.html] --> B[main.js]
+    B --> C[api.js]
+    B --> D[ui.js]
+    B --> E[auth.js]
+    B --> F[offline.js]
+    C --> G[API Client]
+    D --> H[UI Components]
+    E --> I[JWT Handler]
+    F --> J[IndexedDB]
+    F --> K[Service Worker]
+    G --> L[Error Handler]
+    G --> M[Request Queue]
+    J --> N[Offline Data Store]
+    K --> O[Cache API]
+    K --> P[Background Sync]
+    subgraph "Core Modules"
+        C
+        D
+        E
+        F
+    end
+    subgraph "Feature Modules"
+        Q[prescriptions.js]
+        R[vitals.js]
+        S[reports.js]
+        T[emergency.js]
+    end
+    B --> Q
+    B --> R
+    B --> S
+    B --> T
+</mermaid>
+
+### Backend Architecture (Django REST Framework)
+
+```mermaid
+graph TD
+    A[URLs/Routes] --> B[ViewSets]
+    B --> C[Serializers]
+    B --> D[Service Layer]
+    D --> E[Models]
+    E --> F[PostgreSQL]
+    subgraph "Authentication App"
+        G[UserViewSet]
+        H[JWTAuthentication]
+        I[Permissions]
+    end
+    subgraph "Prescriptions App"
+        J[PrescriptionViewSet]
+        K[OCR Service]
+        L[File Storage]
+    end
+    subgraph "Vitals App"
+        M[VitalsViewSet]
+        N[Analytics Service]
+    end
+    subgraph "Reports App"
+        O[ReportsViewSet]
+        P[PDF Generator]
+    end
+    subgraph "Emergency App"
+        Q[EmergencyViewSet]
+        R[SMS Service]
+    end
+    B --> G
+    B --> J
+    B --> M
+    B --> O
+    B --> Q
+    G --> H
+    G --> I
+    J --> K
+    J --> L
+    M --> N
+    O --> P
+    Q --> R
+</mermaid>
+
+### Data Flow Diagrams
+
+#### 1. Prescription Processing Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant VisionAI
+    participant MedGemma
+    participant Database
+    User->>Frontend: Take photo of prescription
+    Frontend->>Frontend: Compress & optimize image
+    Frontend->>Backend: Upload image (multipart/form-data)
+    Backend->>Backend: Validate file (type, size, security)
+    Backend->>VisionAI: Send for OCR processing
+    VisionAI-->>Backend: Return extracted text
+    Backend->>MedGemma: Extract medication entities
+    MedGemma-->>Backend: Return structured medication data
+    Backend->>Database: Store prescription & medication data
+    Backend-->>Frontend: Return structured medication info
+    Frontend->>Frontend: Store in IndexedDB
+    Frontend->>User: Display medication list for confirmation
+</mermaid>
+
+#### 2. Offline Synchronization Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant ServiceWorker
+    participant SyncManager
+    participant Backend
+    participant Database
+    User->>Frontend: Log vital reading while offline
+    Frontend->>Frontend: Store in IndexedDB
+    Frontend->>ServiceWorker: Register sync task
+    Note over Frontend,ServiceWorker: Device goes online
+    ServiceWorker->>SyncManager: Trigger sync event
+    SyncManager->>Frontend: Process sync queue
+    Frontend->>Backend: Send pending vital readings
+    Backend->>Backend: Validate data
+    Backend->>Database: Store vital readings
+    Backend-->>Frontend: Confirm successful sync
+    Frontend->>Frontend: Update sync status in IndexedDB
+    Frontend->>User: Show sync confirmation
+</mermaid>
+
+#### 3. Emergency Alert Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant TwilioAPI
+    participant EmergencyContacts
+    User->>Frontend: Trigger SOS button
+    Frontend->>Frontend: Get current location
+    Frontend->>Backend: Send emergency alert with location
+    Backend->>Backend: Generate emergency report
+    Backend->>TwilioAPI: Send SMS alerts
+    TwilioAPI->>EmergencyContacts: Deliver SMS with location link
+    Backend-->>Frontend: Confirm alert sent
+    Frontend->>User: Show alert confirmation
+    Backend->>Backend: Log emergency event
+</mermaid>
+
+### Technology Stack Details
+
+#### Frontend (Vanilla JavaScript PWA)
+- **Framework**: Vanilla JavaScript (ES6+) with Vite for bundling
 - **Styling**: Tailwind CSS with DaisyUI component library
-- **PWA Features**: Service Workers, IndexedDB for offline support
-- **Architecture**: Modular component-based structure
+- **PWA Features**: 
+  - Service Workers for offline caching
+  - IndexedDB for structured data storage
+  - Background Sync for offline operations
+  - Push API for notifications
+  - Web App Manifest for installation
+- **Architecture**: Modular component-based structure with ES6 modules
 
-### Backend (Django REST Framework)
-- **Framework**: Django with Django REST Framework
-- **Database**: PostgreSQL with row-level security
-- **Authentication**: JWT + OAuth 2.0
-- **Cache**: Redis for session management
-- **AI/ML**: Google Cloud Vision API, MedGemma via Vertex AI
+#### Backend (Django REST Framework)
+- **Framework**: Django 4.2 with Django REST Framework
+- **Database**: PostgreSQL with row-level security and encryption
+- **Authentication**: JWT + OAuth 2.0 with token refresh
+- **Cache**: Redis for session management and rate limiting
+- **AI/ML**: 
+  - Google Cloud Vision API for OCR
+  - MedGemma via Vertex AI for medical entity extraction
+  - Speech-to-Text API for voice commands
+- **File Storage**: Cloud Storage with secure access controls
+- **Messaging**: Twilio API for emergency SMS alerts
 
-### System Architecture
-```
-User Devices <-> Cloud CDN <-> [Cloud Storage, Cloud Run] <-> [Cloud SQL, Vision AI, Vertex AI, Twilio API]
-```
+### Performance Optimization
 
-### Data Flow
-1. **Prescription Processing**:
-   - Image upload → Cloud Storage → Vision AI → Data extraction → Database
-   - Processing time: < 5 seconds
-   - Accuracy: >95% for printed text, >85% for handwriting
+```mermaid
+graph TD
+    A[Performance Optimizations] --> B[Frontend]
+    A --> C[Backend]
+    A --> D[Network]
+    B --> B1[Code Splitting]
+    B --> B2[Asset Optimization]
+    B --> B3[Lazy Loading]
+    B --> B4[Virtual Scrolling]
+    C --> C1[Query Optimization]
+    C --> C2[Caching]
+    C --> C3[Async Processing]
+    C --> C4[Database Indexing]
+    D --> D1[CDN Distribution]
+    D --> D2[Compression]
+    D --> D3[HTTP/2]
+    D --> D4[Resource Hints]
+</mermaid>
 
-2. **Vitals Logging**:
-   - Form submission → API validation → Database
-   - Offline support with sync queue
-   - Conflict resolution for offline edits
+### Security Architecture
+
+```mermaid
+graph TD
+    A[Security Layers] --> B[Authentication]
+    A --> C[Authorization]
+    A --> D[Data Protection]
+    A --> E[Network Security]
+    A --> F[Input Validation]
+    B --> B1[JWT Tokens]
+    B --> B2[OAuth 2.0]
+    B --> B3[Rate Limiting]
+    C --> C1[Role-Based Access]
+    C --> C2[Row-Level Security]
+    C --> C3[Permission Classes]
+    D --> D1[Encryption at Rest]
+    D --> D2[Secure Storage]
+    D --> D3[Data Minimization]
+    E --> E1[HTTPS]
+    E --> E2[CORS]
+    E --> E3[CSP Headers]
+    F --> F1[Serializer Validation]
+    F --> F2[File Upload Scanning]
+    F --> F3[Input Sanitization]
+</mermaid>
 
 ## 🛠️ Project Structure
 
@@ -239,11 +467,9 @@ docker-compose up --build
 
 ## 👥 Team
 
-- **Khaled**: Project Lead & Backend Developer
-- **Ahmed**: Frontend Developer & UX Designer
-- **Fatma**: AI Engineer & Data Scientist
-- **Youssef**: Cloud Engineer & DevOps
-- **Nadia**: Product Manager & UX Researcher
+- **Khaled Mahmoud**: Project Lead & Backend Developer & Ai Engineer &software Archticet 
+- **Gasser Mohammed**: Frontend Developer & Deployment engineer & UX Designer
+
 
 ## 📄 License
 
