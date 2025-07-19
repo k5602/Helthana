@@ -291,14 +291,6 @@ window.logout = function() {
     if (window.auth) window.auth.logout();
 }
 
-window.showProfile = function() {
-    if (window.router) {
-        window.router.navigate('/profile');
-    } else {
-        window.location.href = '/profile.html';
-    }
-}
-
 window.generateReport = function() {
     if (window.router) {
         window.router.navigate('/reports');
