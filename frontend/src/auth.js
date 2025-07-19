@@ -738,6 +738,143 @@ class AuthManager {
         };
     }
 
+    // Hijack Management Methods
+
+    // Check if current session is hijacked
+    async checkHijackStatus() {
+        try {
+            const response = await window.api.request('/auth/hijack/status/');
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    isHijacked: data.is_hijacked,
+                    originalUser: data.original_user,
+                    currentUser: data.current_user
+                };
+            } else {
+                return { success: false, isHijacked: false };
+            }
+        } catch (error) {
+            console.error('Hijack status check error:', error);
+            return { success: false, isHijacked: false };
+        }
+    }
+
+    // Release hijack session
+    async releaseHijack() {
+        try {
+            const response = await window.api.request('/auth/hijack/release-api/', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    message: data.message
+                };
+            } else {
+                const errorData = await response.json();
+                return this.handleAuthError(errorData);
+            }
+        } catch (error) {
+            console.error('Release hijack error:', error);
+            return this.handleNetworkError(error, 'Failed to release hijack session.');
+        }
+    }
+
+    // Initialize hijack indicator on page load
+    async initializeHijackIndicator() {
+        const hijackStatus = await this.checkHijackStatus();
+        if (hijackStatus.success && hijackStatus.isHijacked) {
+            this.showHijackIndicator(hijackStatus.originalUser, hijackStatus.currentUser);
+        }
+    }
+
+    // Show hijack indicator in the UI
+    showHijackIndicator(originalUser, currentUser) {
+        // Remove existing indicator if present
+        this.removeHijackIndicator();
+        
+        // Create hijack indicator
+        const indicator = document.createElement('div');
+        indicator.id = 'hijack-indicator';
+        indicator.className = 'fixed top-0 left-0 right-0 bg-warning text-warning-content p-2 z-50 shadow-lg';
+        indicator.innerHTML = `
+            <div class="container mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="font-medium">
+                        Admin Mode: Viewing as ${currentUser.first_name} ${currentUser.last_name} (${currentUser.email})
+                    </span>
+                </div>
+                <button id="release-hijack-btn" class="btn btn-sm btn-outline">
+                    Return to ${originalUser.first_name} ${originalUser.last_name}
+                </button>
+            </div>
+        `;
+        
+        // Insert at the beginning of body
+        document.body.insertBefore(indicator, document.body.firstChild);
+        
+        // Add margin to body to account for fixed indicator
+        document.body.style.marginTop = '60px';
+        
+        // Add event listener for release button
+        const releaseBtn = document.getElementById('release-hijack-btn');
+        if (releaseBtn) {
+            releaseBtn.addEventListener('click', async () => {
+                await this.handleReleaseHijack();
+            });
+        }
+    }
+
+    // Remove hijack indicator
+    removeHijackIndicator() {
+        const indicator = document.getElementById('hijack-indicator');
+        if (indicator) {
+            indicator.remove();
+            document.body.style.marginTop = '';
+        }
+    }
+
+    // Handle release hijack button click
+    async handleReleaseHijack() {
+        const releaseBtn = document.getElementById('release-hijack-btn');
+        if (releaseBtn) {
+            releaseBtn.disabled = true;
+            releaseBtn.textContent = 'Releasing...';
+        }
+        
+        const result = await this.releaseHijack();
+        
+        if (result.success) {
+            // Show success message
+            if (window.ui && window.ui.showToast) {
+                window.ui.showToast(result.message, 'success');
+            }
+            
+            // Redirect to admin panel after a short delay
+            setTimeout(() => {
+                window.location.href = '/admin/';
+            }, 1000);
+        } else {
+            // Show error message
+            if (window.ui && window.ui.showToast) {
+                window.ui.showToast(result.error || 'Failed to release hijack session', 'error');
+            }
+            
+            // Re-enable button
+            if (releaseBtn) {
+                releaseBtn.disabled = false;
+                releaseBtn.textContent = 'Return to Admin';
+            }
+        }
+    }
+
     // Validate profile form
     validateProfileForm(profileData) {
         const errors = [];

@@ -17,6 +17,13 @@ from .views import (
     TerminateSessionView,
     TerminateAllSessionsView
 )
+from .hijack_views import (
+    CustomHijackView,
+    CustomReleaseView,
+    hijack_status_api,
+    hijack_user_api,
+    release_hijack_api
+)
 
 urlpatterns = [
     # Authentication endpoints
@@ -46,4 +53,11 @@ urlpatterns = [
     
     # Security audit
     path('security-logs/', SecurityLogsView.as_view(), name='security_logs'),
+    
+    # Hijack endpoints (admin only)
+    path('hijack/<int:user_id>/', CustomHijackView.as_view(), name='custom_hijack'),
+    path('hijack/release/', CustomReleaseView.as_view(), name='custom_release'),
+    path('hijack/status/', hijack_status_api, name='hijack_status_api'),
+    path('hijack/user/<int:user_id>/', hijack_user_api, name='hijack_user_api'),
+    path('hijack/release-api/', release_hijack_api, name='release_hijack_api'),
 ]

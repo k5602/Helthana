@@ -29,6 +29,11 @@ class HealthGuideApp {
             return;
         }
 
+        // Initialize hijack indicator if user is authenticated
+        if (window.auth && window.auth.isAuthenticated()) {
+            window.auth.initializeHijackIndicator();
+        }
+
         // Initialize page-specific functionality
         this.initializePage();
         

@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'hijack.middleware.HijackUserMiddleware',
     'apps.authentication.middleware.SecurityAuditMiddleware',
     'apps.authentication.middleware.RateLimitMiddleware',
     'apps.authentication.middleware.IPTrackingMiddleware',
@@ -195,6 +196,10 @@ HIJACK_LOGOUT_REDIRECT_URL = '/admin/'
 HIJACK_REGISTER_ADMIN = True
 HIJACK_ALLOW_GET_REQUESTS = True
 HIJACK_USE_BOOTSTRAP = True
+HIJACK_PERMISSION_CHECK = 'hijack.permissions.superusers_only'
+HIJACK_DISPLAY_ADMIN_BUTTON = True
+HIJACK_INSERT_BEFORE = '<div class="submit-row">'
+HIJACK_DECORATOR = 'django.contrib.admin.views.decorators.staff_member_required'
 
 # Security Settings
 SECURE_BROWSER_XSS_FILTER = True

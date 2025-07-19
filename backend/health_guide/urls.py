@@ -15,6 +15,8 @@ def health_check(request):
 urlpatterns = [
     path('health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
+    # Django-Hijack URLs
+    path('hijack/', include('hijack.urls')),
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

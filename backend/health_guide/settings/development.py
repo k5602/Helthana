@@ -26,10 +26,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:5173",  # Vite default port
     "http://127.0.0.1:5173",
+    "http://localhost:5174",  # Alternative Vite port
+    "http://127.0.0.1:5174",
+    "http://localhost:4173",  # Vite preview port
+    "http://127.0.0.1:4173",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
+
+# Enhanced CORS headers for authentication and API functionality
 CORS_ALLOWED_HEADERS = [
     'accept',
     'accept-encoding',
@@ -40,6 +46,27 @@ CORS_ALLOWED_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'cache-control',
+    'pragma',
+    'expires',
+    'x-forwarded-for',
+    'x-forwarded-proto',
+]
+
+# Allow specific HTTP methods for API endpoints
+CORS_ALLOWED_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Expose headers that frontend might need
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-csrftoken',
 ]
 
 # Cache configuration

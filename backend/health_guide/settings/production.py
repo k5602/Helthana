@@ -31,9 +31,46 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# CORS settings for production
+# CORS settings for production - Secure configuration for frontend domains
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 CORS_ALLOW_CREDENTIALS = True
+
+# Enhanced CORS headers for production API functionality
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'cache-control',
+    'pragma',
+    'expires',
+    'x-forwarded-for',
+    'x-forwarded-proto',
+]
+
+# Allow specific HTTP methods for API endpoints
+CORS_ALLOWED_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Expose headers that frontend might need
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-csrftoken',
+]
+
+# Preflight request cache time (24 hours)
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Cache configuration with Redis
 CACHES = {
