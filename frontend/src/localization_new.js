@@ -31,7 +31,6 @@ class LocalizationManager {
         this.translations.en = {
             // Navigation
             'nav.brand': 'Your Health Guide',
-            'nav.dashboard': 'Dashboard',
             'nav.services': 'Services',
             'nav.about': 'About',
             'nav.login': 'Login',
@@ -198,8 +197,6 @@ class LocalizationManager {
             'common.cancel': 'Cancel',
             'common.save': 'Save',
             'common.submit': 'Submit',
-            'common.edit': 'Edit',
-            'common.delete': 'Delete',
 
             // Messages
             'msg.connection.restored': 'Connection restored',
@@ -212,11 +209,6 @@ class LocalizationManager {
             'msg.voice.failed': 'Voice recognition failed',
             'msg.voice.not.supported': 'Voice recognition not supported in this browser',
             'msg.command.not.recognized': 'Command not recognized. Try "scan prescription" or "log vitals"',
-            'msg.no.recent.activity': 'No recent activity',
-            'msg.loading.vitals': 'Loading vitals...',
-            'msg.loading.prescriptions': 'Loading prescriptions...',
-            'msg.failed.load.vitals': 'Failed to load vitals',
-            'msg.failed.load.prescriptions': 'Failed to load prescriptions',
 
             // Modals
             'modal.prescription.title': 'Scan Prescription',
@@ -279,73 +271,14 @@ class LocalizationManager {
             'vitals.title': 'Vitals Tracking',
             'vitals.subtitle': 'Monitor and track your vital signs over time',
             'vitals.log.title': 'Log New Vital',
-            'vitals.log.save': 'Save Vitals',
             'vitals.history.title': 'Vitals History',
-            'vitals.charts.title': 'Trends & Charts',
-            'vitals.chart.blood_pressure': 'Blood Pressure Trend',
-            'vitals.chart.heart_rate': 'Heart Rate Trend',
-            'vitals.chart.coming_soon': 'Chart coming soon',
-            'vitals.recent.title': 'Recent Measurements',
-            'vitals.table.date': 'Date',
-            'vitals.table.actions': 'Actions',
-            'vitals.table.blood_pressure': 'Blood Pressure',
-            'vitals.table.heart_rate': 'Heart Rate', 
-            'vitals.table.temperature': 'Temperature',
-            'vitals.table.weight': 'Weight',
-            'vitals.empty.title': 'No Vitals Recorded',
-            'vitals.empty.desc': 'Start tracking your health by logging your first vital signs',
-
-            // Prescriptions additional
-            'prescriptions.scan.new': 'Scan New Prescription',
-            'prescriptions.add.manual': 'Add Manually',
-            'prescriptions.empty.title': 'No Prescriptions Yet',
-            'prescriptions.empty.desc': 'Start by scanning your first prescription or adding one manually',
-            'prescriptions.scan.first': 'Scan First Prescription',
-            'prescriptions.scanner.title': 'Prescription Scanner',
-            'prescriptions.scanner.instruction': 'Position your prescription in the camera viewfinder',
-            'prescriptions.scanner.start': 'Start Camera',
-            'prescriptions.scanner.upload': 'Upload Image',
-            'prescriptions.dosage': 'Dosage',
-            'prescriptions.frequency': 'Frequency',
-            'prescriptions.date': 'Date',
-            'prescriptions.not.specified': 'Not specified',
-            'prescriptions.unknown.medication': 'Unknown Medication',
-            'prescriptions.unknown.doctor': 'Unknown Doctor',
-
-            // Emergency
-            'emergency.title': 'EMERGENCY ALERT SYSTEM',
-            'emergency.call.title': 'CALL 911',
-            'emergency.call.desc': 'For immediate life-threatening emergencies',
-            'emergency.call.button': 'CALL NOW',
-            'emergency.location.title': 'Share Location',
-            'emergency.location.desc': 'Send your current location to emergency contacts',
-            'emergency.location.button': 'SHARE LOCATION',
-            'emergency.medical.title': 'Medical Alert',
-            'emergency.medical.desc': 'Send medical information to first responders',
-            'emergency.medical.button': 'SEND ALERT',
-            'emergency.contacts.title': 'Emergency Contacts',
-            'emergency.contacts.add': 'Add Emergency Contact',
-            'emergency.contacts.add.title': 'Add Emergency Contact',
-            'emergency.contacts.name': 'Full Name',
-            'emergency.contacts.phone': 'Phone Number',
-            'emergency.contacts.relationship': 'Relationship',
-            'emergency.contacts.family': 'Family Member',
-            'emergency.contacts.friend': 'Friend',
-            'emergency.contacts.doctor': 'Doctor',
-            'emergency.contacts.other': 'Other',
-            'emergency.medical.info.title': 'Medical Information',
-            'emergency.medical.conditions': 'Medical Conditions:',
-            'emergency.medical.medications': 'Current Medications:',
-            'emergency.medical.update': 'Update Medical Information',
-            'emergency.contacts.empty': 'No emergency contacts added yet',
-            'emergency.contacts.call': 'Call'
+            'vitals.charts.title': 'Trends & Charts'
         };
 
         // Arabic translations
         this.translations.ar = {
             // Navigation
             'nav.brand': 'دليلك الصحي',
-            'nav.dashboard': 'لوحة التحكم',
             'nav.services': 'الخدمات',
             'nav.about': 'عن التطبيق',
             'nav.login': 'تسجيل الدخول',
@@ -512,8 +445,6 @@ class LocalizationManager {
             'common.cancel': 'إلغاء',
             'common.save': 'حفظ',
             'common.submit': 'إرسال',
-            'common.edit': 'تعديل',
-            'common.delete': 'حذف',
 
             // Messages
             'msg.connection.restored': 'تم استعادة الاتصال',
@@ -526,11 +457,6 @@ class LocalizationManager {
             'msg.voice.failed': 'فشل التعرف على الصوت',
             'msg.voice.not.supported': 'التعرف على الصوت غير مدعوم في هذا المتصفح',
             'msg.command.not.recognized': 'لم يتم التعرف على الأمر. جرب "مسح الوصفة الطبية" أو "تسجيل العلامات الحيوية"',
-            'msg.no.recent.activity': 'لا يوجد نشاط حديث',
-            'msg.loading.vitals': 'جاري تحميل العلامات الحيوية...',
-            'msg.loading.prescriptions': 'جاري تحميل الوصفات الطبية...',
-            'msg.failed.load.vitals': 'فشل في تحميل العلامات الحيوية',
-            'msg.failed.load.prescriptions': 'فشل في تحميل الوصفات الطبية',
 
             // Modals
             'modal.prescription.title': 'مسح الوصفة الطبية',
@@ -593,62 +519,8 @@ class LocalizationManager {
             'vitals.title': 'تتبع العلامات الحيوية',
             'vitals.subtitle': 'راقب وتتبع علاماتك الحيوية بمرور الوقت',
             'vitals.log.title': 'تسجيل علامة حيوية جديدة',
-            'vitals.log.save': 'حفظ العلامات الحيوية',
             'vitals.history.title': 'تاريخ العلامات الحيوية',
-            'vitals.charts.title': 'الاتجاهات والرسوم البيانية',
-            'vitals.chart.blood_pressure': 'اتجاه ضغط الدم',
-            'vitals.chart.heart_rate': 'اتجاه معدل ضربات القلب',
-            'vitals.chart.coming_soon': 'الرسم البياني قريباً',
-            'vitals.recent.title': 'القياسات الحديثة',
-            'vitals.table.date': 'التاريخ',
-            'vitals.table.actions': 'الإجراءات',
-            'vitals.empty.title': 'لم يتم تسجيل علامات حيوية',
-            'vitals.empty.desc': 'ابدأ بتتبع صحتك عن طريق تسجيل أول علاماتك الحيوية',
-
-            // Prescriptions additional
-            'prescriptions.scan.new': 'مسح وصفة طبية جديدة',
-            'prescriptions.add.manual': 'إضافة يدوياً',
-            'prescriptions.empty.title': 'لا توجد وصفات طبية بعد',
-            'prescriptions.empty.desc': 'ابدأ بمسح وصفتك الطبية الأولى أو إضافة واحدة يدوياً',
-            'prescriptions.scan.first': 'مسح الوصفة الطبية الأولى',
-            'prescriptions.scanner.title': 'ماسح الوصفات الطبية',
-            'prescriptions.scanner.instruction': 'ضع وصفتك الطبية في إطار الكاميرا',
-            'prescriptions.scanner.start': 'تشغيل الكاميرا',
-            'prescriptions.scanner.upload': 'رفع صورة',
-            'prescriptions.dosage': 'الجرعة',
-            'prescriptions.frequency': 'التكرار',
-            'prescriptions.date': 'التاريخ',
-            'prescriptions.not.specified': 'غير محدد',
-            'prescriptions.unknown.medication': 'دواء غير معروف',
-            'prescriptions.unknown.doctor': 'طبيب غير معروف',
-
-            // Emergency
-            'emergency.title': 'نظام تنبيه الطوارئ',
-            'emergency.call.title': 'اتصل بالطوارئ 911',
-            'emergency.call.desc': 'للحالات الطارئة التي تهدد الحياة فوراً',
-            'emergency.call.button': 'اتصل الآن',
-            'emergency.location.title': 'مشاركة الموقع',
-            'emergency.location.desc': 'أرسل موقعك الحالي إلى جهات الاتصال الطارئة',
-            'emergency.location.button': 'مشاركة الموقع',
-            'emergency.medical.title': 'تنبيه طبي',
-            'emergency.medical.desc': 'إرسال المعلومات الطبية للمسعفين الأوليين',
-            'emergency.medical.button': 'إرسال تنبيه',
-            'emergency.contacts.title': 'جهات الاتصال الطارئة',
-            'emergency.contacts.add': 'إضافة جهة اتصال طارئة',
-            'emergency.contacts.add.title': 'إضافة جهة اتصال طارئة',
-            'emergency.contacts.name': 'الاسم الكامل',
-            'emergency.contacts.phone': 'رقم الهاتف',
-            'emergency.contacts.relationship': 'صلة القرابة',
-            'emergency.contacts.family': 'فرد من العائلة',
-            'emergency.contacts.friend': 'صديق',
-            'emergency.contacts.doctor': 'طبيب',
-            'emergency.contacts.other': 'أخرى',
-            'emergency.medical.info.title': 'المعلومات الطبية',
-            'emergency.medical.conditions': 'الحالات الطبية:',
-            'emergency.medical.medications': 'الأدوية الحالية:',
-            'emergency.medical.update': 'تحديث المعلومات الطبية',
-            'emergency.contacts.empty': 'لم يتم إضافة جهات اتصال طارئة بعد',
-            'emergency.contacts.call': 'اتصال'
+            'vitals.charts.title': 'الاتجاهات والرسوم البيانية'
         };
     }
 
