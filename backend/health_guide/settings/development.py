@@ -39,7 +39,6 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
 
 # Additional CORS settings for network access
 CORS_ALLOW_PRIVATE_NETWORK = True  # Allow private network access
-CORS_REPLACE_HTTPS_REFERER = True  # Handle HTTPS referer replacement
 
 # Enhanced CORS headers for authentication and API functionality
 CORS_ALLOWED_HEADERS = [
