@@ -4,6 +4,7 @@ Development settings for health_guide project.
 
 from .base import *
 import dj_database_url
+import socket
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -19,6 +20,7 @@ DATABASES = {
 }
 
 # CORS settings for development - Enhanced for frontend-backend communication
+# Base localhost origins
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -33,6 +35,27 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",  # Django dev server
     "http://127.0.0.1:8000",
 ]
+
+# Add network IP origins dynamically from system
+def get_local_ip():
+    """Get the local network IP address of the system"""
+    try:
+        # Connect to a remote address to determine local IP
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return None
+
+NETWORK_IP = get_local_ip()
+if NETWORK_IP and NETWORK_IP != '127.0.0.1':
+    CORS_ALLOWED_ORIGINS.extend([
+        f"http://{NETWORK_IP}:8080",  # Network frontend
+        f"http://{NETWORK_IP}:8000",  # Network backend
+        f"http://{NETWORK_IP}:5173",  # Network Vite
+        f"http://{NETWORK_IP}:5174",  # Network Vite alt
+        f"http://{NETWORK_IP}:4173",  # Network Vite preview
+    ])
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
@@ -96,6 +119,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Frontend URL for development
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
+# Disable email verification in development
+REQUIRE_EMAIL_VERIFICATION = False
 
 # Disable security settings for development
 SECURE_BROWSER_XSS_FILTER = False

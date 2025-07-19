@@ -251,7 +251,10 @@ class AuthErrorHandler:
                 error_code=AuthErrorCodes.ACCOUNT_INACTIVE
             )
         
-        if user and not user.email_verified:
+        # Check email verification only if required by settings
+        from django.conf import settings
+        if (getattr(settings, 'REQUIRE_EMAIL_VERIFICATION', True) and 
+            user and not user.email_verified):
             return StandardizedErrorResponse.create_authentication_error_response(
                 error_code=AuthErrorCodes.EMAIL_NOT_VERIFIED
             )
