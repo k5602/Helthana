@@ -6,10 +6,11 @@
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign Up | Your Health Guide</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet" type="text/css" />
-  <script type="module" src="/src/main.js"></script>
+     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet" type="text/css" />
+    <script type="module" src="/src/main.js"></script>
+  <script src="/frontend/src/localization.js"></script>
   <style>
     .label-text {
       white-space: normal;
@@ -235,21 +236,6 @@
   <div id="message-container" class="fixed top-4 right-4 z-50"></div>
 
   <script>
-    // Language toggle functionality
-    document.addEventListener('DOMContentLoaded', function () {
-      const langToggle = document.getElementById('language-toggle');
-      if (langToggle) {
-        langToggle.addEventListener('click', function (e) {
-          e.preventDefault();
-          console.log('Language toggle clicked');
-          if (window.i18n) {
-            const currentLang = window.i18n.getCurrentLanguage();
-            const newLang = currentLang === 'en' ? 'ar' : 'en';
-            window.i18n.setLanguage(newLang);
-          }
-        });
-      }
-    });
 
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -311,9 +297,9 @@
         alert.remove();
       }, 5000);
     }
+
   </script>
 
-  <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>

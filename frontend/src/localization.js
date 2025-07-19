@@ -115,6 +115,7 @@ class LocalizationManager {
             'auth.no.account': "Don't have an account?",
             'auth.signin.here': 'Sign in here',
             'auth.signup.here': 'Sign up here',
+            'auth.terms':'Terms and conditions',
             // Authentication placeholders
             'auth.username.placeholder': 'Enter your username',
             'auth.email.placeholder': 'Enter your email',
@@ -577,6 +578,7 @@ class LocalizationManager {
             'auth.no.account': 'ليس لديك حساب؟',
             'auth.signin.here': 'سجل الدخول هنا',
             'auth.signup.here': 'سجل هنا',
+            'auth.terms':'الموافقه علي ألشروط والاحكام',    
             // Authentication placeholders
             'auth.username.placeholder': 'أدخل اسم المستخدم',
             'auth.email.placeholder': 'أدخل بريدك الإلكتروني',
