@@ -1,5 +1,4 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView, 
     LoginView, 
@@ -11,14 +10,20 @@ from .views import (
     ChangePasswordView,
     EmailUpdateView,
     AccountDeletionView,
-    SecurityLogsView
+    SecurityLogsView,
+    EnhancedTokenRefreshView,
+    LogoutView,
+    UserSessionsView,
+    TerminateSessionView,
+    TerminateAllSessionsView
 )
 
 urlpatterns = [
     # Authentication endpoints
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('token/refresh/', EnhancedTokenRefreshView.as_view(), name='token_refresh'),
     
     # Password reset endpoints
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
@@ -33,6 +38,11 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('update-email/', EmailUpdateView.as_view(), name='update_email'),
     path('delete-account/', AccountDeletionView.as_view(), name='delete_account'),
+    
+    # Session management endpoints
+    path('sessions/', UserSessionsView.as_view(), name='user_sessions'),
+    path('sessions/terminate/', TerminateSessionView.as_view(), name='terminate_session'),
+    path('sessions/terminate-all/', TerminateAllSessionsView.as_view(), name='terminate_all_sessions'),
     
     # Security audit
     path('security-logs/', SecurityLogsView.as_view(), name='security_logs'),

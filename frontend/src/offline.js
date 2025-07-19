@@ -17,6 +17,14 @@ class OfflineManager {
             console.log('IndexedDB initialized');
         } catch (error) {
             console.error('Failed to initialize IndexedDB:', error);
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                window.errorHandler.handleError(error, {
+                    action: 'initialize offline storage',
+                    type: 'offline'
+                });
+            }
         }
     }
 
@@ -62,6 +70,14 @@ class OfflineManager {
             return true;
         } catch (error) {
             console.error('Failed to store offline data:', error);
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                window.errorHandler.handleError(error, {
+                    action: 'store data offline',
+                    type: 'offline'
+                });
+            }
             return false;
         }
     }
@@ -88,6 +104,14 @@ class OfflineManager {
             });
         } catch (error) {
             console.error('Failed to get offline data:', error);
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                window.errorHandler.handleError(error, {
+                    action: 'retrieve offline data',
+                    type: 'offline'
+                });
+            }
             return [];
         }
     }
@@ -108,6 +132,14 @@ class OfflineManager {
             return true;
         } catch (error) {
             console.error('Failed to add to sync queue:', error);
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                window.errorHandler.handleError(error, {
+                    action: 'queue data for sync',
+                    type: 'offline'
+                });
+            }
             return false;
         }
     }
@@ -141,6 +173,16 @@ class OfflineManager {
             };
         } catch (error) {
             console.error('Failed to sync offline data:', error);
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                window.errorHandler.handleError(error, {
+                    action: 'sync offline data',
+                    type: 'offline',
+                    retryable: true,
+                    retryCallback: () => this.syncOfflineData()
+                });
+            }
         }
     }
 
@@ -192,6 +234,15 @@ class OfflineManager {
                 return [...onlineData.results || onlineData, ...offlineData];
             } catch (error) {
                 console.error('Failed to fetch online prescriptions:', error);
+                
+                // Use global error handler if available
+                if (window.errorHandler) {
+                    window.errorHandler.handleError(error, {
+                        action: 'fetch prescriptions',
+                        type: 'network',
+                        retryable: true
+                    });
+                }
                 return offlineData;
             }
         }
@@ -208,6 +259,15 @@ class OfflineManager {
                 return [...onlineData.results || onlineData, ...offlineData];
             } catch (error) {
                 console.error('Failed to fetch online vitals:', error);
+                
+                // Use global error handler if available
+                if (window.errorHandler) {
+                    window.errorHandler.handleError(error, {
+                        action: 'fetch vitals',
+                        type: 'network',
+                        retryable: true
+                    });
+                }
                 return offlineData;
             }
         }

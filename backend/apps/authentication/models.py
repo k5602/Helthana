@@ -152,6 +152,66 @@ class User(AbstractUser):
         self.save(update_fields=['failed_login_attempts'])
 
 
+class UserSession(models.Model):
+    """Model for tracking user sessions across multiple devices"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
+    session_key = models.CharField(max_length=255, unique=True)
+    refresh_token_jti = models.CharField(max_length=255, unique=True)  # JWT ID for refresh token
+    device_name = models.CharField(max_length=100, blank=True, default='')
+    device_type = models.CharField(max_length=50, blank=True)  # mobile, desktop, tablet
+    browser_name = models.CharField(max_length=50, blank=True)
+    browser_version = models.CharField(max_length=20, blank=True)
+    os_name = models.CharField(max_length=50, blank=True)
+    os_version = models.CharField(max_length=20, blank=True)
+    ip_address = models.GenericIPAddressField()
+    location = models.CharField(max_length=100, blank=True)  # City, Country
+    remember_me = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        ordering = ['-last_activity']
+        indexes = [
+            models.Index(fields=['user', '-last_activity']),
+            models.Index(fields=['refresh_token_jti']),
+            models.Index(fields=['session_key']),
+            models.Index(fields=['is_active', '-last_activity']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.device_name or 'Unknown Device'} - {self.created_at}"
+    
+    def is_expired(self):
+        """Check if session is expired"""
+        return timezone.now() > self.expires_at
+    
+    def deactivate(self):
+        """Deactivate this session"""
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+    
+    def get_device_info(self):
+        """Get formatted device information"""
+        device_info = []
+        if self.device_name:
+            device_info.append(self.device_name)
+        elif self.browser_name:
+            browser_info = self.browser_name
+            if self.browser_version:
+                browser_info += f" {self.browser_version}"
+            device_info.append(browser_info)
+        
+        if self.os_name:
+            os_info = self.os_name
+            if self.os_version:
+                os_info += f" {self.os_version}"
+            device_info.append(os_info)
+        
+        return " • ".join(device_info) if device_info else "Unknown Device"
+
+
 class SecurityAuditLog(models.Model):
     """Model for tracking authentication and security events"""
     ACTION_CHOICES = [
@@ -166,6 +226,9 @@ class SecurityAuditLog(models.Model):
         ('account_unlocked', 'Account Unlocked'),
         ('hijack_started', 'Hijack Started'),
         ('hijack_ended', 'Hijack Ended'),
+        ('session_created', 'Session Created'),
+        ('session_terminated', 'Session Terminated'),
+        ('token_refreshed', 'Token Refreshed'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security_logs')
@@ -175,6 +238,7 @@ class SecurityAuditLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     success = models.BooleanField()
     details = models.JSONField(default=dict)
+    session = models.ForeignKey(UserSession, on_delete=models.SET_NULL, null=True, blank=True)
     
     class Meta:
         ordering = ['-timestamp']

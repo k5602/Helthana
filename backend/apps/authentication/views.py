@@ -1,14 +1,15 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import transaction
 import logging
 
-from .models import User, SecurityAuditLog
+from .models import User, SecurityAuditLog, UserSession
+from .session_service import SessionManager, TokenManager
 from .serializers import (
     UserRegistrationSerializer, 
     UserProfileSerializer,
@@ -22,6 +23,12 @@ from .serializers import (
     AccountDeletionSerializer
 )
 from .services import EmailService
+from .error_handlers import (
+    AuthErrorCodes, 
+    StandardizedErrorResponse, 
+    AuthErrorHandler,
+    handle_auth_exception
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -53,7 +60,7 @@ def log_security_event(user, action, request, success=True, details=None):
 
 
 class EnhancedLoginView(TokenObtainPairView):
-    """Enhanced login view with security features and proper error handling"""
+    """Enhanced login view with session management and security features"""
     permission_classes = [AllowAny]
     serializer_class = CustomLoginSerializer
 
@@ -71,18 +78,11 @@ class EnhancedLoginView(TokenObtainPairView):
             user.last_login_ip = get_client_ip(request)
             user.save(update_fields=['last_login_ip'])
             
-            # Generate JWT tokens
-            refresh = RefreshToken.for_user(user)
-            access_token = refresh.access_token
+            # Get remember_me preference from request
+            remember_me = request.data.get('remember_me', False)
             
-            # Log successful login
-            log_security_event(
-                user=user,
-                action='login',
-                request=request,
-                success=True,
-                details={'login_method': 'password'}
-            )
+            # Create tokens and session using TokenManager
+            token_data = TokenManager.create_tokens_for_user(user, request, remember_me)
             
             # Send security notification if enabled
             try:
@@ -92,15 +92,19 @@ class EnhancedLoginView(TokenObtainPairView):
                     details={
                         'ip_address': get_client_ip(request),
                         'user_agent': request.META.get('HTTP_USER_AGENT', ''),
-                        'timestamp': timezone.now().isoformat()
+                        'timestamp': timezone.now().isoformat(),
+                        'device_info': token_data['session'].get_device_info()
                     }
                 )
             except Exception as e:
                 logger.warning(f"Failed to send security notification: {str(e)}")
             
             return Response({
-                'access': str(access_token),
-                'refresh': str(refresh),
+                'access': token_data['access'],
+                'refresh': token_data['refresh'],
+                'expires_in': token_data['expires_in'],
+                'refresh_expires_in': token_data['refresh_expires_in'],
+                'session_id': token_data['session'].id,
                 'user': {
                     'id': user.id,
                     'username': user.username,
@@ -114,6 +118,7 @@ class EnhancedLoginView(TokenObtainPairView):
         except Exception as e:
             # Log failed login attempt
             username = request.data.get('username', '')
+            failed_user = None
             try:
                 if '@' in username:
                     failed_user = User.objects.get(email=username)
@@ -130,19 +135,8 @@ class EnhancedLoginView(TokenObtainPairView):
             except User.DoesNotExist:
                 pass
             
-            # Return standardized error response
-            if hasattr(e, 'detail'):
-                error_message = str(e.detail[0]) if isinstance(e.detail, list) else str(e.detail)
-            else:
-                error_message = str(e)
-            
-            return Response({
-                'error': {
-                    'code': 'LOGIN_FAILED',
-                    'message': error_message,
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # Use standardized error handling
+            return AuthErrorHandler.handle_login_error(e, failed_user)
 
 
 class EnhancedRegisterView(generics.CreateAPIView):
@@ -197,20 +191,8 @@ class EnhancedRegisterView(generics.CreateAPIView):
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            # Return standardized error response
-            if hasattr(e, 'detail'):
-                error_details = e.detail
-            else:
-                error_details = {'non_field_errors': [str(e)]}
-            
-            return Response({
-                'error': {
-                    'code': 'REGISTRATION_FAILED',
-                    'message': 'Registration failed due to validation errors.',
-                    'details': error_details,
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            # Use standardized error handling
+            return AuthErrorHandler.handle_registration_error(e)
 
 
 class PasswordResetRequestView(generics.GenericAPIView):
@@ -258,13 +240,7 @@ class PasswordResetRequestView(generics.GenericAPIView):
             
         except Exception as e:
             logger.error(f"Password reset request failed: {str(e)}")
-            return Response({
-                'error': {
-                    'code': 'PASSWORD_RESET_FAILED',
-                    'message': 'Failed to process password reset request.',
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return AuthErrorHandler.handle_password_reset_error(e)
 
 
 class PasswordResetConfirmView(generics.GenericAPIView):
@@ -284,23 +260,15 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             try:
                 user = User.objects.get(password_reset_token=token)
             except User.DoesNotExist:
-                return Response({
-                    'error': {
-                        'code': 'INVALID_TOKEN',
-                        'message': 'Invalid or expired password reset token.',
-                        'timestamp': timezone.now().isoformat()
-                    }
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return StandardizedErrorResponse.create_error_response(
+                    error_code=AuthErrorCodes.INVALID_RESET_TOKEN
+                )
             
             # Verify token
             if not user.verify_password_reset_token(token):
-                return Response({
-                    'error': {
-                        'code': 'INVALID_TOKEN',
-                        'message': 'Invalid or expired password reset token.',
-                        'timestamp': timezone.now().isoformat()
-                    }
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return StandardizedErrorResponse.create_error_response(
+                    error_code=AuthErrorCodes.INVALID_RESET_TOKEN
+                )
             
             # Update password
             user.set_password(new_password)
@@ -342,14 +310,7 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             else:
                 error_details = {'non_field_errors': [str(e)]}
             
-            return Response({
-                'error': {
-                    'code': 'PASSWORD_RESET_FAILED',
-                    'message': 'Failed to reset password.',
-                    'details': error_details,
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return AuthErrorHandler.handle_password_reset_error(e)
 
 
 class EmailVerificationView(generics.GenericAPIView):
@@ -368,23 +329,15 @@ class EmailVerificationView(generics.GenericAPIView):
             try:
                 user = User.objects.get(email_verification_token=token)
             except User.DoesNotExist:
-                return Response({
-                    'error': {
-                        'code': 'INVALID_TOKEN',
-                        'message': 'Invalid or expired email verification token.',
-                        'timestamp': timezone.now().isoformat()
-                    }
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return StandardizedErrorResponse.create_error_response(
+                    error_code=AuthErrorCodes.INVALID_VERIFICATION_TOKEN
+                )
             
             # Verify token
             if not user.verify_email_token(token):
-                return Response({
-                    'error': {
-                        'code': 'INVALID_TOKEN',
-                        'message': 'Invalid or expired email verification token.',
-                        'timestamp': timezone.now().isoformat()
-                    }
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return StandardizedErrorResponse.create_error_response(
+                    error_code=AuthErrorCodes.INVALID_VERIFICATION_TOKEN
+                )
             
             # Log email verification
             log_security_event(
@@ -408,13 +361,7 @@ class EmailVerificationView(generics.GenericAPIView):
         except Exception as e:
             logger.error(f"Email verification failed: {str(e)}")
             
-            return Response({
-                'error': {
-                    'code': 'EMAIL_VERIFICATION_FAILED',
-                    'message': 'Failed to verify email.',
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return AuthErrorHandler.handle_email_verification_error(e)
 
 
 class ResendEmailVerificationView(generics.GenericAPIView):
@@ -425,13 +372,9 @@ class ResendEmailVerificationView(generics.GenericAPIView):
         email = request.data.get('email')
         
         if not email:
-            return Response({
-                'error': {
-                    'code': 'EMAIL_REQUIRED',
-                    'message': 'Email address is required.',
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return StandardizedErrorResponse.create_error_response(
+                error_code=AuthErrorCodes.EMAIL_REQUIRED
+            )
         
         try:
             user = User.objects.get(email=email)
@@ -460,13 +403,9 @@ class ResendEmailVerificationView(generics.GenericAPIView):
             
         except Exception as e:
             logger.error(f"Resend email verification failed: {str(e)}")
-            return Response({
-                'error': {
-                    'code': 'EMAIL_SEND_FAILED',
-                    'message': 'Failed to send verification email.',
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return StandardizedErrorResponse.create_server_error_response(
+                error_code=AuthErrorCodes.EMAIL_SEND_FAILED
+            )
 
 
 class ChangePasswordView(generics.GenericAPIView):
@@ -521,14 +460,7 @@ class ChangePasswordView(generics.GenericAPIView):
             else:
                 error_details = {'non_field_errors': [str(e)]}
             
-            return Response({
-                'error': {
-                    'code': 'PASSWORD_CHANGE_FAILED',
-                    'message': 'Failed to change password.',
-                    'details': error_details,
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.PASSWORD_CHANGE_FAILED)
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
@@ -567,14 +499,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             else:
                 error_details = {'non_field_errors': [str(e)]}
             
-            return Response({
-                'error': {
-                    'code': 'PROFILE_UPDATE_FAILED',
-                    'message': 'Failed to update profile.',
-                    'details': error_details,
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.PROFILE_UPDATE_FAILED)
 
 
 class EmailUpdateView(generics.GenericAPIView):
@@ -646,14 +571,7 @@ class EmailUpdateView(generics.GenericAPIView):
             else:
                 error_details = {'non_field_errors': [str(e)]}
             
-            return Response({
-                'error': {
-                    'code': 'EMAIL_UPDATE_FAILED',
-                    'message': 'Failed to update email address.',
-                    'details': error_details,
-                    'timestamp': timezone.now().isoformat()
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.EMAIL_UPDATE_FAILED)
 
 
 class AccountDeletionView(generics.GenericAPIView):
@@ -733,11 +651,196 @@ class AccountDeletionView(generics.GenericAPIView):
             else:
                 error_details = {'non_field_errors': [str(e)]}
             
+            return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.ACCOUNT_DELETION_FAILED)
+
+
+class EnhancedTokenRefreshView(TokenRefreshView):
+    """Enhanced token refresh view with session management"""
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token_string = request.data.get('refresh')
+            
+            if not refresh_token_string:
+                return StandardizedErrorResponse.create_error_response(
+                    error_code=AuthErrorCodes.REFRESH_TOKEN_REQUIRED
+                )
+            
+            # Use TokenManager to refresh token
+            token_data = TokenManager.refresh_access_token(refresh_token_string)
+            
+            if not token_data:
+                return StandardizedErrorResponse.create_authentication_error_response(
+                    error_code=AuthErrorCodes.INVALID_REFRESH_TOKEN
+                )
+            
+            return Response({
+                'access': token_data['access'],
+                'refresh': token_data['refresh'],
+                'expires_in': token_data['expires_in'],
+                'session_id': token_data.get('session_id')
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Token refresh failed: {str(e)}")
+            return AuthErrorHandler.handle_token_error(e)
+
+
+class LogoutView(generics.GenericAPIView):
+    """Enhanced logout view with session termination"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token_string = request.data.get('refresh')
+            
+            if refresh_token_string:
+                # Use TokenManager to logout user
+                success = TokenManager.logout_user(refresh_token_string, request)
+                
+                if success:
+                    return Response({
+                        'message': 'Successfully logged out.'
+                    }, status=status.HTTP_200_OK)
+            
+            # Fallback: terminate all sessions for this user
+            SessionManager.terminate_all_sessions(request.user)
+            
+            return Response({
+                'message': 'Successfully logged out from all devices.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Logout failed: {str(e)}")
             return Response({
                 'error': {
-                    'code': 'ACCOUNT_DELETION_FAILED',
-                    'message': 'Failed to delete account.',
-                    'details': error_details,
+                    'code': 'LOGOUT_FAILED',
+                    'message': 'Failed to logout.',
+                    'timestamp': timezone.now().isoformat()
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserSessionsView(generics.ListAPIView):
+    """View for retrieving user's active sessions"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            sessions = SessionManager.get_user_sessions(request.user)
+            
+            sessions_data = []
+            for session in sessions:
+                sessions_data.append({
+                    'id': session.id,
+                    'device_info': session.get_device_info(),
+                    'device_type': session.device_type,
+                    'ip_address': session.ip_address,
+                    'location': session.location,
+                    'last_activity': session.last_activity.isoformat(),
+                    'created_at': session.created_at.isoformat(),
+                    'remember_me': session.remember_me,
+                    'is_current': session.refresh_token_jti == request.data.get('current_jti', '')
+                })
+            
+            return Response({
+                'sessions': sessions_data,
+                'total_sessions': len(sessions_data)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Failed to retrieve sessions: {str(e)}")
+            return Response({
+                'error': {
+                    'code': 'SESSIONS_RETRIEVAL_FAILED',
+                    'message': 'Failed to retrieve sessions.',
+                    'timestamp': timezone.now().isoformat()
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TerminateSessionView(generics.GenericAPIView):
+    """View for terminating a specific session"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            session_id = request.data.get('session_id')
+            
+            if not session_id:
+                return Response({
+                    'error': {
+                        'code': 'SESSION_ID_REQUIRED',
+                        'message': 'Session ID is required.',
+                        'timestamp': timezone.now().isoformat()
+                    }
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                session = UserSession.objects.get(
+                    id=session_id,
+                    user=request.user,
+                    is_active=True
+                )
+            except UserSession.DoesNotExist:
+                return Response({
+                    'error': {
+                        'code': 'SESSION_NOT_FOUND',
+                        'message': 'Session not found or already terminated.',
+                        'timestamp': timezone.now().isoformat()
+                    }
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Terminate the session
+            SessionManager.terminate_session(session, request, 'user_terminated')
+            
+            return Response({
+                'message': 'Session terminated successfully.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Session termination failed: {str(e)}")
+            return Response({
+                'error': {
+                    'code': 'SESSION_TERMINATION_FAILED',
+                    'message': 'Failed to terminate session.',
+                    'timestamp': timezone.now().isoformat()
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TerminateAllSessionsView(generics.GenericAPIView):
+    """View for terminating all sessions except current"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            current_session_id = request.data.get('current_session_id')
+            current_session = None
+            
+            if current_session_id:
+                try:
+                    current_session = UserSession.objects.get(
+                        id=current_session_id,
+                        user=request.user,
+                        is_active=True
+                    )
+                except UserSession.DoesNotExist:
+                    pass
+            
+            # Terminate all sessions except current
+            SessionManager.terminate_all_sessions(request.user, current_session)
+            
+            return Response({
+                'message': 'All other sessions terminated successfully.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Terminate all sessions failed: {str(e)}")
+            return Response({
+                'error': {
+                    'code': 'TERMINATE_ALL_FAILED',
+                    'message': 'Failed to terminate all sessions.',
                     'timestamp': timezone.now().isoformat()
                 }
             }, status=status.HTTP_400_BAD_REQUEST)

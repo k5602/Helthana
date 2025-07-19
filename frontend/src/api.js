@@ -65,7 +65,18 @@ class ApiClient {
             return response;
         } catch (error) {
             console.error('API request failed:', error);
-            // Check if it's a network error (CORS, connection issues)
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                const errorResult = window.errorHandler.handleError(error, {
+                    type: 'network',
+                    action: 'connect to server',
+                    retryable: true
+                });
+                throw new Error(errorResult.error);
+            }
+            
+            // Fallback error handling
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 throw new Error('Unable to connect to server. Please check your connection.');
             }
@@ -81,11 +92,31 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
+    }
+
+    // Safe JSON parsing with error handling
+    async safeJsonParse(response) {
+        try {
+            const text = await response.text();
+            if (!text) {
+                return { error: { code: 'EMPTY_RESPONSE', message: 'Server returned empty response' } };
+            }
+            return JSON.parse(text);
+        } catch (error) {
+            console.error('JSON parse error:', error);
+            return { 
+                error: { 
+                    code: 'INVALID_JSON', 
+                    message: 'Server returned invalid response format',
+                    details: { originalError: error.message }
+                } 
+            };
+        }
     }
 
     async register(userData) {
@@ -95,11 +126,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     async refreshToken(refreshToken) {
@@ -115,9 +146,11 @@ class ApiClient {
             });
             
             if (response.ok) {
-                const data = await response.json();
-                this.setToken(data.access);
-                return data;
+                const data = await this.safeJsonParse(response);
+                if (data.access) {
+                    this.setToken(data.access);
+                    return data;
+                }
             }
         } catch (error) {
             console.error('Token refresh failed:', error);
@@ -133,11 +166,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Password reset confirmation
@@ -148,11 +181,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Email verification
@@ -163,11 +196,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Resend email verification
@@ -178,11 +211,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Change password
@@ -197,11 +230,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Get user profile
@@ -209,11 +242,11 @@ class ApiClient {
         const response = await this.request('/auth/profile/');
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Update user profile
@@ -224,11 +257,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Update email address
@@ -242,11 +275,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Delete account
@@ -260,11 +293,11 @@ class ApiClient {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Get security logs
@@ -272,17 +305,77 @@ class ApiClient {
         const response = await this.request('/auth/security-logs/');
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await this.safeJsonParse(response);
             return errorData;
         }
         
-        return response.json();
+        return this.safeJsonParse(response);
+    }
+
+    // Enhanced logout with session termination
+    async logout(refreshToken) {
+        const response = await this.request('/auth/logout/', {
+            method: 'POST',
+            body: JSON.stringify({ refresh: refreshToken })
+        });
+        
+        if (!response.ok) {
+            const errorData = await this.safeJsonParse(response);
+            return errorData;
+        }
+        
+        return this.safeJsonParse(response);
+    }
+
+    // Get user sessions
+    async getUserSessions(currentJti = null) {
+        const response = await this.request('/auth/sessions/', {
+            method: 'GET',
+            body: currentJti ? JSON.stringify({ current_jti: currentJti }) : undefined
+        });
+        
+        if (!response.ok) {
+            const errorData = await this.safeJsonParse(response);
+            return errorData;
+        }
+        
+        return this.safeJsonParse(response);
+    }
+
+    // Terminate specific session
+    async terminateSession(sessionId) {
+        const response = await this.request('/auth/sessions/terminate/', {
+            method: 'POST',
+            body: JSON.stringify({ session_id: sessionId })
+        });
+        
+        if (!response.ok) {
+            const errorData = await this.safeJsonParse(response);
+            return errorData;
+        }
+        
+        return this.safeJsonParse(response);
+    }
+
+    // Terminate all other sessions
+    async terminateAllSessions(currentSessionId = null) {
+        const response = await this.request('/auth/sessions/terminate-all/', {
+            method: 'POST',
+            body: JSON.stringify({ current_session_id: currentSessionId })
+        });
+        
+        if (!response.ok) {
+            const errorData = await this.safeJsonParse(response);
+            return errorData;
+        }
+        
+        return this.safeJsonParse(response);
     }
 
     // Prescription methods
     async getPrescriptions() {
         const response = await this.request('/prescriptions/');
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     async uploadPrescription(formData) {
@@ -291,14 +384,14 @@ class ApiClient {
             headers: {}, // Let browser set Content-Type for FormData
             body: formData
         });
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Vitals methods
     async getVitals(type = null) {
         const endpoint = type ? `/vitals/?type=${type}` : '/vitals/';
         const response = await this.request(endpoint);
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     async addVital(vitalData) {
@@ -306,13 +399,13 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify(vitalData)
         });
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Reports methods
     async getReports() {
         const response = await this.request('/reports/');
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     async generateReport(reportData) {
@@ -320,13 +413,13 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify(reportData)
         });
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     // Emergency methods
     async getEmergencyContacts() {
         const response = await this.request('/emergency/contacts/');
-        return response.json();
+        return this.safeJsonParse(response);
     }
 
     async sendEmergencyAlert(alertData) {
@@ -334,7 +427,7 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify(alertData)
         });
-        return response.json();
+        return this.safeJsonParse(response);
     }
 }
 

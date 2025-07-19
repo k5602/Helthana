@@ -8,6 +8,8 @@ class AuthManager {
         this.currentUser = null;
         this.rememberMe = false;
         this.tokenRefreshTimer = null;
+        this.currentSessionId = null;
+        this.refreshTokenJti = null;
         this.checkAuthStatus();
         this.setupTokenRefresh();
     }
@@ -81,20 +83,36 @@ class AuthManager {
     async login(username, password, rememberMe = false) {
         try {
             this.rememberMe = rememberMe;
-            const response = await window.api.login(username, password);
             
-            if (response.access) {
-                this.storeTokens(response.access, response.refresh, rememberMe);
-                this.currentUser = response.user;
+            // Send remember_me preference to backend
+            const loginData = { username, password, remember_me: rememberMe };
+            const response = await window.api.request('/auth/login/', {
+                method: 'POST',
+                body: JSON.stringify(loginData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                return this.handleAuthError(errorData);
+            }
+            
+            const data = await response.json();
+            
+            if (data.access) {
+                this.storeTokens(data.access, data.refresh, rememberMe);
+                this.currentUser = data.user;
+                this.currentSessionId = data.session_id;
+                this.extractRefreshTokenJti(data.refresh);
                 this.setupTokenRefresh();
                 
                 return { 
                     success: true, 
-                    user: response.user,
-                    emailVerified: response.user.email_verified 
+                    user: data.user,
+                    emailVerified: data.user.email_verified,
+                    sessionId: data.session_id
                 };
             } else {
-                return this.handleAuthError(response);
+                return this.handleAuthError(data);
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -214,7 +232,17 @@ class AuthManager {
         }
     }
 
-    // Refresh access token
+    // Extract JWT ID from refresh token
+    extractRefreshTokenJti(refreshToken) {
+        try {
+            const payload = JSON.parse(atob(refreshToken.split('.')[1]));
+            this.refreshTokenJti = payload.jti;
+        } catch (error) {
+            console.error('Error extracting refresh token JTI:', error);
+        }
+    }
+
+    // Refresh access token with enhanced session management
     async refreshAccessToken() {
         try {
             const refreshToken = this.getRefreshToken();
@@ -223,11 +251,34 @@ class AuthManager {
                 return false;
             }
 
-            const response = await window.api.refreshToken(refreshToken);
+            const response = await window.api.request('/auth/token/refresh/', {
+                method: 'POST',
+                body: JSON.stringify({ refresh: refreshToken })
+            });
             
-            if (response.access) {
-                this.storeTokens(response.access, refreshToken, this.rememberMe);
-                window.api.setToken(response.access);
+            if (!response.ok) {
+                this.logout();
+                return false;
+            }
+            
+            const data = await response.json();
+            
+            if (data.access) {
+                // Store new tokens (refresh token might have rotated)
+                const newRefreshToken = data.refresh || refreshToken;
+                this.storeTokens(data.access, newRefreshToken, this.rememberMe);
+                
+                // Update session tracking
+                if (data.session_id) {
+                    this.currentSessionId = data.session_id;
+                }
+                
+                // Extract new refresh token JTI if token was rotated
+                if (data.refresh) {
+                    this.extractRefreshTokenJti(data.refresh);
+                }
+                
+                window.api.setToken(data.access);
                 this.setupTokenRefresh();
                 return true;
             } else {
@@ -261,8 +312,13 @@ class AuthManager {
         window.api.setToken(accessToken);
     }
 
-    // Handle authentication errors with proper error extraction
+    // Handle authentication errors using the global error handler
     handleAuthError(response) {
+        if (window.errorHandler) {
+            return window.errorHandler.handleError(response, { type: 'auth' });
+        }
+        
+        // Fallback for backward compatibility
         let errorMessage = 'Authentication failed';
         
         if (response.error) {
@@ -298,8 +354,16 @@ class AuthManager {
         return { success: false, error: errorMessage };
     }
 
-    // Handle network errors
+    // Handle network errors using the global error handler
     handleNetworkError(error, defaultMessage) {
+        if (window.errorHandler) {
+            return window.errorHandler.handleError(error, { 
+                type: 'network',
+                action: defaultMessage.replace('failed. Please try again.', '').replace('Failed to ', '').toLowerCase()
+            });
+        }
+        
+        // Fallback for backward compatibility
         let errorMessage = defaultMessage;
         
         if (error.message) {
@@ -402,8 +466,20 @@ class AuthManager {
         this.currentUser = null;
     }
 
-    // Enhanced logout with proper cleanup
-    logout() {
+    // Enhanced logout with proper session termination
+    async logout() {
+        try {
+            const refreshToken = this.getRefreshToken();
+            
+            if (refreshToken) {
+                // Call backend logout to terminate session
+                await window.api.logout(refreshToken);
+            }
+        } catch (error) {
+            console.error('Logout API call failed:', error);
+            // Continue with local cleanup even if API call fails
+        }
+        
         this.clearAuthData();
         
         // Redirect to login page if not already there
@@ -570,6 +646,96 @@ class AuthManager {
             console.error('Security logs error:', error);
             return this.handleNetworkError(error, 'Failed to load security logs.');
         }
+    }
+
+    // Session Management Methods
+
+    // Get user sessions
+    async getUserSessions() {
+        try {
+            const response = await window.api.getUserSessions(this.refreshTokenJti);
+            
+            if (response.sessions) {
+                return { 
+                    success: true, 
+                    sessions: response.sessions,
+                    totalSessions: response.total_sessions
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Get user sessions error:', error);
+            return this.handleNetworkError(error, 'Failed to load sessions.');
+        }
+    }
+
+    // Terminate specific session
+    async terminateSession(sessionId) {
+        try {
+            const response = await window.api.terminateSession(sessionId);
+            
+            if (response.message) {
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Terminate session error:', error);
+            return this.handleNetworkError(error, 'Failed to terminate session.');
+        }
+    }
+
+    // Terminate all other sessions
+    async terminateAllOtherSessions() {
+        try {
+            const response = await window.api.terminateAllSessions(this.currentSessionId);
+            
+            if (response.message) {
+                return { 
+                    success: true, 
+                    message: response.message 
+                };
+            } else {
+                return this.handleAuthError(response);
+            }
+        } catch (error) {
+            console.error('Terminate all sessions error:', error);
+            return this.handleNetworkError(error, 'Failed to terminate all sessions.');
+        }
+    }
+
+    // Get current session info
+    getCurrentSessionId() {
+        return this.currentSessionId;
+    }
+
+    // Check if remember me is enabled
+    isRememberMeEnabled() {
+        return localStorage.getItem('remember_me') === 'true';
+    }
+
+    // Get device info for current session
+    getCurrentDeviceInfo() {
+        const userAgent = navigator.userAgent;
+        const platform = navigator.platform;
+        
+        // Simple device detection
+        let deviceType = 'desktop';
+        if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
+            deviceType = /iPad/.test(userAgent) ? 'tablet' : 'mobile';
+        }
+        
+        return {
+            userAgent,
+            platform,
+            deviceType,
+            language: navigator.language,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
     }
 
     // Validate profile form

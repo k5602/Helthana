@@ -1,4 +1,5 @@
 import './style.css'
+import './error-handler.js'  // Load error handler first
 import './navigation.js'
 import './localization.js'
 import './api.js'
@@ -187,7 +188,17 @@ class HealthGuideApp {
             }
         } catch (error) {
             console.error('Emergency alert failed:', error);
-            if (window.ui) window.ui.showToast(window.t ? window.t('msg.emergency.failed') : 'Failed to send emergency alert', 'error');
+            
+            // Use global error handler if available
+            if (window.errorHandler) {
+                window.errorHandler.handleError(error, {
+                    action: 'send emergency alert',
+                    retryable: true,
+                    retryCallback: () => this.handleEmergencyAlert()
+                });
+            } else if (window.ui) {
+                window.ui.showToast(window.t ? window.t('msg.emergency.failed') : 'Failed to send emergency alert', 'error');
+            }
         }
     }
 
