@@ -332,6 +332,7 @@ class LocalizationManager {
             'vitals.stats.highest': 'Highest',
             'vitals.stats.lowest': 'Lowest',
             'vitals.stats.readings': 'Readings',
+            'vitals.noChartData': 'No chart data available',
             
             // Vitals placeholders
             'vitals.placeholder.blood_pressure': '120/80',
@@ -751,6 +752,7 @@ class LocalizationManager {
             'vitals.stats.highest': 'الأعلى',
             'vitals.stats.lowest': 'الأدنى',
             'vitals.stats.readings': 'القراءات',
+            'vitals.noChartData': 'لا توجد بيانات رسم بياني متاحة',
             
             // Vitals placeholders
             'vitals.placeholder.blood_pressure': '120/80',
