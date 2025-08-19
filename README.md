@@ -1,4 +1,4 @@
-# Your Health Guide (دليلك الصحي)
+# Helthana:Your Health Guide (دليلك الصحي)
 
 A Progressive Web App (PWA) designed to transform healthcare management in Egypt by providing an intelligent, accessible digital health companion for patients with chronic conditions.
 
