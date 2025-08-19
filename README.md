@@ -31,30 +31,35 @@ Egyptian patients with chronic diseases face significant challenges:
 ## ✅ MVP Features Implemented
 
 ### 1. Intelligent Prescription Scanner
+
 - Camera-based prescription scanning with image optimization
 - OCR processing with medication name, dosage, and instruction extraction
 - Manual editing capabilities for OCR results
 - Secure image storage with encryption
 
 ### 2. Smart Vitals Tracker
+
 - Quick logging of health metrics (blood pressure, glucose, etc.)
 - Visual trend analysis with charts and graphs
 - Abnormal reading detection and alerts
 - Offline data storage with background sync
 
 ### 3. Health Report Generator
+
 - PDF report generation with WeasyPrint
 - Comprehensive health data visualization
 - Doctor-friendly formatting
 - Secure sharing options
 
 ### 4. Emergency SOS System
+
 - One-tap emergency alerts with location sharing
 - Automated messages to emergency contacts
 - Medical ID access for first responders
 - Alert history and status tracking
 
 ### 5. Offline-First Architecture
+
 - Complete offline functionality with IndexedDB
 - Intelligent sync with conflict resolution
 - Offline queue management and prioritization
@@ -63,18 +68,21 @@ Egyptian patients with chronic diseases face significant challenges:
 ## 🚀 Planned Features
 
 ### 1. AI Health Insights
+
 - Medication interaction warnings
 - Health trend analysis with personalized recommendations
 - Nutrition and lifestyle guidance
 - Early warning detection for abnormal patterns
 
 ### 2. Voice Assistant Integration
+
 - Egyptian Arabic voice command processing
 - Voice-guided navigation for visually impaired users
 - Voice-based vitals logging and medication reminders
 - Natural language processing for health queries
 
 ### 3. Community Support Network
+
 - Anonymous condition-specific support groups
 - Verified healthcare professional Q&A
 - Resource sharing and local healthcare information
@@ -93,13 +101,13 @@ graph TD
     D --> F[Cloud Vision AI]
     D --> G[Vertex AI - MedGemma]
     D --> H[Twilio API]
-    subgraph "Frontend (PWA)"
+    subgraph Frontend_PWA
         I[HTML/CSS/JS]
         J[Service Worker]
         K[IndexedDB]
         L[PWA Manifest]
     end
-    subgraph "Backend (Django)"
+    subgraph Backend_Django
         M[Django REST Framework]
         N[JWT Authentication]
         O[ViewSets]
@@ -113,7 +121,7 @@ graph TD
     M --> O
     O --> P
     O --> Q
-</mermaid>
+```
 
 ### Frontend Architecture (Vanilla JavaScript PWA)
 
@@ -134,13 +142,13 @@ graph TD
     J --> N[Offline Data Store]
     K --> O[Cache API]
     K --> P[Background Sync]
-    subgraph "Core Modules"
+    subgraph Core_Modules
         C
         D
         E
         F
     end
-    subgraph "Feature Modules"
+    subgraph Feature_Modules
         Q[prescriptions.js]
         R[vitals.js]
         S[reports.js]
@@ -150,7 +158,7 @@ graph TD
     B --> R
     B --> S
     B --> T
-</mermaid>
+```
 
 ### Backend Architecture (Django REST Framework)
 
@@ -161,25 +169,25 @@ graph TD
     B --> D[Service Layer]
     D --> E[Models]
     E --> F[PostgreSQL]
-    subgraph "Authentication App"
+    subgraph Authentication_App
         G[UserViewSet]
         H[JWTAuthentication]
         I[Permissions]
     end
-    subgraph "Prescriptions App"
+    subgraph Prescriptions_App
         J[PrescriptionViewSet]
         K[OCR Service]
         L[File Storage]
     end
-    subgraph "Vitals App"
+    subgraph Vitals_App
         M[VitalsViewSet]
         N[Analytics Service]
     end
-    subgraph "Reports App"
+    subgraph Reports_App
         O[ReportsViewSet]
         P[PDF Generator]
     end
-    subgraph "Emergency App"
+    subgraph Emergency_App
         Q[EmergencyViewSet]
         R[SMS Service]
     end
@@ -195,7 +203,7 @@ graph TD
     M --> N
     O --> P
     Q --> R
-</mermaid>
+```
 
 ### Data Flow Diagrams
 
@@ -221,7 +229,7 @@ sequenceDiagram
     Backend-->>Frontend: Return structured medication info
     Frontend->>Frontend: Store in IndexedDB
     Frontend->>User: Display medication list for confirmation
-</mermaid>
+```
 
 #### 2. Offline Synchronization Flow
 
@@ -245,7 +253,7 @@ sequenceDiagram
     Backend-->>Frontend: Confirm successful sync
     Frontend->>Frontend: Update sync status in IndexedDB
     Frontend->>User: Show sync confirmation
-</mermaid>
+```
 
 #### 3. Emergency Alert Flow
 
@@ -265,14 +273,15 @@ sequenceDiagram
     Backend-->>Frontend: Confirm alert sent
     Frontend->>User: Show alert confirmation
     Backend->>Backend: Log emergency event
-</mermaid>
+```
 
 ### Technology Stack Details
 
 #### Frontend (Vanilla JavaScript PWA)
+
 - **Framework**: Vanilla JavaScript (ES6+) with Vite for bundling
 - **Styling**: Tailwind CSS with DaisyUI component library
-- **PWA Features**: 
+- **PWA Features**:
   - Service Workers for offline caching
   - IndexedDB for structured data storage
   - Background Sync for offline operations
@@ -281,11 +290,12 @@ sequenceDiagram
 - **Architecture**: Modular component-based structure with ES6 modules
 
 #### Backend (Django REST Framework)
+
 - **Framework**: Django 4.2 with Django REST Framework
 - **Database**: PostgreSQL with row-level security and encryption
 - **Authentication**: JWT + OAuth 2.0 with token refresh
 - **Cache**: Redis for session management and rate limiting
-- **AI/ML**: 
+- **AI/ML**:
   - Google Cloud Vision API for OCR
   - MedGemma via Vertex AI for medical entity extraction
   - Speech-to-Text API for voice commands
@@ -311,7 +321,7 @@ graph TD
     D --> D2[Compression]
     D --> D3[HTTP/2]
     D --> D4[Resource Hints]
-</mermaid>
+```
 
 ### Security Architecture
 
@@ -337,11 +347,11 @@ graph TD
     F --> F1[Serializer Validation]
     F --> F2[File Upload Scanning]
     F --> F3[Input Sanitization]
-</mermaid>
+```
 
 ## 🛠️ Project Structure
 
-```
+```text
 your-health-guide/
 ├── backend/                 # Django REST API
 │   ├── health_guide/       # Main Django project
@@ -371,6 +381,7 @@ your-health-guide/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 16+
 - PostgreSQL (for production)
@@ -453,12 +464,14 @@ docker-compose up --build
 ## 🌐 Deployment Options
 
 ### GitHub Docker Deployment
+
 - Automated Docker builds for both backend and frontend
 - GitHub Container Registry (GHCR) for image storage
 - Integration testing with full application stack
 - Release management with tagged Docker images
 
 ### Google Cloud Platform
+
 - Cloud Run for containerized backend
 - Cloud Storage for static frontend hosting
 - Cloud SQL for PostgreSQL database
@@ -467,7 +480,7 @@ docker-compose up --build
 
 ## 👥 Team
 
-- **Khaled Mahmoud**: Project Lead & Backend Developer & Ai Engineer &software Archticet 
+- **Khaled Mahmoud**: Project Lead & Backend Developer & Ai Engineer &software Archticet
 - **Gasser Mohammed**: Frontend Developer & Deployment engineer & UX Designer
 
 
@@ -485,4 +498,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-*Made with ❤️ for the people of Egypt*
+Made with ❤️ for the people of Egypt.
