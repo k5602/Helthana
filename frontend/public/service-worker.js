@@ -20,31 +20,11 @@ const STATIC_ASSETS = [
   '/index.html',
   '/src/index.css',
   '/src/main.jsx',
-  '/src/api.js',
-  '/src/auth.js',
-  '/src/ui.js',
-  '/src/offline.js',
-  '/src/navigation.js',
-  '/src/router.js',
-  '/src/error-handler.js',
-  '/src/localization.js',
-  '/src/permissions.js',
-  '/src/voice-commands.js',
-  '/src/ai-insights.js',
-  '/src/pages/dashboard.js',
-  '/src/pages/prescriptions.js',
-  '/src/pages/vitals.js',
-  '/src/pages/reports.js',
-  '/src/pages/emergency.js',
-  '/src/pages/profile.js',
-  '/components/loading.js',
-  '/components/modal.js',
-  '/components/voice-command-button.js',
-  '/public/manifest.json'
+  '/manifest.json'
 ];
 
 // Offline fallback page
-const OFFLINE_PAGE = '/offline.html';
+const OFFLINE_PAGE = '/';
 
 // Cache expiration times (in milliseconds)
 const CACHE_EXPIRATION = {
