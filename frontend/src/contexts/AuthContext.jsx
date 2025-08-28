@@ -179,24 +179,71 @@ export const AuthProvider = ({ children }) => {
   // Register function
   const register = useCallback(async (userData) => {
     try {
-      if (userData.password !== userData.password_confirm) {
+      console.log("AuthContext register called with:", userData)
+
+      // Frontend-only field; ensure it's not sent to the API
+      // and trim string fields
+      const sanitize = (v) => (typeof v === "string" ? v.trim() : v)
+      const payload = {
+        username: sanitize(userData.username),
+        email: sanitize(userData.email),
+        password: userData.password,
+        password_confirm: userData.password_confirm,
+        first_name: sanitize(userData.first_name),
+        last_name: sanitize(userData.last_name),
+        phone_number: sanitize(userData.phone_number) || undefined,
+        date_of_birth: sanitize(userData.date_of_birth) || undefined,
+        // Optional fields supported by backend serializer
+        emergency_contact_name: sanitize(userData.emergency_contact_name) || undefined,
+        emergency_contact_phone: sanitize(userData.emergency_contact_phone) || undefined,
+        medical_conditions: sanitize(userData.medical_conditions) || undefined,
+      }
+
+      // Remove undefined keys to avoid sending them
+      Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k])
+
+      if (payload.password !== payload.password_confirm) {
+        console.log("Password mismatch detected")
         return { success: false, error: "Passwords don't match" }
       }
 
-      const response = await apiClient.register(userData)
+      console.log("Calling apiClient.register with payload:", payload)
+      const response = await apiClient.register(payload)
+      console.log("API response:", response)
 
       if (response.user || response.message) {
+        console.log("Registration successful, returning success response")
         return {
           success: true,
           user: response.user,
-          message: response.message || "Registration successful! Please check your email to verify your account.",
+          message:
+            response.message ||
+            "Registration successful! Please check your email to verify your account.",
           emailVerificationSent: response.email_verification_sent,
         }
-      } else {
-        return { success: false, error: response.error || "Registration failed" }
       }
+
+      // Normalize error shape from backend { error: { message, details } }
+      let friendly = "Registration failed"
+      if (response?.error) {
+        const { message, details } = response.error
+        if (details && typeof details === "object") {
+          // Prefer first field error message
+          const firstKey = Object.keys(details)[0]
+          const firstVal = details[firstKey]
+          const detailMsg = Array.isArray(firstVal) ? firstVal[0] : String(firstVal)
+          friendly = detailMsg || message || friendly
+        } else if (typeof message === "string") {
+          friendly = message
+        }
+      } else if (response?.detail) {
+        friendly = response.detail
+      }
+
+      console.log("Registration failed, returning error:", friendly)
+      return { success: false, error: friendly }
     } catch (error) {
-      console.error("Registration error:", error)
+      console.error("Registration error caught in AuthContext:", error)
       return { success: false, error: "Registration failed. Please try again." }
     }
   }, [])

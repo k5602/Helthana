@@ -1,33 +1,18 @@
 /**
- * API Communication Module
- * Handles all backend API interactions
+ * Secure API Communication Module
+ * Handles all backend API interactions with environment-based configuration
  */
 
-// Determine API base URL based on environment
-function getApiBaseUrl() {
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
-    
-    // Development environments - use port 8000 for Django backend
-    if (hostname === 'localhost' || 
-        hostname === '127.0.0.1' || 
-        hostname.startsWith('192.168.') || 
-        hostname.startsWith('10.') || 
-        hostname.startsWith('172.') ||
-        /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-        return `${protocol}//${hostname}:8000/api/v1`;
-    }
-    
-    // Production environment - same host as frontend
-    return `${protocol}//${window.location.host}/api/v1`;
-}
+import { config, API_ENDPOINTS } from './config/environment.js';
 
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = config.api.baseUrl;
 
 class ApiClient {
     constructor() {
         this.baseURL = API_BASE_URL;
         this.token = localStorage.getItem('access_token');
+        this.timeout = config.api.timeout;
+        this.maxRetries = config.api.maxRetries;
     }
 
     // Set authentication token
@@ -102,7 +87,7 @@ class ApiClient {
 
     // Authentication methods
     async login(username, password) {
-        const response = await this.request('/auth/login/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.LOGIN, {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
@@ -136,7 +121,7 @@ class ApiClient {
     }
 
     async register(userData) {
-        const response = await this.request('/auth/register/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.REGISTER, {
             method: 'POST',
             body: JSON.stringify(userData)
         });
@@ -156,7 +141,7 @@ class ApiClient {
         if (!refreshToken) return false;
 
         try {
-            const response = await this.request('/auth/token/refresh/', {
+            const response = await this.request(API_ENDPOINTS.AUTH.REFRESH_TOKEN, {
                 method: 'POST',
                 body: JSON.stringify({ refresh: refreshToken })
             });
@@ -176,7 +161,7 @@ class ApiClient {
 
     // Password reset request
     async requestPasswordReset(email) {
-        const response = await this.request('/auth/password-reset/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.PASSWORD_RESET, {
             method: 'POST',
             body: JSON.stringify({ email })
         });
@@ -191,7 +176,7 @@ class ApiClient {
 
     // Password reset confirmation
     async confirmPasswordReset(token, password) {
-        const response = await this.request('/auth/password-reset-confirm/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.PASSWORD_RESET_CONFIRM, {
             method: 'POST',
             body: JSON.stringify({ token, password })
         });
@@ -206,7 +191,7 @@ class ApiClient {
 
     // Email verification
     async verifyEmail(token) {
-        const response = await this.request('/auth/verify-email/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.VERIFY_EMAIL, {
             method: 'POST',
             body: JSON.stringify({ token })
         });
@@ -221,7 +206,7 @@ class ApiClient {
 
     // Resend email verification
     async resendEmailVerification(email) {
-        const response = await this.request('/auth/resend-verification/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, {
             method: 'POST',
             body: JSON.stringify({ email })
         });
@@ -236,7 +221,7 @@ class ApiClient {
 
     // Change password
     async changePassword(currentPassword, newPassword, confirmPassword) {
-        const response = await this.request('/auth/change-password/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, {
             method: 'POST',
             body: JSON.stringify({ 
                 current_password: currentPassword,
@@ -255,7 +240,7 @@ class ApiClient {
 
     // Get user profile
     async getProfile() {
-        const response = await this.request('/auth/profile/');
+        const response = await this.request(API_ENDPOINTS.AUTH.PROFILE);
         
         if (!response.ok) {
             const errorData = await this.safeJsonParse(response);
@@ -267,7 +252,7 @@ class ApiClient {
 
     // Update user profile
     async updateProfile(profileData) {
-        const response = await this.request('/auth/profile/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.PROFILE, {
             method: 'PATCH',
             body: JSON.stringify(profileData)
         });
@@ -282,7 +267,7 @@ class ApiClient {
 
     // Update email address
     async updateEmail(newEmail, password) {
-        const response = await this.request('/auth/update-email/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.UPDATE_EMAIL, {
             method: 'POST',
             body: JSON.stringify({ 
                 new_email: newEmail,
@@ -300,7 +285,7 @@ class ApiClient {
 
     // Delete account
     async deleteAccount(password, confirmation) {
-        const response = await this.request('/auth/delete-account/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.DELETE_ACCOUNT, {
             method: 'POST',
             body: JSON.stringify({ 
                 password: password,
@@ -318,7 +303,7 @@ class ApiClient {
 
     // Get security logs
     async getSecurityLogs() {
-        const response = await this.request('/auth/security-logs/');
+        const response = await this.request(API_ENDPOINTS.AUTH.SECURITY_LOGS);
         
         if (!response.ok) {
             const errorData = await this.safeJsonParse(response);
@@ -330,7 +315,7 @@ class ApiClient {
 
     // Enhanced logout with session termination
     async logout(refreshToken) {
-        const response = await this.request('/auth/logout/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.LOGOUT, {
             method: 'POST',
             body: JSON.stringify({ refresh: refreshToken })
         });
@@ -345,7 +330,7 @@ class ApiClient {
 
     // Get user sessions
     async getUserSessions(currentJti = null) {
-        const response = await this.request('/auth/sessions/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.SESSIONS, {
             method: 'GET',
             body: currentJti ? JSON.stringify({ current_jti: currentJti }) : undefined
         });
@@ -360,7 +345,7 @@ class ApiClient {
 
     // Terminate specific session
     async terminateSession(sessionId) {
-        const response = await this.request('/auth/sessions/terminate/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.SESSIONS_TERMINATE, {
             method: 'POST',
             body: JSON.stringify({ session_id: sessionId })
         });
@@ -375,7 +360,7 @@ class ApiClient {
 
     // Terminate all other sessions
     async terminateAllSessions(currentSessionId = null) {
-        const response = await this.request('/auth/sessions/terminate-all/', {
+        const response = await this.request(API_ENDPOINTS.AUTH.SESSIONS_TERMINATE_ALL, {
             method: 'POST',
             body: JSON.stringify({ current_session_id: currentSessionId })
         });
@@ -390,12 +375,12 @@ class ApiClient {
 
     // Prescription methods
     async getPrescriptions() {
-        const response = await this.request('/prescriptions/');
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.BASE);
         return this.safeJsonParse(response);
     }
 
     async uploadPrescription(formData) {
-        const response = await this.request('/prescriptions/', {
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.BASE, {
             method: 'POST',
             headers: {}, // Let browser set Content-Type for FormData
             body: formData
@@ -404,7 +389,7 @@ class ApiClient {
     }
 
     async uploadPrescriptionImage(prescriptionId, formData) {
-        const response = await this.request(`/prescriptions/${prescriptionId}/upload_image/`, {
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.UPLOAD_IMAGE(prescriptionId), {
             method: 'POST',
             headers: {}, // Let browser set Content-Type for FormData
             body: formData
@@ -413,7 +398,7 @@ class ApiClient {
     }
 
     async validateFileUpload(formData) {
-        const response = await this.request('/prescriptions/validate_upload/', {
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.VALIDATE_UPLOAD, {
             method: 'POST',
             headers: {}, // Let browser set Content-Type for FormData
             body: formData
@@ -422,19 +407,19 @@ class ApiClient {
     }
 
     async deletePrescriptionImage(prescriptionId) {
-        const response = await this.request(`/prescriptions/${prescriptionId}/delete_image/`, {
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.DELETE_IMAGE(prescriptionId), {
             method: 'DELETE'
         });
         return this.safeJsonParse(response);
     }
 
     async getStorageUsage() {
-        const response = await this.request('/prescriptions/storage_usage/');
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.STORAGE_USAGE);
         return this.safeJsonParse(response);
     }
 
     async cleanupFiles(daysOld = 30) {
-        const response = await this.request('/prescriptions/cleanup_files/', {
+        const response = await this.request(API_ENDPOINTS.PRESCRIPTIONS.CLEANUP_FILES, {
             method: 'POST',
             body: JSON.stringify({ days_old: daysOld })
         });
@@ -443,13 +428,13 @@ class ApiClient {
 
     // Vitals methods
     async getVitals(type = null) {
-        const endpoint = type ? `/vitals/?type=${type}` : '/vitals/';
+        const endpoint = type ? `${API_ENDPOINTS.VITALS.BASE}?type=${type}` : API_ENDPOINTS.VITALS.BASE;
         const response = await this.request(endpoint);
         return this.safeJsonParse(response);
     }
 
     async addVital(vitalData) {
-        const response = await this.request('/vitals/', {
+        const response = await this.request(API_ENDPOINTS.VITALS.BASE, {
             method: 'POST',
             body: JSON.stringify(vitalData)
         });
@@ -458,12 +443,12 @@ class ApiClient {
 
     // Reports methods
     async getReports() {
-        const response = await this.request('/reports/');
+        const response = await this.request(API_ENDPOINTS.REPORTS.BASE);
         return this.safeJsonParse(response);
     }
 
     async generateReport(reportData) {
-        const response = await this.request('/reports/', {
+        const response = await this.request(API_ENDPOINTS.REPORTS.BASE, {
             method: 'POST',
             body: JSON.stringify(reportData)
         });
@@ -472,12 +457,12 @@ class ApiClient {
 
     // Emergency methods
     async getEmergencyContacts() {
-        const response = await this.request('/emergency/contacts/');
+        const response = await this.request(API_ENDPOINTS.EMERGENCY.CONTACTS);
         return this.safeJsonParse(response);
     }
 
     async sendEmergencyAlert(alertData) {
-        const response = await this.request('/emergency/alert/', {
+        const response = await this.request(API_ENDPOINTS.EMERGENCY.SEND_ALERT, {
             method: 'POST',
             body: JSON.stringify(alertData)
         });
@@ -535,7 +520,7 @@ const checkBackendAvailability = async () => {
     if (backendAvailable !== null) return backendAvailable;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/health/`, { 
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.HEALTH}`, { 
             method: 'GET',
             timeout: 2000,
             signal: AbortSignal.timeout(2000)
@@ -571,10 +556,10 @@ export const apiGetDashboardStats = async () => {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
         const [prescriptionStats, vitalStats, reportStats, emergencyStats] = await Promise.allSettled([
-            api.request('/prescriptions/statistics/').then(handleApiResponse).catch(() => ({ total_prescriptions: 0, pending_prescriptions: 0 })),
-            api.request('/vitals/types/').then(handleApiResponse).catch(() => ({ total_readings: 0, recent_count: 0 })),
-            api.request('/reports/?limit=1').then(handleApiResponse).catch(() => ({ count: 0 })),
-            api.request('/emergency/contacts/').then(handleApiResponse).catch(() => [])
+            api.request(API_ENDPOINTS.PRESCRIPTIONS.STATISTICS).then(handleApiResponse).catch(() => ({ total_prescriptions: 0, pending_prescriptions: 0 })),
+            api.request(API_ENDPOINTS.VITALS.TYPES).then(handleApiResponse).catch(() => ({ total_readings: 0, recent_count: 0 })),
+            api.request(`${API_ENDPOINTS.REPORTS.BASE}?limit=1`).then(handleApiResponse).catch(() => ({ count: 0 })),
+            api.request(API_ENDPOINTS.EMERGENCY.CONTACTS).then(handleApiResponse).catch(() => [])
         ]);
         
         clearTimeout(timeoutId);
@@ -613,9 +598,9 @@ export const apiGetRecentActivity = async () => {
     try {
         // Try to get real data from API with graceful fallback
         const [recentPrescriptions, recentVitals, recentReports] = await Promise.allSettled([
-            api.request('/prescriptions/recent/').then(handleApiResponse).catch(() => []),
-            api.request('/vitals/?limit=5').then(handleApiResponse).catch(() => ({ results: [] })),
-            api.request('/reports/?limit=3').then(handleApiResponse).catch(() => ({ results: [] }))
+            api.request(API_ENDPOINTS.PRESCRIPTIONS.RECENT).then(handleApiResponse).catch(() => []),
+            api.request(`${API_ENDPOINTS.VITALS.BASE}?limit=5`).then(handleApiResponse).catch(() => ({ results: [] })),
+            api.request(`${API_ENDPOINTS.REPORTS.BASE}?limit=3`).then(handleApiResponse).catch(() => ({ results: [] }))
         ]);
         
         const activities = [];
@@ -680,7 +665,7 @@ export const apiGetPrescriptions = (filters = {}) => {
             if (value) params.append(key, value);
         });
         const queryString = params.toString();
-        const endpoint = queryString ? `/prescriptions/?${queryString}` : '/prescriptions/';
+        const endpoint = queryString ? `${API_ENDPOINTS.PRESCRIPTIONS.BASE}?${queryString}` : API_ENDPOINTS.PRESCRIPTIONS.BASE;
         return api.request(endpoint).then(handleApiResponse);
     });
 };
@@ -693,13 +678,13 @@ export const apiUploadPrescription = (formData) => {
 
 export const apiGetPrescription = (id) => {
     return withRetry(async () => {
-        return api.request(`/prescriptions/${id}/`).then(handleApiResponse);
+        return api.request(API_ENDPOINTS.PRESCRIPTIONS.DETAIL(id)).then(handleApiResponse);
     });
 };
 
 export const apiUpdatePrescription = (id, data) => {
     return withRetry(async () => {
-        const response = await api.request(`/prescriptions/${id}/`, {
+        const response = await api.request(API_ENDPOINTS.PRESCRIPTIONS.DETAIL(id), {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
@@ -709,14 +694,14 @@ export const apiUpdatePrescription = (id, data) => {
 
 export const apiDeletePrescription = async (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/prescriptions/${id}/`, { method: 'DELETE' });
+        const response = await api.request(API_ENDPOINTS.PRESCRIPTIONS.DETAIL(id), { method: 'DELETE' });
         return response.ok;
     });
 };
 
 export const apiProcessPrescriptionOCR = (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/prescriptions/${id}/process_ocr/`, {
+        const response = await api.request(API_ENDPOINTS.PRESCRIPTIONS.PROCESS_OCR(id), {
             method: 'POST'
         });
         return handleApiResponse(response);
@@ -726,19 +711,19 @@ export const apiProcessPrescriptionOCR = (id) => {
 export const apiSearchPrescriptions = (searchQuery, filters = {}) => {
     return withRetry(async () => {
         const params = new URLSearchParams({ search: searchQuery, ...filters });
-        return api.request(`/prescriptions/search/?${params.toString()}`).then(handleApiResponse);
+        return api.request(`${API_ENDPOINTS.PRESCRIPTIONS.SEARCH}?${params.toString()}`).then(handleApiResponse);
     });
 };
 
 export const apiGetRecentPrescriptions = () => {
     return withRetry(async () => {
-        return api.request('/prescriptions/recent/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.PRESCRIPTIONS.RECENT).then(handleApiResponse);
     });
 };
 
 export const apiGetPrescriptionStatistics = () => {
     return withRetry(async () => {
-        return api.request('/prescriptions/statistics/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.PRESCRIPTIONS.STATISTICS).then(handleApiResponse);
     });
 };
 
@@ -746,15 +731,15 @@ export const apiGetPrescriptionStatistics = () => {
 export const apiGetMedications = (prescriptionId = null) => {
     return withRetry(async () => {
         const endpoint = prescriptionId 
-            ? `/medications/?prescription_id=${prescriptionId}` 
-            : '/medications/';
+            ? `${API_ENDPOINTS.MEDICATIONS.BASE}?prescription_id=${prescriptionId}` 
+            : API_ENDPOINTS.MEDICATIONS.BASE;
         return api.request(endpoint).then(handleApiResponse);
     });
 };
 
 export const apiCreateMedication = (medicationData) => {
     return withRetry(async () => {
-        const response = await api.request('/medications/', {
+        const response = await api.request(API_ENDPOINTS.MEDICATIONS.BASE, {
             method: 'POST',
             body: JSON.stringify(medicationData)
         });
@@ -764,7 +749,7 @@ export const apiCreateMedication = (medicationData) => {
 
 export const apiUpdateMedication = (id, medicationData) => {
     return withRetry(async () => {
-        const response = await api.request(`/medications/${id}/`, {
+        const response = await api.request(API_ENDPOINTS.MEDICATIONS.DETAIL(id), {
             method: 'PATCH',
             body: JSON.stringify(medicationData)
         });
@@ -774,7 +759,7 @@ export const apiUpdateMedication = (id, medicationData) => {
 
 export const apiDeleteMedication = (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/medications/${id}/`, { method: 'DELETE' });
+        const response = await api.request(API_ENDPOINTS.MEDICATIONS.DETAIL(id), { method: 'DELETE' });
         return response.ok;
     });
 };
@@ -787,7 +772,7 @@ export const apiGetVitals = (filters = {}) => {
             if (value) params.append(key, value);
         });
         const queryString = params.toString();
-        const endpoint = queryString ? `/vitals/?${queryString}` : '/vitals/';
+        const endpoint = queryString ? `${API_ENDPOINTS.VITALS.BASE}?${queryString}` : API_ENDPOINTS.VITALS.BASE;
         return api.request(endpoint).then(handleApiResponse);
     });
 };
@@ -800,13 +785,13 @@ export const apiCreateVital = (vitalData) => {
 
 export const apiGetVital = (id) => {
     return withRetry(async () => {
-        return api.request(`/vitals/${id}/`).then(handleApiResponse);
+        return api.request(API_ENDPOINTS.VITALS.DETAIL(id)).then(handleApiResponse);
     });
 };
 
 export const apiUpdateVital = (id, vitalData) => {
     return withRetry(async () => {
-        const response = await api.request(`/vitals/${id}/`, {
+        const response = await api.request(API_ENDPOINTS.VITALS.DETAIL(id), {
             method: 'PATCH',
             body: JSON.stringify(vitalData)
         });
@@ -816,7 +801,7 @@ export const apiUpdateVital = (id, vitalData) => {
 
 export const apiDeleteVital = async (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/vitals/${id}/`, { method: 'DELETE' });
+        const response = await api.request(API_ENDPOINTS.VITALS.DETAIL(id), { method: 'DELETE' });
         return response.ok;
     });
 };
@@ -824,13 +809,13 @@ export const apiDeleteVital = async (id) => {
 export const apiGetVitalsTrends = (vitalType, days = 30) => {
     return withRetry(async () => {
         const params = new URLSearchParams({ type: vitalType, days: days.toString() });
-        return api.request(`/vitals/trends/?${params.toString()}`).then(handleApiResponse);
+        return api.request(`${API_ENDPOINTS.VITALS.TRENDS}?${params.toString()}`).then(handleApiResponse);
     });
 };
 
 export const apiGetVitalsSummary = () => {
     return withRetry(async () => {
-        return api.request('/vitals/summary/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.VITALS.SUMMARY).then(handleApiResponse);
     });
 };
 
@@ -838,13 +823,13 @@ export const apiGetVitalsStatistics = (vitalType = null, days = 30) => {
     return withRetry(async () => {
         const params = new URLSearchParams({ days: days.toString() });
         if (vitalType) params.append('type', vitalType);
-        return api.request(`/vitals/statistics/?${params.toString()}`).then(handleApiResponse);
+        return api.request(`${API_ENDPOINTS.VITALS.STATISTICS}?${params.toString()}`).then(handleApiResponse);
     });
 };
 
 export const apiGetVitalTypes = () => {
     return withRetry(async () => {
-        return api.request('/vitals/types/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.VITALS.TYPES).then(handleApiResponse);
     });
 };
 
@@ -856,20 +841,20 @@ export const apiGetReports = (filters = {}) => {
             if (value) params.append(key, value);
         });
         const queryString = params.toString();
-        const endpoint = queryString ? `/reports/?${queryString}` : '/reports/';
+        const endpoint = queryString ? `${API_ENDPOINTS.REPORTS.BASE}?${queryString}` : API_ENDPOINTS.REPORTS.BASE;
         return api.request(endpoint).then(handleApiResponse);
     });
 };
 
 export const apiGetReport = (id) => {
     return withRetry(async () => {
-        return api.request(`/reports/${id}/`).then(handleApiResponse);
+        return api.request(API_ENDPOINTS.REPORTS.DETAIL(id)).then(handleApiResponse);
     });
 };
 
 export const apiGenerateReport = (reportData) => {
     return withRetry(async () => {
-        const response = await api.request('/reports/generate/', {
+        const response = await api.request(API_ENDPOINTS.REPORTS.GENERATE, {
             method: 'POST',
             body: JSON.stringify(reportData)
         });
@@ -879,7 +864,7 @@ export const apiGenerateReport = (reportData) => {
 
 export const apiDownloadReport = async (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/reports/${id}/download/`);
+        const response = await api.request(API_ENDPOINTS.REPORTS.DOWNLOAD(id));
         if (!response.ok) {
             throw new Error(`Failed to download report: ${response.status}`);
         }
@@ -889,7 +874,7 @@ export const apiDownloadReport = async (id) => {
 
 export const apiPreviewReport = async (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/reports/${id}/preview/`);
+        const response = await api.request(API_ENDPOINTS.REPORTS.PREVIEW(id));
         if (!response.ok) {
             throw new Error(`Failed to preview report: ${response.status}`);
         }
@@ -899,7 +884,7 @@ export const apiPreviewReport = async (id) => {
 
 export const apiShareReport = (id, shareOptions = {}) => {
     return withRetry(async () => {
-        const response = await api.request(`/reports/${id}/share/`, {
+        const response = await api.request(API_ENDPOINTS.REPORTS.SHARE(id), {
             method: 'POST',
             body: JSON.stringify(shareOptions)
         });
@@ -909,7 +894,7 @@ export const apiShareReport = (id, shareOptions = {}) => {
 
 export const apiDeleteReport = async (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/reports/${id}/`, { method: 'DELETE' });
+        const response = await api.request(API_ENDPOINTS.REPORTS.DETAIL(id), { method: 'DELETE' });
         return response.ok;
     });
 };
@@ -947,13 +932,13 @@ export const apiCleanupFiles = (daysOld = 30) => {
 
 export const apiGetReportTemplates = () => {
     return withRetry(async () => {
-        return api.request('/reports/templates/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.REPORTS.TEMPLATES).then(handleApiResponse);
     });
 };
 
 export const apiScheduleReport = (scheduleData) => {
     return withRetry(async () => {
-        const response = await api.request('/reports/schedule/', {
+        const response = await api.request(API_ENDPOINTS.REPORTS.SCHEDULE, {
             method: 'POST',
             body: JSON.stringify(scheduleData)
         });
@@ -970,13 +955,13 @@ export const apiGetEmergencyContacts = () => {
 
 export const apiGetEmergencyContact = (id) => {
     return withRetry(async () => {
-        return api.request(`/emergency/contacts/${id}/`).then(handleApiResponse);
+        return api.request(API_ENDPOINTS.EMERGENCY.CONTACT_DETAIL(id)).then(handleApiResponse);
     });
 };
 
 export const apiCreateEmergencyContact = (contactData) => {
     return withRetry(async () => {
-        const response = await api.request('/emergency/contacts/', {
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.CONTACTS, {
             method: 'POST',
             body: JSON.stringify(contactData)
         });
@@ -986,7 +971,7 @@ export const apiCreateEmergencyContact = (contactData) => {
 
 export const apiUpdateEmergencyContact = (id, contactData) => {
     return withRetry(async () => {
-        const response = await api.request(`/emergency/contacts/${id}/`, {
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.CONTACT_DETAIL(id), {
             method: 'PATCH',
             body: JSON.stringify(contactData)
         });
@@ -996,14 +981,14 @@ export const apiUpdateEmergencyContact = (id, contactData) => {
 
 export const apiDeleteEmergencyContact = (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/emergency/contacts/${id}/`, { method: 'DELETE' });
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.CONTACT_DETAIL(id), { method: 'DELETE' });
         return response.ok;
     });
 };
 
 export const apiSetPrimaryEmergencyContact = (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/emergency/contacts/${id}/set_primary/`, {
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.SET_PRIMARY(id), {
             method: 'POST'
         });
         return handleApiResponse(response);
@@ -1012,7 +997,7 @@ export const apiSetPrimaryEmergencyContact = (id) => {
 
 export const apiGetPrimaryEmergencyContact = () => {
     return withRetry(async () => {
-        return api.request('/emergency/contacts/primary/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.EMERGENCY.PRIMARY_CONTACT).then(handleApiResponse);
     });
 };
 
@@ -1024,20 +1009,20 @@ export const apiGetEmergencyAlerts = (filters = {}) => {
             if (value !== null && value !== undefined) params.append(key, value);
         });
         const queryString = params.toString();
-        const endpoint = queryString ? `/emergency/alerts/?${queryString}` : '/emergency/alerts/';
+        const endpoint = queryString ? `${API_ENDPOINTS.EMERGENCY.ALERTS}?${queryString}` : API_ENDPOINTS.EMERGENCY.ALERTS;
         return api.request(endpoint).then(handleApiResponse);
     });
 };
 
 export const apiGetEmergencyAlert = (id) => {
     return withRetry(async () => {
-        return api.request(`/emergency/alerts/${id}/`).then(handleApiResponse);
+        return api.request(API_ENDPOINTS.EMERGENCY.ALERT_DETAIL(id)).then(handleApiResponse);
     });
 };
 
 export const apiSendEmergencyAlert = (alertData) => {
     return withRetry(async () => {
-        const response = await api.request('/emergency/alerts/send_alert/', {
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.SEND_ALERT, {
             method: 'POST',
             body: JSON.stringify(alertData)
         });
@@ -1047,7 +1032,7 @@ export const apiSendEmergencyAlert = (alertData) => {
 
 export const apiResolveEmergencyAlert = (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/emergency/alerts/${id}/resolve/`, {
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.RESOLVE_ALERT(id), {
             method: 'POST'
         });
         return handleApiResponse(response);
@@ -1056,7 +1041,7 @@ export const apiResolveEmergencyAlert = (id) => {
 
 export const apiCancelEmergencyAlert = (id) => {
     return withRetry(async () => {
-        const response = await api.request(`/emergency/alerts/${id}/cancel/`, {
+        const response = await api.request(API_ENDPOINTS.EMERGENCY.CANCEL_ALERT(id), {
             method: 'POST'
         });
         return handleApiResponse(response);
@@ -1065,14 +1050,14 @@ export const apiCancelEmergencyAlert = (id) => {
 
 export const apiGetEmergencyStatus = () => {
     return withRetry(async () => {
-        return api.request('/emergency/alerts/status/').then(handleApiResponse);
+        return api.request(API_ENDPOINTS.EMERGENCY.STATUS).then(handleApiResponse);
     });
 };
 
 export const apiGetEmergencyAlertHistory = (days = 30) => {
     return withRetry(async () => {
         const params = new URLSearchParams({ days: days.toString() });
-        return api.request(`/emergency/alerts/history/?${params.toString()}`).then(handleApiResponse);
+        return api.request(`${API_ENDPOINTS.EMERGENCY.HISTORY}?${params.toString()}`).then(handleApiResponse);
     });
 };
 

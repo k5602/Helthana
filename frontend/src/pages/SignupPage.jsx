@@ -19,6 +19,8 @@ const SignupPage = () => {
     terms: false,
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [toast, setToast] = useState(null)
 
   const { register } = useAuth()
@@ -71,6 +73,32 @@ const SignupPage = () => {
       showToast("Password must be at least 8 characters long", "error")
       return false
     }
+    
+    // Enhanced password validation to match backend requirements
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_+=\-\[\]\\;'\/~`])/
+    if (!passwordRegex.test(formData.password)) {
+      showToast(
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        "error"
+      )
+      return false
+    }
+    
+    // Check for common patterns
+    const commonPatterns = ['123456', 'password', 'qwerty', 'abc123', 'admin', 'letmein', 'welcome', 'monkey', 'dragon']
+    const lowercasePassword = formData.password.toLowerCase()
+    if (commonPatterns.some(pattern => lowercasePassword.includes(pattern))) {
+      showToast("Password contains common patterns that are not secure", "error")
+      return false
+    }
+    
+    // Check for sequential characters
+    const hasSequential = /123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz/i.test(formData.password)
+    if (hasSequential) {
+      showToast("Password should not contain sequential characters", "error")
+      return false
+    }
+    
     if (formData.password !== formData.password_confirm) {
       showToast("Passwords don't match", "error")
       return false
@@ -84,15 +112,24 @@ const SignupPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log("Form submitted with data:", formData)
 
-    if (!validateForm()) return
+    if (!validateForm()) {
+      console.log("Form validation failed")
+      return
+    }
 
     setIsLoading(true)
+    console.log("Calling register function...")
 
     try {
-      const result = await register(formData)
+      // Avoid sending frontend-only fields like `terms`
+      const { terms, ...dataForApi } = formData
+      const result = await register(dataForApi)
+      console.log("Register result:", result)
 
       if (result.success) {
+        console.log("Registration successful")
         if (result.emailVerificationSent) {
           showToast(
             "Account created successfully! Please check your email to verify your account before logging in.",
@@ -108,12 +145,14 @@ const SignupPage = () => {
           }, 2000)
         }
       } else {
-        showToast(result.error, "error")
+        console.log("Registration failed:", result.error)
+        showToast(result.error || "Registration failed", "error")
       }
     } catch (error) {
       console.error("Registration error:", error)
       showToast("Registration failed. Please try again.", "error")
     } finally {
+      console.log("Setting loading to false")
       setIsLoading(false)
     }
   }
@@ -279,28 +318,35 @@ const SignupPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="input input-bordered w-full pr-10"
+                    className="input input-bordered w-full pr-20"
                     placeholder="Create a password"
                     required
                   />
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50"
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-xs"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                    />
-                  </svg>
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <div className="text-xs text-base-content/60 mt-1">
+                  <p>Password must contain:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>At least 8 characters</li>
+                    <li>One uppercase letter (A-Z)</li>
+                    <li>One lowercase letter (a-z)</li>
+                    <li>One number (0-9)</li>
+                    <li>One special character</li>
+                    <li>No common patterns (123456, password, qwerty, etc.)</li>
+                    <li>No sequential characters (abc, 123, etc.)</li>
+                  </ul>
                 </div>
               </div>
 
@@ -310,28 +356,23 @@ const SignupPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPasswordConfirm ? "text" : "password"}
                     name="password_confirm"
                     value={formData.password_confirm}
                     onChange={handleInputChange}
-                    className="input input-bordered w-full pr-10"
+                    className="input input-bordered w-full pr-20"
                     placeholder="Confirm your password"
                     required
                   />
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50"
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordConfirm((v) => !v)}
+                    className="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-xs"
+                    aria-label={showPasswordConfirm ? "Hide password" : "Show password"}
+                    title={showPasswordConfirm ? "Hide password" : "Show password"}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                    />
-                  </svg>
+                    {showPasswordConfirm ? "Hide" : "Show"}
+                  </button>
                 </div>
               </div>
 

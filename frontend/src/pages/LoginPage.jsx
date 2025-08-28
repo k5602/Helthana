@@ -13,6 +13,7 @@ const LoginPage = () => {
     rememberMe: false,
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [showPasswordReset, setShowPasswordReset] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
   const [toast, setToast] = useState(null)
@@ -204,28 +205,23 @@ const LoginPage = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Enter your password"
-                    className="input input-bordered w-full pr-10"
+                    className="input input-bordered w-full pr-20"
                     required
                   />
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50"
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-xs"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                    />
-                  </svg>
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
                 </div>
               </div>
 

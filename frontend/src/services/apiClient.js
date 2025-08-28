@@ -1,12 +1,9 @@
-// Determine API base URL from environment first, with safe fallbacks
+// Determine API base URL based on environment
 function getApiBaseUrl() {
-  const envBase = import.meta?.env?.VITE_API_BASE_URL
-  if (envBase) return envBase.replace(/\/$/, "")
-
   const hostname = window.location.hostname
   const protocol = window.location.protocol
 
-  // Development fallback - typical Django port
+  // Development environments - use port 8000 for Django backend
   if (
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
@@ -18,7 +15,7 @@ function getApiBaseUrl() {
     return `${protocol}//${hostname}:8000/api/v1`
   }
 
-  // Production fallback - same host as frontend
+  // Production environment - same host as frontend
   return `${protocol}//${window.location.host}/api/v1`
 }
 
@@ -117,17 +114,24 @@ class ApiClient {
   }
 
   async register(userData) {
+    console.log("ApiClient register called with:", userData)
+    
     const response = await this.request("/auth/register/", {
       method: "POST",
       body: JSON.stringify(userData),
     })
 
+    console.log("API response status:", response.status, "ok:", response.ok)
+
     if (!response.ok) {
       const errorData = await this.safeJsonParse(response)
+      console.log("API error data:", errorData)
       return errorData
     }
 
-    return this.safeJsonParse(response)
+    const result = await this.safeJsonParse(response)
+    console.log("API success data:", result)
+    return result
   }
 
   async refreshToken(refreshToken) {
@@ -266,8 +270,7 @@ class ApiClient {
 
   // Emergency management
   async sendEmergencyAlert(alertData) {
-  // Backend defines custom action under alerts route
-  const response = await this.request("/emergency/alerts/send_alert/", {
+    const response = await this.request("/emergency/alert/", {
       method: "POST",
       body: JSON.stringify(alertData),
     })
