@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const themeToggle = document.querySelector('.theme-controller');
   if (themeToggle) {
     themeToggle.addEventListener('change', function() {
-      const theme = this.checked ? 'synthwave' : 'light';
+  const theme = this.checked ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
     });
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    if (savedTheme === 'synthwave') {
+  if (savedTheme === 'dark') {
       themeToggle.checked = true;
     }
   }

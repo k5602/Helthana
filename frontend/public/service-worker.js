@@ -18,16 +18,8 @@ const CACHE_STRATEGIES = {
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/dashboard.html',
-  '/login.html',
-  '/signup.html',
-  '/prescriptions.html',
-  '/vitals.html',
-  '/reports.html',
-  '/emergency.html',
-  '/profile.html',
-  '/src/style.css',
-  '/src/main.js',
+  '/src/index.css',
+  '/src/main.jsx',
   '/src/api.js',
   '/src/auth.js',
   '/src/ui.js',
@@ -48,9 +40,7 @@ const STATIC_ASSETS = [
   '/components/loading.js',
   '/components/modal.js',
   '/components/voice-command-button.js',
-  '/public/manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css'
+  '/public/manifest.json'
 ];
 
 // Offline fallback page

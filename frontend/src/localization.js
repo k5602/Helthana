@@ -1034,6 +1034,7 @@ export const getCurrentLanguage = () => i18n.currentLanguage;
 
 // Export the localization manager class and instance
 export { LocalizationManager, i18n };
+export default LocalizationManager;
 
 // Legacy CommonJS export
 if (typeof module !== 'undefined' && module.exports) {
