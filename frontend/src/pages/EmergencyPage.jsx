@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import Toast from "../components/Toast"
 import { EmergencyContactModal } from "../components/EmergencyContactModal"
+import AuthenticatedLayout from "../components/AuthenticatedLayout"
 
 export function EmergencyPage() {
   const { user } = useAuth()
@@ -50,7 +51,7 @@ export function EmergencyPage() {
   }
 
   const callEmergency = () => {
-    if (confirm("This will call emergency services (111). Proceed only if this is a real emergency.")) {
+    if (confirm(t("emergency.call.confirm"))) {
       window.location.href = "tel:111"
     }
   }
@@ -66,28 +67,24 @@ export function EmergencyPage() {
           const message = `EMERGENCY: I need help! My current location is: ${locationUrl}`
 
           if (navigator.share) {
-            navigator.share({
-              title: "Emergency Location",
-              text: message,
-              url: locationUrl,
-            })
+            navigator.share({ title: "Emergency Location", text: message, url: locationUrl })
           } else {
             navigator.clipboard.writeText(message).then(() => {
-              showToast("Location copied to clipboard", "success")
+              showToast(t("emergency.location.copied"), "success")
             })
           }
         },
         (error) => {
-          showToast("Unable to get location. Please enable GPS.", "error")
+          showToast(t("emergency.location.error"), "error")
         },
       )
     } else {
-      showToast("Geolocation is not supported by this browser.", "error")
+      showToast(t("emergency.geo.unsupported"), "error")
     }
   }
 
   const sendMedicalAlert = () => {
-    showToast("Medical alert sent to emergency services", "success")
+    showToast(t("emergency.medical.sent"), "success")
   }
 
   const handleAddContact = (contactData) => {
@@ -99,66 +96,38 @@ export function EmergencyPage() {
     const updatedContacts = [...emergencyContacts, newContact]
     setEmergencyContacts(updatedContacts)
     localStorage.setItem("emergency-contacts", JSON.stringify(updatedContacts))
-    setShowContactModal(false)
-    showToast("Emergency contact added successfully", "success")
+  setShowContactModal(false)
+  showToast(t("emergency.contacts.added"), "success")
   }
 
   const deleteContact = (id) => {
-    if (confirm("Are you sure you want to delete this emergency contact?")) {
+    if (confirm(t("emergency.contacts.confirmDelete"))) {
       const updatedContacts = emergencyContacts.filter((c) => c.id !== id)
       setEmergencyContacts(updatedContacts)
       localStorage.setItem("emergency-contacts", JSON.stringify(updatedContacts))
-      showToast("Emergency contact deleted", "success")
+      showToast(t("emergency.contacts.deleted"), "success")
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100">
-      {/* Emergency Header */}
-      <div className="bg-error text-error-content p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-                className="w-8 h-8 mr-3 animate-pulse"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
-                />
-              </svg>
-              <h1 className="text-2xl font-bold">{t("emergency.title")}</h1>
-            </div>
-            <div className="flex items-center">
-              <a href="/dashboard" className="btn btn-ghost text-error-content">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                {t("common.close")}
-              </a>
-            </div>
+    <AuthenticatedLayout>
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-error/10 text-error flex items-center justify-center">
+            <span className="text-xl">🚨</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{t("emergency.title")}</h1>
+            <p className="text-base-content/60">{t("emergency.call.desc")}</p>
           </div>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <div>
         {/* Emergency Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Call Emergency Services */}
-          <div className="card bg-error text-error-content shadow-xl animate-pulse">
+          <div className="card bg-error text-error-content shadow-xl">
             <div className="card-body text-center">
               <div className="text-6xl mb-4">🚨</div>
               <h2 className="card-title justify-center mb-2">{t("emergency.call.title")}</h2>
@@ -238,7 +207,7 @@ export function EmergencyPage() {
         </div>
 
         {/* Emergency Contacts */}
-        <div className="card bg-base-100 shadow-xl mb-8">
+  <div className="card bg-base-100 shadow-xl mb-8">
           <div className="card-body">
             <h2 className="card-title mb-4">{t("emergency.contacts.title")}</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -355,7 +324,7 @@ export function EmergencyPage() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Emergency Contact Modal */}
       {showContactModal && (
@@ -364,7 +333,7 @@ export function EmergencyPage() {
 
       {/* Toast Notifications */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    </AuthenticatedLayout>
   )
 }
 

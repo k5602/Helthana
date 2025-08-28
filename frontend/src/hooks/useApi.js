@@ -96,3 +96,41 @@ export const useEmergency = () => {
 
   return { loading, error, sendEmergencyAlert }
 }
+
+// Reports API hooks
+export const useReports = () => {
+  const { loading, error, request } = useApi()
+
+  const listReports = useCallback(
+    (filters = {}) => {
+      return request(async () => {
+        const params = new URLSearchParams()
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value) params.append(key, value)
+        })
+        const queryString = params.toString()
+        const endpoint = queryString ? `/reports/?${queryString}` : "/reports/"
+        const response = await apiClient.request(endpoint)
+        return handleApiResponse(response)
+      })
+    },
+    [request],
+  )
+
+  const generate = useCallback(
+    (payload) => {
+      return request(async () => {
+        const response = await apiClient.request("/reports/generate/", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })
+        return handleApiResponse(response)
+      })
+    },
+    [request],
+  )
+
+  const downloadUrl = (reportId) => `${apiClient.baseURL}/reports/${reportId}/download/`
+
+  return { loading, error, listReports, generate, downloadUrl }
+}

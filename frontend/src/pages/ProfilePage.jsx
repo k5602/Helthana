@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useAuth } from "../contexts/AuthContext"
 import { useLanguage } from "../contexts/LanguageContext"
 import Toast from "../components/Toast"
+import AuthenticatedLayout from "../components/AuthenticatedLayout"
 
 const ProfilePage = () => {
   const { user, updateProfile } = useAuth()
@@ -47,7 +48,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error("Profile update error:", error)
-      showToast("Failed to update profile. Please try again.", "error")
+  showToast(t("profile.updateError"), "error")
     } finally {
       setIsLoading(false)
     }
@@ -65,6 +66,7 @@ const ProfilePage = () => {
   }
 
   return (
+    <AuthenticatedLayout>
     <div className="min-h-screen bg-base-200 py-8 px-4">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
@@ -85,7 +87,7 @@ const ProfilePage = () => {
                 </div>
               </div>
               <button onClick={() => setIsEditing(!isEditing)} className="btn btn-primary btn-sm" disabled={isLoading}>
-                {isEditing ? "Cancel" : "Edit Profile"}
+                {isEditing ? t("common.cancel") : t("profile.edit")}
               </button>
             </div>
 
@@ -94,7 +96,7 @@ const ProfilePage = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">First Name</span>
+                    <span className="label-text font-medium">{t("auth.firstname")}</span>
                   </label>
                   <input
                     type="text"
@@ -108,7 +110,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">Last Name</span>
+                    <span className="label-text font-medium">{t("auth.lastname")}</span>
                   </label>
                   <input
                     type="text"
@@ -124,7 +126,7 @@ const ProfilePage = () => {
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-medium">Email Address</span>
+                  <span className="label-text font-medium">{t("auth.email")}</span>
                 </label>
                 <input
                   type="email"
@@ -139,7 +141,7 @@ const ProfilePage = () => {
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-medium">Phone Number</span>
+                  <span className="label-text font-medium">{t("auth.phone")}</span>
                 </label>
                 <input
                   type="tel"
@@ -153,7 +155,7 @@ const ProfilePage = () => {
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-medium">Date of Birth</span>
+                  <span className="label-text font-medium">{t("auth.dob")}</span>
                 </label>
                 <input
                   type="date"
@@ -168,10 +170,10 @@ const ProfilePage = () => {
               {isEditing && (
                 <div className="flex space-x-4">
                   <button type="submit" className="btn btn-primary flex-1" disabled={isLoading}>
-                    {isLoading ? <span className="loading loading-spinner loading-sm"></span> : "Save Changes"}
+                    {isLoading ? <span className="loading loading-spinner loading-sm"></span> : t("common.save")}
                   </button>
                   <button type="button" onClick={handleCancel} className="btn btn-ghost flex-1">
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               )}
@@ -182,21 +184,22 @@ const ProfilePage = () => {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-primary">12</div>
-                <div className="text-sm text-base-content/70">Prescriptions</div>
+                <div className="text-sm text-base-content/70">{t("dashboard.prescriptions")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-secondary">45</div>
-                <div className="text-sm text-base-content/70">Vitals Logged</div>
+                <div className="text-sm text-base-content/70">{t("dashboard.vitals")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-accent">3</div>
-                <div className="text-sm text-base-content/70">Reports</div>
+                <div className="text-sm text-base-content/70">{t("dashboard.reports")}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+  </div>
+  </AuthenticatedLayout>
   )
 }
 

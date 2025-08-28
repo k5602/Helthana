@@ -7,6 +7,7 @@ import { useApi } from "../hooks/useApi"
 import Toast from "../components/Toast"
 import { PrescriptionScanner } from "../components/PrescriptionScanner"
 import { PrescriptionCard } from "../components/PrescriptionCard"
+import AuthenticatedLayout from "../components/AuthenticatedLayout"
 
 export function PrescriptionsPage() {
   const { user } = useAuth()
@@ -61,6 +62,7 @@ export function PrescriptionsPage() {
   }
 
   return (
+    <AuthenticatedLayout>
     <div className="min-h-screen bg-base-200">
       {/* Header */}
       <div className="bg-base-100 shadow-sm border-b">
@@ -166,6 +168,7 @@ export function PrescriptionsPage() {
       {/* Toast Notifications */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
+    </AuthenticatedLayout>
   )
 }
 

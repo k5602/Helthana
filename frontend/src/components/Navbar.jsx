@@ -20,7 +20,7 @@ const Navbar = () => {
     <div className="navbar bg-base-100 shadow-lg px-2 sm:px-4">
       <div className="navbar-start">
         <div className="dropdown">
-          <div tabindex="0" role="button" className="btn btn-ghost lg:hidden">
+          <div tabIndex="0" role="button" className="btn btn-ghost lg:hidden">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -31,7 +31,7 @@ const Navbar = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" />
             </svg>
           </div>
-          <ul tabindex="0" className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+          <ul tabIndex="0" className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
             <li>
               <Link to="/services">{t("nav.services")}</Link>
             </li>
@@ -120,7 +120,7 @@ const Navbar = () => {
 
         {isAuthenticated ? (
           <div className="dropdown dropdown-end">
-            <div tabindex="0" role="button" className="btn btn-ghost btn-circle avatar">
+            <div tabIndex="0" role="button" className="btn btn-ghost btn-circle avatar">
               <div className="w-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <span className="text-primary font-semibold">
                   {user?.first_name?.charAt(0) || user?.username?.charAt(0) || "U"}
@@ -128,19 +128,19 @@ const Navbar = () => {
               </div>
             </div>
             <ul
-              tabindex="0"
+              tabIndex="0"
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
             >
               <li>
                 <Link to="/profile" className="justify-between">
-                  Profile
+                  {t("nav.profile", "Profile")}
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard">Dashboard</Link>
+                <Link to="/dashboard">{t("nav.dashboard", "Dashboard")}</Link>
               </li>
               <li>
-                <button onClick={handleLogout}>Logout</button>
+                <button onClick={handleLogout}>{t("nav.logout", "Logout")}</button>
               </li>
             </ul>
           </div>

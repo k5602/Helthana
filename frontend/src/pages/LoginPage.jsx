@@ -45,7 +45,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Email verification error:", error)
-      showToast("Email verification failed", "error")
+  showToast(t("auth.error.verifyEmail"), "error")
     }
   }
 
@@ -64,11 +64,11 @@ const LoginPage = () => {
 
   const validateForm = () => {
     if (!formData.username.trim()) {
-      showToast("Username is required", "error")
+  showToast(t("auth.error.username.required"), "error")
       return false
     }
     if (!formData.password) {
-      showToast("Password is required", "error")
+  showToast(t("auth.error.password.required"), "error")
       return false
     }
     return true
@@ -85,10 +85,10 @@ const LoginPage = () => {
       const result = await login(formData.username, formData.password, formData.rememberMe)
 
       if (result.success) {
-        showToast("Login successful! Redirecting...", "success")
+  showToast(t("auth.success.login.redirect"), "success")
 
         if (!result.emailVerified) {
-          showToast("Please verify your email address to access all features.", "warning")
+          showToast(t("auth.warning.verifyEmail"), "warning")
         }
 
         setTimeout(() => {
@@ -99,7 +99,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Login error:", error)
-      showToast("Login failed. Please try again.", "error")
+  showToast(t("auth.error.login.generic"), "error")
     } finally {
       setIsLoading(false)
     }
@@ -109,7 +109,7 @@ const LoginPage = () => {
     e.preventDefault()
 
     if (!resetEmail || !resetEmail.includes("@")) {
-      showToast("Please enter a valid email address", "error")
+  showToast(t("auth.error.reset.invalidEmail"), "error")
       return
     }
 
@@ -127,7 +127,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Password reset error:", error)
-      showToast("Failed to send reset email. Please try again.", "error")
+  showToast(t("auth.error.reset.generic"), "error")
     } finally {
       setIsLoading(false)
     }
@@ -178,7 +178,7 @@ const LoginPage = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleInputChange}
-                    placeholder="Enter your username"
+                    placeholder={t("auth.placeholder.username")}
                     className="input input-bordered w-full pr-10"
                     required
                   />
@@ -209,7 +209,7 @@ const LoginPage = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="Enter your password"
+                    placeholder={t("auth.placeholder.password")}
                     className="input input-bordered w-full pr-20"
                     required
                   />
@@ -217,10 +217,10 @@ const LoginPage = () => {
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-xs"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    title={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("auth.hide") : t("auth.show")}
+                    title={showPassword ? t("auth.hide") : t("auth.show")}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? t("auth.hide") : t("auth.show")}
                   </button>
                 </div>
               </div>
@@ -260,7 +260,7 @@ const LoginPage = () => {
                     />
                   </svg>
                 )}
-                <span>{isLoading ? "Signing In..." : t("auth.signin", "Sign In")}</span>
+                <span>{isLoading ? t("auth.signingIn") : t("auth.signin", "Sign In")}</span>
               </button>
             </form>
 
@@ -280,27 +280,27 @@ const LoginPage = () => {
       {showPasswordReset && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Reset Password</h3>
+            <h3 className="font-bold text-lg mb-4">{t("auth.reset.title")}</h3>
             <form onSubmit={handlePasswordReset} className="space-y-4">
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Email Address</span>
+                  <span className="label-text">{t("auth.email")}</span>
                 </label>
                 <input
                   type="email"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="Enter your email address"
+                  placeholder={t("auth.placeholder.resetEmail")}
                   className="input input-bordered w-full"
                   required
                 />
               </div>
               <div className="modal-action">
                 <button type="button" className="btn" onClick={() => setShowPasswordReset(false)}>
-                  Cancel
+                  {t("auth.reset.cancel")}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                  {isLoading ? <span className="loading loading-spinner loading-sm"></span> : "Send Reset Link"}
+                  {isLoading ? <span className="loading loading-spinner loading-sm"></span> : t("auth.reset.send")}
                 </button>
               </div>
             </form>

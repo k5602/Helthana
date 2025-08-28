@@ -8,45 +8,75 @@ const ServicesPage = () => {
 
   const services = [
     {
-      title: "AI Prescription Scanner",
-      description: "Scan and digitize prescriptions with 95% accuracy using advanced OCR technology",
+      title: t("services.aiScanner.title"),
+      description: t("services.aiScanner.desc"),
       icon: "📱",
-      features: ["OCR Technology", "Arabic Support", "Drug Database", "Dosage Tracking"],
+      features: [
+        t("services.aiScanner.feature1"),
+        t("services.aiScanner.feature2"),
+        t("services.aiScanner.feature3"),
+        t("services.aiScanner.feature4"),
+      ],
       color: "primary",
     },
     {
-      title: "Smart Vitals Tracking",
-      description: "Monitor your health metrics with intelligent insights and trend analysis",
+      title: t("services.vitals.title"),
+      description: t("services.vitals.desc"),
       icon: "📊",
-      features: ["Blood Pressure", "Heart Rate", "Weight Tracking", "Trend Analysis"],
+      features: [
+        t("services.vitals.feature1"),
+        t("services.vitals.feature2"),
+        t("services.vitals.feature3"),
+        t("services.vitals.feature4"),
+      ],
       color: "secondary",
     },
     {
-      title: "Health Reports",
-      description: "Generate comprehensive health reports for doctor visits and personal tracking",
+      title: t("services.reports.title"),
+      description: t("services.reports.desc"),
       icon: "📄",
-      features: ["PDF Export", "Doctor Sharing", "Historical Data", "Visual Charts"],
+      features: [
+        t("services.reports.feature1"),
+        t("services.reports.feature2"),
+        t("services.reports.feature3"),
+        t("services.reports.feature4"),
+      ],
       color: "accent",
     },
     {
-      title: "Emergency Alerts",
-      description: "Quick access to emergency services with location sharing and contact alerts",
+      title: t("services.emergency.title"),
+      description: t("services.emergency.desc"),
       icon: "🚨",
-      features: ["GPS Location", "Contact Alerts", "Medical Info", "Quick Dial"],
+      features: [
+        t("services.emergency.feature1"),
+        t("services.emergency.feature2"),
+        t("services.emergency.feature3"),
+        t("services.emergency.feature4"),
+      ],
       color: "error",
     },
     {
-      title: "Voice Commands",
-      description: "Control the app using Egyptian Arabic voice commands for accessibility",
+      title: t("services.voice.title"),
+      description: t("services.voice.desc"),
       icon: "🎤",
-      features: ["Arabic Recognition", "Hands-free Control", "Accessibility", "Quick Actions"],
+      features: [
+        t("services.voice.feature1"),
+        t("services.voice.feature2"),
+        t("services.voice.feature3"),
+        t("services.voice.feature4"),
+      ],
       color: "info",
     },
     {
-      title: "Medication Reminders",
-      description: "Never miss a dose with smart medication reminders and tracking",
+      title: t("services.reminders.title"),
+      description: t("services.reminders.desc"),
       icon: "💊",
-      features: ["Smart Reminders", "Dose Tracking", "Refill Alerts", "Adherence Reports"],
+      features: [
+        t("services.reminders.feature1"),
+        t("services.reminders.feature2"),
+        t("services.reminders.feature3"),
+        t("services.reminders.feature4"),
+      ],
       color: "warning",
     },
   ]
@@ -58,11 +88,9 @@ const ServicesPage = () => {
         <div className="hero-content text-center">
           <div className="max-w-4xl">
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Our Services
+              {t("services.hero.title")}
             </h1>
-            <p className="text-xl mb-8 text-base-content/80">
-              Comprehensive healthcare management tools designed for Egyptian patients
-            </p>
+            <p className="text-xl mb-8 text-base-content/80">{t("services.hero.subtitle")}</p>
           </div>
         </div>
       </div>
@@ -81,7 +109,7 @@ const ServicesPage = () => {
                   <p className="text-base-content/70 mb-4">{service.description}</p>
                   <div className="space-y-2">
                     {service.features.map((feature, featureIndex) => (
-                      <div key={featureIndex} className="flex items-center space-x-2">
+                      <div key={featureIndex} className="flex items-center gap-2">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4 text-success"
@@ -105,19 +133,17 @@ const ServicesPage = () => {
       {/* CTA Section */}
       <section className="py-16 px-4 bg-gradient-to-r from-primary to-secondary">
         <div className="max-w-4xl mx-auto text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-lg mb-8 opacity-90">
-            Join thousands of patients who trust Your Health Guide for their healthcare management
-          </p>
+      <h2 className="text-3xl font-bold mb-4">{t("services.cta.title")}</h2>
+      <p className="text-lg mb-8 opacity-90">{t("services.cta.desc")}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/signup" className="btn btn-secondary btn-lg">
-              Start Free Trial
+        {t("services.cta.start")}
             </Link>
             <Link
               to="/about"
               className="btn btn-outline btn-lg border-white text-white hover:bg-white hover:text-primary"
             >
-              Learn More
+        {t("services.cta.learnMore")}
             </Link>
           </div>
         </div>

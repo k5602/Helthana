@@ -42,45 +42,42 @@ const SignupPage = () => {
 
   const validateForm = () => {
     if (!formData.first_name.trim()) {
-      showToast("First name is required", "error")
+  showToast(t("auth.error.first.required"), "error")
       return false
     }
     if (!formData.last_name.trim()) {
-      showToast("Last name is required", "error")
+  showToast(t("auth.error.last.required"), "error")
       return false
     }
     if (!formData.username.trim()) {
-      showToast("Username is required", "error")
+  showToast(t("auth.error.username.required"), "error")
       return false
     }
     if (formData.username.length < 3) {
-      showToast("Username must be at least 3 characters long", "error")
+  showToast(t("auth.error.username.min"), "error")
       return false
     }
     if (!formData.email.trim()) {
-      showToast("Email is required", "error")
+  showToast(t("auth.error.email.required"), "error")
       return false
     }
     if (!formData.email.includes("@")) {
-      showToast("Please enter a valid email address", "error")
+  showToast(t("auth.error.email.invalid"), "error")
       return false
     }
     if (!formData.password) {
-      showToast("Password is required", "error")
+  showToast(t("auth.error.password.required"), "error")
       return false
     }
     if (formData.password.length < 8) {
-      showToast("Password must be at least 8 characters long", "error")
+  showToast(t("auth.error.password.min"), "error")
       return false
     }
     
     // Enhanced password validation to match backend requirements
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_+=\-\[\]\\;'\/~`])/
     if (!passwordRegex.test(formData.password)) {
-      showToast(
-        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
-        "error"
-      )
+  showToast(t("auth.error.password.complex"), "error")
       return false
     }
     
@@ -88,23 +85,23 @@ const SignupPage = () => {
     const commonPatterns = ['123456', 'password', 'qwerty', 'abc123', 'admin', 'letmein', 'welcome', 'monkey', 'dragon']
     const lowercasePassword = formData.password.toLowerCase()
     if (commonPatterns.some(pattern => lowercasePassword.includes(pattern))) {
-      showToast("Password contains common patterns that are not secure", "error")
+      showToast(t("auth.error.password.common"), "error")
       return false
     }
     
     // Check for sequential characters
     const hasSequential = /123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz/i.test(formData.password)
     if (hasSequential) {
-      showToast("Password should not contain sequential characters", "error")
+      showToast(t("auth.error.password.sequential"), "error")
       return false
     }
     
     if (formData.password !== formData.password_confirm) {
-      showToast("Passwords don't match", "error")
+  showToast(t("auth.error.password.mismatch"), "error")
       return false
     }
     if (!formData.terms) {
-      showToast("You must agree to the Terms of Service and Privacy Policy", "error")
+  showToast(t("auth.error.terms"), "error")
       return false
     }
     return true
@@ -131,26 +128,23 @@ const SignupPage = () => {
       if (result.success) {
         console.log("Registration successful")
         if (result.emailVerificationSent) {
-          showToast(
-            "Account created successfully! Please check your email to verify your account before logging in.",
-            "success",
-          )
+          showToast(t("auth.success.register.verify"), "success")
           setTimeout(() => {
             navigate("/login")
           }, 3000)
         } else {
-          showToast("Account created successfully! Redirecting...", "success")
+          showToast(t("auth.success.register.redirect"), "success")
           setTimeout(() => {
             navigate("/dashboard")
           }, 2000)
         }
       } else {
         console.log("Registration failed:", result.error)
-        showToast(result.error || "Registration failed", "error")
+        showToast(result.error || t("auth.error.register.generic"), "error")
       }
     } catch (error) {
       console.error("Registration error:", error)
-      showToast("Registration failed. Please try again.", "error")
+      showToast(t("auth.error.register.generic"), "error")
     } finally {
       console.log("Setting loading to false")
       setIsLoading(false)
@@ -203,7 +197,7 @@ const SignupPage = () => {
                     value={formData.first_name}
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
-                    placeholder="First name"
+                    placeholder={t("auth.placeholder.first")}
                     required
                   />
                 </div>
@@ -217,7 +211,7 @@ const SignupPage = () => {
                     value={formData.last_name}
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
-                    placeholder="Last name"
+                    placeholder={t("auth.placeholder.last")}
                     required
                   />
                 </div>
@@ -233,7 +227,7 @@ const SignupPage = () => {
                   value={formData.username}
                   onChange={handleInputChange}
                   className="input input-bordered w-full"
-                  placeholder="Choose a username"
+                  placeholder={t("auth.placeholder.username")}
                   required
                 />
               </div>
@@ -249,7 +243,7 @@ const SignupPage = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="input input-bordered w-full pr-10"
-                    placeholder="Enter your email"
+                    placeholder={t("auth.placeholder.email")}
                     required
                   />
                   <svg
@@ -280,7 +274,7 @@ const SignupPage = () => {
                     value={formData.phone_number}
                     onChange={handleInputChange}
                     className="input input-bordered w-full pr-10"
-                    placeholder="Enter your phone number"
+                    placeholder={t("auth.placeholder.phone")}
                   />
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -323,29 +317,29 @@ const SignupPage = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="input input-bordered w-full pr-20"
-                    placeholder="Create a password"
+                    placeholder={t("auth.placeholder.password.create")}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-xs"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    title={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("auth.hide") : t("auth.show")}
+                    title={showPassword ? t("auth.hide") : t("auth.show")}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? t("auth.hide") : t("auth.show")}
                   </button>
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  <p>Password must contain:</p>
+                  <p>{t("auth.password.hint.title")}</p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>At least 8 characters</li>
-                    <li>One uppercase letter (A-Z)</li>
-                    <li>One lowercase letter (a-z)</li>
-                    <li>One number (0-9)</li>
-                    <li>One special character</li>
-                    <li>No common patterns (123456, password, qwerty, etc.)</li>
-                    <li>No sequential characters (abc, 123, etc.)</li>
+                    <li>{t("auth.password.hint.8chars")}</li>
+                    <li>{t("auth.password.hint.upper")}</li>
+                    <li>{t("auth.password.hint.lower")}</li>
+                    <li>{t("auth.password.hint.number")}</li>
+                    <li>{t("auth.password.hint.special")}</li>
+                    <li>{t("auth.password.hint.common")}</li>
+                    <li>{t("auth.password.hint.sequential")}</li>
                   </ul>
                 </div>
               </div>
@@ -361,17 +355,17 @@ const SignupPage = () => {
                     value={formData.password_confirm}
                     onChange={handleInputChange}
                     className="input input-bordered w-full pr-20"
-                    placeholder="Confirm your password"
+                    placeholder={t("auth.placeholder.password.confirm")}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswordConfirm((v) => !v)}
                     className="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-xs"
-                    aria-label={showPasswordConfirm ? "Hide password" : "Show password"}
-                    title={showPasswordConfirm ? "Hide password" : "Show password"}
+                    aria-label={showPasswordConfirm ? t("auth.hide") : t("auth.show")}
+                    title={showPasswordConfirm ? t("auth.hide") : t("auth.show")}
                   >
-                    {showPasswordConfirm ? "Hide" : "Show"}
+                    {showPasswordConfirm ? t("auth.hide") : t("auth.show")}
                   </button>
                 </div>
               </div>
@@ -411,7 +405,7 @@ const SignupPage = () => {
                     />
                   </svg>
                 )}
-                <span>{isLoading ? "Creating Account..." : t("auth.signup", "Create Account")}</span>
+                <span>{isLoading ? t("auth.creatingAccount") : t("auth.signup", "Create Account")}</span>
               </button>
             </form>
 

@@ -74,6 +74,17 @@ body {
   margin-left: 0;
 }
 
+/* Flip input adornments in RTL (absolute icons/buttons aligned on the right) */
+[dir="rtl"] .input + svg,
+[dir="rtl"] .relative .absolute.right-3 {
+  right: auto;
+  left: 0.75rem; /* 3 * 0.25rem */
+}
+[dir="rtl"] .relative .absolute.right-2 {
+  right: auto;
+  left: 0.5rem;
+}
+
 /* Responsive improvements */
 @media (max-width: 640px) {
   .stats {

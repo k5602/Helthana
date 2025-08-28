@@ -8,6 +8,7 @@ import Toast from "../components/Toast"
 import { VitalsChart } from "../components/VitalsChart"
 import { VitalCard } from "../components/VitalCard"
 import { VitalEntryModal } from "../components/VitalEntryModal"
+import AuthenticatedLayout from "../components/AuthenticatedLayout"
 
 export function VitalsPage() {
   const { user } = useAuth()
@@ -196,7 +197,8 @@ export function VitalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <AuthenticatedLayout>
+      <div className="min-h-screen bg-base-200">
       {/* Header */}
       <div className="bg-base-100 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -466,7 +468,8 @@ export function VitalsPage() {
 
       {/* Toast Notifications */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+      </div>
+    </AuthenticatedLayout>
   )
 }
 

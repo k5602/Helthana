@@ -17,7 +17,7 @@ import ServicesPage from "./pages/ServicesPage"
 import OfflineIndicator from "./components/OfflineIndicator"
 import PWAInstaller from "./components/PWAInstaller"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
-import { LanguageProvider } from "./contexts/LanguageContext"
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
 
 function ProtectedRoute({ children }) {
@@ -30,30 +30,20 @@ function PublicRoute({ children }) {
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />
 }
 
-function App() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
-
+function SWUpdater() {
+  const { t } = useLanguage()
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/service-worker.js")
         .then((registration) => {
           console.log("SW registered: ", registration)
-
-          // Check for updates
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing
             if (newWorker) {
               newWorker.addEventListener("statechange", () => {
                 if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                  // New content is available, prompt user to refresh
-                  if (confirm("New version available! Refresh to update?")) {
+                  if (confirm(t("pwa.updatePrompt"))) {
                     window.location.reload()
                   }
                 }
@@ -65,6 +55,19 @@ function App() {
           console.log("SW registration failed: ", registrationError)
         })
     }
+  }, [t])
+  return null
+}
+
+function App() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
 
     return () => {
       window.removeEventListener("online", handleOnline)
@@ -80,6 +83,7 @@ function App() {
             <Navbar />
             <OfflineIndicator isOnline={isOnline} />
             <PWAInstaller />
+            <SWUpdater />
 
             <Routes>
               {/* Public routes */}
