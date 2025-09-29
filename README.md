@@ -2,10 +2,6 @@
 
 A Progressive Web App (PWA) designed to transform healthcare management in Egypt by providing an intelligent, accessible digital health companion for patients with chronic conditions.
 
-## 🏆 Hackathon Project - GDG Alexandria 2025
-
-This project was developed for the GDG Alexandria Hackathon (July 2025) to address critical healthcare challenges in Egypt through innovative technology solutions.
-
 ## 🩺 Problem Statement
 
 Egyptian patients with chronic diseases face significant challenges:
@@ -494,8 +490,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Tailwind CSS and DaisyUI for the beautiful UI
 - Django and Django REST Framework for the robust backend
 - The open-source community for the amazing tools and libraries
-- GDG Alexandria for organizing this hackathon
-
 ---
 
 Made with ❤️ for the people of Egypt.
