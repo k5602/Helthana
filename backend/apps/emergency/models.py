@@ -27,6 +27,8 @@ class EmergencyContact(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
+    # Meta class controls the default ordering when querying this model. 
+    # This is applied automatically for all queries unless overridden.
     class Meta:
         ordering = ['-is_primary', 'name']
         indexes = [
@@ -40,11 +42,13 @@ class EmergencyContact(models.Model):
     def save(self, *args, **kwargs):
         # Ensure only one primary contact per user
         if self.is_primary:
-            EmergencyContact.objects.filter(
+            all_primary_contacts = EmergencyContact.objects.filter(
                 user=self.user,
                 is_primary=True,
                 is_active=True
-            ).exclude(id=self.id).update(is_primary=False)
+            )
+            all_primary_contacts_except_self = all_primary_contacts.exclude(id=self.id)
+            all_primary_contacts_except_self.update(is_primary=False)
         super().save(*args, **kwargs)
 
 
