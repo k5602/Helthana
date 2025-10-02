@@ -30,7 +30,7 @@ class EmergencyContactViewSet(ModelViewSet):
         instance.save()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save()
 
     def perform_update(self, serializer):
         """Handle primary contact logic when updating"""
