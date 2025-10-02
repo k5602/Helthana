@@ -20,6 +20,13 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
+        
+        if validated_data.get('is_primary', False):
+            EmergencyContact.objects.filter(
+                user=self.request.user,
+                is_primary=True,
+                is_active=True
+            ).update(is_primary=False)
         return super().create(validated_data)
 
     def validate_name(self, value):
