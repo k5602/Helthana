@@ -30,16 +30,7 @@ class EmergencyContactViewSet(ModelViewSet):
         instance.save()
 
     def perform_create(self, serializer):
-        """Handle primary contact logic when creating"""
-        # If this is set as primary, unset other primary contacts
-        if serializer.validated_data.get('is_primary', False):
-            EmergencyContact.objects.filter(
-                user=self.request.user,
-                is_primary=True,
-                is_active=True
-            ).update(is_primary=False)
-        
-        serializer.save(user=self.request.user)
+        serializer.save()
 
     def perform_update(self, serializer):
         """Handle primary contact logic when updating"""
