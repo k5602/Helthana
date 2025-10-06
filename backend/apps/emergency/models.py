@@ -1,6 +1,20 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
+
+class EmergencyContactManager(models.Manager):
+    def set_primary(self, user, contact_id):
+        # transaction ensures that either all operations succeed, or none do.
+        with transaction.atomic():
+            # select_for_update() prevents race conditions when multiple users try to update simultaneously
+            queryset = self.select_for_update().filter(user=user, is_active=True)
+            #unset any existing primary contacts
+            queryset.filter(is_primary=True).exclude(id=contact_id).update(is_primary=False)
+            contact = queryset.get(id=contact_id)
+            if not contact.is_primary:
+                contact.is_primary = True
+            contact.save()
+            return contact
 
 
 class EmergencyContact(models.Model):
@@ -26,6 +40,7 @@ class EmergencyContact(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    objects = EmergencyContactManager()
 
     class Meta:
         ordering = ['-is_primary', 'name']
@@ -36,18 +51,6 @@ class EmergencyContact(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.user.username}"
-
-    def save(self, *args, **kwargs):
-        # Ensure only one primary contact per user
-        if self.is_primary:
-            all_primary_contacts = EmergencyContact.objects.filter(
-                user=self.user,
-                is_primary=True,
-                is_active=True
-            )
-            all_primary_contacts_except_self = all_primary_contacts.exclude(id=self.id)
-            all_primary_contacts_except_self.update(is_primary=False)
-        super().save(*args, **kwargs)
 
 
 class EmergencyAlert(models.Model):
