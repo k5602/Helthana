@@ -32,7 +32,7 @@ class EmergencyContactViewSet(ModelViewSet):
 
     # TODO: find a solution to the redundancy in perform_create() and perform_update()
     def perform_create(self, serializer):
-        instance = serializer.save(user=self.request.user)
+        instance = serializer.save()
         with transaction.atomic():
             if serializer.validated_data.get('is_primary', False):
                 EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
