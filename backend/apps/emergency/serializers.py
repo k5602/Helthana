@@ -19,15 +19,22 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
         read_only_fields = ('user', 'created_at')
 
     def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
+        user = self.context['request'].user
+        validated_data['user'] = user
+        is_making_primary = validated_data.get('is_primary', False)
+        # popping is primary here is necessary to ensure that
+        # we only use set_primary() in models.py for creating primary contacts.
+        if 'is_primary' in validated_data:
+            validated_data.pop('is_primary')
+        instance = super().create(validated_data)
         
-        if validated_data.get('is_primary', False):
-            EmergencyContact.objects.filter(
-                user=self.request.user,
-                is_primary=True,
-                is_active=True
-            ).update(is_primary=False)
-        return super().create(validated_data)
+        if is_making_primary:
+            EmergencyContact.objects.set_primary(user=user, contact_id=instance.id)
+            instance.refresh_from_db()
+        
+            
+        
+        
 
     def validate_name(self, value):
         """Validate contact name"""

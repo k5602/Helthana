@@ -30,18 +30,18 @@ class EmergencyContactViewSet(ModelViewSet):
         instance.is_active = False
         instance.save()
 
-    # TODO: find a solution to the redundancy in perform_create() and perform_update()
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        with transaction.atomic():
-            if serializer.validated_data.get('is_primary', False):
-                EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
+    # TODO: figure out how to use perform_create() and perform_update() optimally
+    """ def perform_create(self, serializer):
+        # save() calls the custom create method in serializers.py 
+        # which puts object in database and validates primary contact logic
+        serializer.save()
+        
     
     def perform_update(self, serializer):
         instance = serializer.save()
         with transaction.atomic():
             if serializer.validated_data.get('is_primary', False):
-                EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id) 
+                EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)  """
             
 
     @action(detail=True, methods=['post'])

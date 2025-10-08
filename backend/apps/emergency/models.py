@@ -3,18 +3,27 @@ from django.conf import settings
 from django.utils import timezone
 
 class EmergencyContactManager(models.Manager):
+    
     def set_primary(self, user, contact_id):
         # transaction ensures that either all operations succeed, or none do.
         with transaction.atomic():
-            # select_for_update() prevents race conditions when multiple users try to update simultaneously
-            queryset = self.select_for_update().filter(user=user, is_active=True)
-            #unset any existing primary contacts
-            queryset.filter(is_primary=True).exclude(id=contact_id).update(is_primary=False)
-            contact = queryset.get(id=contact_id)
+            self.demote_other_primaries(user, contact_id)
+            contact = self.get(user=user, id=contact_id)
             if not contact.is_primary:
                 contact.is_primary = True
-            contact.save()
+                contact.save(update_fields=['is_primary'])
             return contact
+        
+    def demote_other_primaries(self, user, contact_id):
+        '''
+        Demote all primary contacts for this user except the specified one.
+        Use row locking to prevent concurrent update issues
+        '''
+        queryset = self.select_for_update().filter(
+            user=user,
+            is_active=True,
+        )
+        queryset.filter(is_primary=True).exclude(id=contact_id).update(is_primary=False)
 
 
 class EmergencyContact(models.Model):
