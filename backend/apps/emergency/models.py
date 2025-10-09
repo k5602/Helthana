@@ -7,14 +7,14 @@ class EmergencyContactManager(models.Manager):
     def set_primary(self, user, contact_id):
         # transaction ensures that either all operations succeed, or none do.
         with transaction.atomic():
-            self.demote_other_primaries(user, contact_id)
+            self._demote_other_primaries(user, contact_id)
             contact = self.get(user=user, id=contact_id)
             if not contact.is_primary:
                 contact.is_primary = True
                 contact.save(update_fields=['is_primary'])
             return contact
-        
-    def demote_other_primaries(self, user, contact_id):
+    # leading underscore means that it is an internal helper
+    def _demote_other_primaries(self, user, contact_id):
         '''
         Demote all primary contacts for this user except the specified one.
         Use row locking to prevent concurrent update issues
