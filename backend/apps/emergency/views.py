@@ -13,6 +13,7 @@ from .serializers import (
     EmergencyStatusSerializer
 )
 from .services import EmergencyService
+from django.db import transaction
 
 
 class EmergencyContactViewSet(ModelViewSet):
@@ -23,6 +24,17 @@ class EmergencyContactViewSet(ModelViewSet):
     def get_queryset(self):
         """Get user's active emergency contacts"""
         return EmergencyContact.objects.filter(user=self.request.user, is_active=True)
+    
+    def _handle_primary_logic(self, serializer):
+        save_kwargs = {}
+        if self.action == 'create':
+            save_kwargs['user'] = self.request.user
+        # save_kwargs will be empty if self.action == 'update', 
+        # which is correct.
+        instance = serializer.save(**save_kwargs)
+        
+        if serializer.validated_data.get('is_primary', False):
+            EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
 
     def perform_destroy(self, instance):
         """Soft delete emergency contact"""
@@ -30,48 +42,27 @@ class EmergencyContactViewSet(ModelViewSet):
         instance.save()
 
     def perform_create(self, serializer):
-        serializer.save()
-
+        self._handle_primary_logic(serializer)
+    
     def perform_update(self, serializer):
-        """Handle primary contact logic when updating"""
-        # If this is set as primary, unset other primary contacts
-        if serializer.validated_data.get('is_primary', False):
-            EmergencyContact.objects.filter(
-                user=self.request.user,
-                is_primary=True,
-                is_active=True
-            ).exclude(id=serializer.instance.id).update(is_primary=False)
-        
-        serializer.save()
+        self._handle_primary_logic(serializer)
+            
 
     @action(detail=True, methods=['post'])
-    def set_primary(self, request, pk=None):
-        """Set a contact as primary"""
+    def set_primary_contact(self, request, pk=None):
         try:
-            contact = self.get_object()
-            
-            # Unset other primary contacts
-            EmergencyContact.objects.filter(
-                user=request.user,
-                is_primary=True,
-                is_active=True
-            ).update(is_primary=False)
-            
-            # Set this contact as primary
-            contact.is_primary = True
-            contact.save()
-            
+            contact = EmergencyContact.objects.set_primary(request.user, pk)
             serializer = self.get_serializer(contact)
             return Response(serializer.data)
-            
-        except Exception as e:
+        
+        except EmergencyContact.DoesNotExist:
             return Response(
-                {'error': f'Failed to set primary contact: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "Contact not found"},
+                status=status.HTTP_404_NOT_FOUND
             )
 
     @action(detail=False, methods=['get'])
-    def primary(self, request):
+    def get_primary(self, request):
         """Get primary emergency contact"""
         try:
             primary_contact = EmergencyContact.objects.filter(
