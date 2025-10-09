@@ -24,24 +24,28 @@ class EmergencyContactViewSet(ModelViewSet):
     def get_queryset(self):
         """Get user's active emergency contacts"""
         return EmergencyContact.objects.filter(user=self.request.user, is_active=True)
+    
+    def _handle_primary_logic(self, serializer):
+        save_kwargs = {}
+        if self.action == 'create':
+            save_kwargs['user'] = self.request.user
+        # save_kwargs will be empty if self.action == 'update', 
+        # which is correct.
+        instance = serializer.save(**save_kwargs)
+        
+        if serializer.validated_data.get('is_primary', False):
+            EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
 
     def perform_destroy(self, instance):
         """Soft delete emergency contact"""
         instance.is_active = False
         instance.save()
 
-    # TODO: figure out how to use perform_create() and perform_update() optimally
     def perform_create(self, serializer):
-        instance = serializer.save(user=self.request.user)
-        with transaction.atomic():
-            if serializer.validated_data.get('is_primary', False):
-                EmergencyContact.objects.set_primary(user = self.request.user, contact_id=instance.id)
+        self._handle_primary_logic(serializer)
     
     def perform_update(self, serializer):
-        instance = serializer.save()
-        with transaction.atomic():
-            if serializer.validated_data.get('is_primary', False):
-                EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
+        self._handle_primary_logic(serializer)
             
 
     @action(detail=True, methods=['post'])
