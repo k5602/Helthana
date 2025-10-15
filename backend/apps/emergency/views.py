@@ -32,14 +32,11 @@ class EmergencyContactViewSet(ModelViewSet):
         # save_kwargs will be empty if self.action == 'update', 
         # which is correct.
         instance = serializer.save(**save_kwargs)
-        
         if serializer.validated_data.get('is_primary', False):
             EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
 
     def perform_destroy(self, instance):
-        """Soft delete emergency contact"""
-        instance.is_active = False
-        instance.save()
+        instance.soft_delete()
 
     def perform_create(self, serializer):
         self._handle_primary_logic(serializer)
