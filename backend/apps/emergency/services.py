@@ -5,15 +5,40 @@ from django.utils import timezone
 from django.db.models import Count, Q
 from .models import EmergencyContact, EmergencyAlert
 
+ALERT_TYPE_CONFIG = {
+    'medical' : {
+        'send_sms' : True,
+        'make_call' : False,
+        'message' : "🚨 MEDICAL EMERGENCY: {user_name} needs immediate help!"
+    },
+    'fall' : {
+        'send_sms' : True,
+        'make_call' : True,
+        'message' : "🚨 FALL DETECTED: {user_name} may have fallen and needs assistance!"
+    },
+    'panic' : {
+        'send_sms' : True,
+        'make_call' : True,
+        'message' : "🚨 PANIC ALERT: {user_name} has activated their panic button!"
+    },
+    'medication' : {
+        'send_sms' : True,
+        'make_call' : False,
+        'message' : "🚨 MEDICATION EMERGENCY: {user_name} needs help with medication!" 
+    }
+    
+    
+}
+
 logger = logging.getLogger(__name__)
 
 
 class EmergencyService:
     """Service class for emergency management and notifications"""
-    @staticmethod
-    def _send_sms_for_each_contact(contact, message, alert) -> Dict[str, Any]:
+    
+    def _dispatch_sms_to_contact(self, contact, message, alert) -> Dict[str, Any]:
         
-        sms_result = EmergencyService._send_sms_notification(
+        sms_result = self._send_sms_notification(
             contact=contact,
             message=message,
             alert=alert
@@ -21,83 +46,53 @@ class EmergencyService:
         return sms_result
             
 
+    def handle_alert(self, user, alert, alert_type, include_location):
+        # this method is built like this so that, in the future, 
+        # if we add new alerts, we won't have to change this method.
+        send_sms = ALERT_TYPE_CONFIG[alert_type]['send_sms']
+        make_call = ALERT_TYPE_CONFIG[alert_type]['make_call']
+        if(send_sms):
+            self._start_sms_sending_process(user, alert, alert_type, include_location)
+        if(make_call):
+            self._make_emergency_call()
+        
     
-    def send_emergency_alert(
-        self,
-        user,
-        alert: EmergencyAlert,
-        include_location: bool = True,
-        alert_type: str = 'general'
-    ) -> Dict[str, Any]:
-        """Send emergency alert to all active contacts"""
-        
-        # Get active emergency contacts
-        contacts = EmergencyContact.objects.filter(
-            user=user,
-            is_active=True
-        ).order_by('-is_primary', 'name')
-        
-        if not contacts.exists():
-            logger.warning(f"No emergency contacts found for user {user.id}")
-            return {
-                'notifications_sent': 0,
-                'failed_notifications': 1,
-                'message': 'No emergency contacts configured'
-            }
-        
+    
+    def _start_sms_sending_process(self, user, alert, alert_type, include_location):
         notifications_sent = 0
         failed_notifications = 0
-        notification_results = []
+        notifications_results = []
         
-        # Prepare alert message
-        message = EmergencyService._prepare_alert_message(
-            user=user,
-            alert=alert,
-            alert_type=alert_type,
-            include_location=include_location
-        )
+        contacts = EmergencyContact.objects.filter(
+            user = user,
+            is_active = True
+            )
         
-        # Send notifications to each contact
+        if not contacts.exists():
+            logger.warning(f"no emergency contacts found for user {user.id}")
+            return {
+                'notifications_sent' : 0,
+                'failed_notifications' : 1,
+                'message' : 'No emergency contacts configured'
+            }
+        # prepare alert sms
+        message = self._prepare_alert_message(user, alert, alert_type, include_location)
+        
+        # loop over contacts
         for contact in contacts:
-            sms_result = self._send_sms_for_each_contact(contact, message, alert)
-            notification_results.append(sms_result)
+            sms_result = self._dispatch_sms_to_contact(contact, message, alert)
+            notifications_results.append(sms_result)
             if sms_result['success']:
                 notifications_sent+=1
             else:
                 failed_notifications+=1
-            # If contact is primary, give user the CHOICE to attempt phone call.
-        """ if contact.is_primary:
-            call_result = EmergencyService._make_emergency_call(
-                contact=contact,
-                alert=alert
-            )
-            notification_results.append(call_result)
-            
-            if call_result['success']:
-                notifications_sent += 1
-            else:
-                failed_notifications += 1
-        
-    except Exception as e:
-        logger.error(f"Failed to send notification to contact {contact.id}: {str(e)}")
-        failed_notifications += 1
-        notification_results.append({
-            'contact_id': contact.id,
-            'contact_name': contact.name,
-            'phone_number': contact.phone_number,
-            'notification_type': 'sms',
-            'status': 'failed',
-            'error_message': str(e),
-            'success': False
-        }) """
         
         return {
-            'notifications_sent': notifications_sent,
-            'failed_notifications': failed_notifications,
-            'notification_results': notification_results,
-            'total_contacts': contacts.count()
+            'notification_sent' : notifications_sent,
+            'failed_notifications' : failed_notifications,
+            'notification_results' : notifications_results,
+            'total_contacts' : contacts.count() 
         }
-
     
     def send_resolution_notification(self, user, alert: EmergencyAlert) -> Dict[str, Any]:
         """Send notification that emergency alert has been resolved"""
@@ -113,7 +108,7 @@ class EmergencyService:
         failed_notifications = 0
         for contact in contacts:
             try:
-                sms_result = self._send_sms_for_each_contact(contact, message, alert)
+                sms_result = self._dispatch_sms_to_contact(contact, message, alert)
                 if sms_result['success']:
                     notifications_sent+=1
                 else:
@@ -143,7 +138,7 @@ class EmergencyService:
         
         for contact in contacts:
             try:
-                sms_result = self._send_sms_for_each_contact(contact, message, alert)
+                sms_result = self._dispatch_sms_to_contact(contact, message, alert)
                 if sms_result['success']:
                     notifications_sent+=1
                 else:
@@ -272,16 +267,7 @@ class EmergencyService:
         user_name = user.get_full_name() or user.username
         
         # Base message
-        if alert_type == 'medical':
-            base_message = f"🚨 MEDICAL EMERGENCY: {user_name} needs immediate help!"
-        elif alert_type == 'fall':
-            base_message = f"🚨 FALL DETECTED: {user_name} may have fallen and needs assistance!"
-        elif alert_type == 'panic':
-            base_message = f"🚨 PANIC ALERT: {user_name} has activated their panic button!"
-        elif alert_type == 'medication':
-            base_message = f"🚨 MEDICATION EMERGENCY: {user_name} needs help with medication!"
-        else:
-            base_message = f"🚨 EMERGENCY ALERT: {user_name} needs immediate assistance!"
+        base_message = ALERT_TYPE_CONFIG[alert_type]['message'].format(user_name=user_name)
         
         # Add custom message if provided
         if alert.message and alert.message.strip():
