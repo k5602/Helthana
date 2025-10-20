@@ -25,14 +25,17 @@ class EmergencyContactViewSet(ModelViewSet):
         """Get user's active emergency contacts"""
         return EmergencyContact.objects.filter(user=self.request.user, is_active=True)
     
-    def _handle_primary_logic(self, serializer):
+    
+    def _save_instance(self, serializer):
         save_kwargs = {}
         if self.action == 'create':
             save_kwargs['user'] = self.request.user
         # save_kwargs will be empty if self.action == 'update', 
         # which is correct.
         instance = serializer.save(**save_kwargs)
-        
+        return instance
+    
+    def _handle_primary_status(self, serializer, instance):
         if serializer.validated_data.get('is_primary', False):
             EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
 
@@ -42,10 +45,12 @@ class EmergencyContactViewSet(ModelViewSet):
         instance.save()
 
     def perform_create(self, serializer):
-        self._handle_primary_logic(serializer)
+        instance = self._save_instance(serializer)
+        self._handle_primary_status(serializer, instance)
     
     def perform_update(self, serializer):
-        self._handle_primary_logic(serializer)
+        instance = self._save_instance(serializer)
+        self._handle_primary_status(serializer, instance)
             
 
     @action(detail=True, methods=['post'])
