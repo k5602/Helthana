@@ -10,9 +10,20 @@ logger = logging.getLogger(__name__)
 
 class EmergencyService:
     """Service class for emergency management and notifications"""
-
     @staticmethod
+    def _send_sms_for_each_contact(contact, message, alert) -> Dict[str, Any]:
+        
+        sms_result = EmergencyService._send_sms_notification(
+            contact=contact,
+            message=message,
+            alert=alert
+        )
+        return sms_result
+            
+
+    
     def send_emergency_alert(
+        self,
         user,
         alert: EmergencyAlert,
         include_location: bool = True,
@@ -48,46 +59,37 @@ class EmergencyService:
         
         # Send notifications to each contact
         for contact in contacts:
-            try:
-                # Send SMS notification
-                sms_result = EmergencyService._send_sms_notification(
-                    contact=contact,
-                    message=message,
-                    alert=alert
-                )
-                
-                if sms_result['success']:
-                    notifications_sent += 1
-                else:
-                    failed_notifications += 1
-                
-                notification_results.append(sms_result)
-                
-                # For primary contact, also attempt phone call if configured
-                if contact.is_primary:
-                    call_result = EmergencyService._make_emergency_call(
-                        contact=contact,
-                        alert=alert
-                    )
-                    notification_results.append(call_result)
-                    
-                    if call_result['success']:
-                        notifications_sent += 1
-                    else:
-                        failed_notifications += 1
-                
-            except Exception as e:
-                logger.error(f"Failed to send notification to contact {contact.id}: {str(e)}")
+            sms_result = self._send_sms_for_each_contact(contact, message, alert)
+            notification_results.append(sms_result)
+            if sms_result['success']:
+                notifications_sent+=1
+            else:
+                failed_notifications+=1
+            # If contact is primary, give user the CHOICE to attempt phone call.
+        """ if contact.is_primary:
+            call_result = EmergencyService._make_emergency_call(
+                contact=contact,
+                alert=alert
+            )
+            notification_results.append(call_result)
+            
+            if call_result['success']:
+                notifications_sent += 1
+            else:
                 failed_notifications += 1
-                notification_results.append({
-                    'contact_id': contact.id,
-                    'contact_name': contact.name,
-                    'phone_number': contact.phone_number,
-                    'notification_type': 'sms',
-                    'status': 'failed',
-                    'error_message': str(e),
-                    'success': False
-                })
+        
+    except Exception as e:
+        logger.error(f"Failed to send notification to contact {contact.id}: {str(e)}")
+        failed_notifications += 1
+        notification_results.append({
+            'contact_id': contact.id,
+            'contact_name': contact.name,
+            'phone_number': contact.phone_number,
+            'notification_type': 'sms',
+            'status': 'failed',
+            'error_message': str(e),
+            'success': False
+        }) """
         
         return {
             'notifications_sent': notifications_sent,
@@ -96,8 +98,8 @@ class EmergencyService:
             'total_contacts': contacts.count()
         }
 
-    @staticmethod
-    def send_resolution_notification(user, alert: EmergencyAlert) -> Dict[str, Any]:
+    
+    def send_resolution_notification(self, user, alert: EmergencyAlert) -> Dict[str, Any]:
         """Send notification that emergency alert has been resolved"""
         
         contacts = EmergencyContact.objects.filter(
@@ -109,23 +111,16 @@ class EmergencyService:
         
         notifications_sent = 0
         failed_notifications = 0
-        
         for contact in contacts:
             try:
-                result = EmergencyService._send_sms_notification(
-                    contact=contact,
-                    message=message,
-                    alert=alert
-                )
-                
-                if result['success']:
-                    notifications_sent += 1
+                sms_result = self._send_sms_for_each_contact(contact, message, alert)
+                if sms_result['success']:
+                    notifications_sent+=1
                 else:
-                    failed_notifications += 1
-                    
+                    failed_notifications+=1
             except Exception as e:
                 logger.error(f"Failed to send resolution notification to contact {contact.id}: {str(e)}")
-                failed_notifications += 1
+            
         
         return {
             'notifications_sent': notifications_sent,
@@ -133,7 +128,7 @@ class EmergencyService:
         }
 
     @staticmethod
-    def send_cancellation_notification(user, alert: EmergencyAlert) -> Dict[str, Any]:
+    def send_cancellation_notification(self ,user, alert: EmergencyAlert) -> Dict[str, Any]:
         """Send notification that emergency alert has been cancelled"""
         
         contacts = EmergencyContact.objects.filter(
@@ -148,16 +143,11 @@ class EmergencyService:
         
         for contact in contacts:
             try:
-                result = EmergencyService._send_sms_notification(
-                    contact=contact,
-                    message=message,
-                    alert=alert
-                )
-                
-                if result['success']:
-                    notifications_sent += 1
+                sms_result = self._send_sms_for_each_contact(contact, message, alert)
+                if sms_result['success']:
+                    notifications_sent+=1
                 else:
-                    failed_notifications += 1
+                    failed_notifications+=1
                     
             except Exception as e:
                 logger.error(f"Failed to send cancellation notification to contact {contact.id}: {str(e)}")

@@ -60,6 +60,10 @@ class EmergencyContact(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.user.username}"
+    
+    def soft_delete(self):
+        self.is_active = False
+        self.save()
 
 
 class EmergencyAlert(models.Model):
@@ -104,7 +108,8 @@ class EmergencyAlert(models.Model):
 
     def __str__(self):
         return f"Emergency Alert - {self.user.username} - {self.get_alert_type_display()} - {self.created_at}"
-
+    # Generally, regular methods imply actions need to be performed on object. 
+    # Properties on the other hand are features/characteristics of objects. 
     @property
     def is_resolved(self):
         """Backward compatibility property"""
