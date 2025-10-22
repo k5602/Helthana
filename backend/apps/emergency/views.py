@@ -146,12 +146,14 @@ class EmergencyAlertViewSet(ModelViewSet):
                 message=serializer.validated_data.get('message', 'Emergency alert from Your Health Guide app')
             )
             
-            # Send notifications to emergency contacts
-            result = EmergencyService.send_emergency_alert(
+            service = EmergencyService()
+            
+            # handle alert based on alert type
+            result = service.handle_alert(
                 user=request.user,
                 alert=alert,
-                include_location=serializer.validated_data.get('include_location', True),
-                alert_type=serializer.validated_data.get('alert_type', 'general')
+                alert_type=serializer.validated_data.get('alert_type', 'general'),
+                include_location=serializer.validated_data.get('include_location', True)
             )
             
             response_serializer = EmergencyAlertSerializer(alert)
