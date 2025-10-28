@@ -1,6 +1,7 @@
 from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
+from shared.models import SoftDeleteMixin
 
 class EmergencyContactManager(models.Manager):
     
@@ -17,7 +18,6 @@ class EmergencyContactManager(models.Manager):
     def _demote_other_primaries(self, user, contact_id):
         '''
         Demote all primary contacts for this user except the specified one.
-        Use row locking to prevent concurrent update issues
         '''
         queryset = self.select_for_update().filter(
             user=user,
@@ -26,7 +26,7 @@ class EmergencyContactManager(models.Manager):
         queryset.filter(is_primary=True).exclude(id=contact_id).update(is_primary=False)
 
 
-class EmergencyContact(models.Model):
+class EmergencyContact(models.Model, SoftDeleteMixin):
     """Emergency contact information"""
     RELATIONSHIP_CHOICES = [
         ('family', 'Family Member'),
@@ -60,10 +60,6 @@ class EmergencyContact(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.user.username}"
-    
-    def soft_delete(self):
-        self.is_active = False
-        self.save()
 
 
 class EmergencyAlert(models.Model):

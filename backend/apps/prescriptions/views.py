@@ -24,7 +24,9 @@ class PrescriptionViewSet(ModelViewSet):
     def get_queryset(self):
         queryset = Prescription.objects.filter(user=self.request.user, is_active=True)
         
-        # Add filtering capabilities
+        # TODO: use FilterByDateMixin here. 
+        # You'll probably have to create start_date and end_date dictionary variables
+        # so that it can correctly use 'date_from' and 'date_to'
         doctor_name = self.request.query_params.get('doctor_name')
         if doctor_name:
             queryset = queryset.filter(doctor_name__icontains=doctor_name)

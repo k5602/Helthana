@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from shared.models import SoftDeleteMixin
 
 
-class HealthReport(models.Model):
+class HealthReport(models.Model, SoftDeleteMixin):
     """Generated PDF reports"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)

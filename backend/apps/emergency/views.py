@@ -14,9 +14,10 @@ from .serializers import (
 )
 from .services import EmergencyService
 from django.db import transaction
+from shared.views import SoftDeleteViewMixin, FilterByDateMixin
 
 
-class EmergencyContactViewSet(ModelViewSet):
+class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
     """ViewSet for managing emergency contacts"""
     serializer_class = EmergencyContactSerializer
     permission_classes = [IsAuthenticated]
@@ -34,9 +35,6 @@ class EmergencyContactViewSet(ModelViewSet):
         instance = serializer.save(**save_kwargs)
         if serializer.validated_data.get('is_primary', False):
             EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
-
-    def perform_destroy(self, instance):
-        instance.soft_delete()
 
     def perform_create(self, serializer):
         self._handle_primary_logic(serializer)
@@ -84,11 +82,14 @@ class EmergencyContactViewSet(ModelViewSet):
             )
 
 
-class EmergencyAlertViewSet(ModelViewSet):
+class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
     """ViewSet for managing emergency alerts"""
     serializer_class = EmergencyAlertSerializer
     permission_classes = [IsAuthenticated]
-
+    date_filter_start_field = "created_at__date__gte"
+    date_filter_end_field = "created_at__date__lte"
+    
+    
     def get_queryset(self):
         """Get user's emergency alerts with optional filtering"""
         queryset = EmergencyAlert.objects.filter(user=self.request.user)
@@ -98,23 +99,8 @@ class EmergencyAlertViewSet(ModelViewSet):
         if is_resolved is not None:
             queryset = queryset.filter(is_resolved=is_resolved.lower() == 'true')
         
-        # Filter by date range
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
-        
-        if start_date:
-            try:
-                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(created_at__date__gte=start_date)
-            except ValueError:
-                pass
-        
-        if end_date:
-            try:
-                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(created_at__date__lte=end_date)
-            except ValueError:
-                pass
+        # Filter by date range (if provided)
+        queryset = self._filter_by_date_range(queryset)
         
         return queryset.order_by('-created_at')
 
