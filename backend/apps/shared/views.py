@@ -1,6 +1,5 @@
 from datetime import datetime
 class SoftDeleteViewMixin:
-    
     def perform_destroy(self, instance):
         instance.soft_delete()
 

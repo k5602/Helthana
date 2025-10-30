@@ -16,7 +16,6 @@ class HealthReport(models.Model, SoftDeleteMixin):
     date_to = models.DateField()
     pdf_file = models.FileField(upload_to='reports/', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-created_at']

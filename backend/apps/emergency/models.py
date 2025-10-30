@@ -48,7 +48,6 @@ class EmergencyContact(models.Model, SoftDeleteMixin):
     notes = models.TextField(blank=True, help_text="Additional notes about this contact")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
     objects = EmergencyContactManager()
 
     class Meta:
