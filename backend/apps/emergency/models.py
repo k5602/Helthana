@@ -115,17 +115,20 @@ class EmergencyAlert(models.Model):
         """Backward compatibility property"""
         return self.status in ['resolved', 'cancelled']
 
+    def _set_final_status(self, status):
+        self.status = status
+        self.resolved_at = timezone.now()
+        self.save(update_fields=['status', 'resolved_at'])
+
     def resolve(self):
         """Mark alert as resolved"""
-        self.status = 'resolved'
-        self.resolved_at = timezone.now()
-        self.save()
+        status = 'resolved'
+        self._set_final_status(status)
 
     def cancel(self):
         """Mark alert as cancelled"""
-        self.status = 'cancelled'
-        self.resolved_at = timezone.now()
-        self.save()
+        status = 'cancelled'
+        self._set_final_status(status)
 
     @property
     def duration_minutes(self):
@@ -178,8 +181,8 @@ class EmergencyNotification(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.get_notification_type_display()} to {self.contact.name} - {self.status}"
-
+        return f"{self.get_notification_type_display()} to {self.contact.name} - {self.status}" 
+    
     def mark_sent(self, external_id=None):
         """Mark notification as sent"""
         self.status = 'sent'
@@ -192,10 +195,10 @@ class EmergencyNotification(models.Model):
         """Mark notification as delivered"""
         self.status = 'delivered'
         self.delivered_at = timezone.now()
-        self.save()
+        self.save(update_fields=['status', 'delivered_at'])
 
     def mark_failed(self, error_message):
         """Mark notification as failed"""
         self.status = 'failed'
         self.error_message = error_message
-        self.save()
+        self.save(update_fields=['status', 'delivered_at'])
