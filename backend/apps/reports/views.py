@@ -18,7 +18,8 @@ class HealthReportViewSet(ModelViewSet, SoftDeleteViewMixin, FilterByDateMixin):
     permission_classes = [IsAuthenticated]
     date_filter_start_field = "date_from__gte"
     date_filter_end_field = "date_to__lte"
-
+    url_start_date_variable = 'start_date'
+    url_end_date_variable = 'end_date'
     def get_queryset(self):
         """Get user's active reports with optional filtering"""
         queryset = HealthReport.objects.filter(user=self.request.user, is_active=True)

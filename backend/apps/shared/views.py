@@ -5,8 +5,10 @@ class SoftDeleteViewMixin:
 
 class FilterByDateMixin:
     def _filter_by_date_range(self, queryset):
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
+        instance_start_date_url_variable = self.url_start_date_variable
+        instance_end_date_url_variable = self.url_end_date_variable
+        start_date = self.request.query_params.get(instance_start_date_url_variable)
+        end_date = self.request.query_params.get(instance_end_date_url_variable)
         
         if start_date:
             try:
