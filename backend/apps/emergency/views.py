@@ -90,6 +90,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
     date_filter_end_field = "created_at__date__lte"
     url_start_date_variable = 'start_date'
     url_end_date_variable = 'end_date'
+    
     def get_queryset(self):
         """Get user's emergency alerts with optional filtering"""
         queryset = EmergencyAlert.objects.filter(user=self.request.user)
