@@ -30,10 +30,6 @@ class ReportGenerationService:
         """Generate a PDF health report"""
         
         # Create report record
-        if not title:
-            report_type_display = dict(HealthReport._meta.get_field('report_type').choices)[report_type]
-            title = f"{report_type_display} - {date_from} to {date_to}"
-        
         report = HealthReport.objects.create(
             user=user,
             title=title,
