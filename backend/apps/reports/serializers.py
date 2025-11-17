@@ -2,9 +2,9 @@ from rest_framework import serializers
 from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import HealthReport
+from shared.serializers import DateValidationMixin
 
-
-class HealthReportSerializer(serializers.ModelSerializer):
+class HealthReportSerializer(serializers.ModelSerializer, DateValidationMixin):
     pdf_url = serializers.SerializerMethodField()
     file_size = serializers.SerializerMethodField()
     
@@ -36,19 +36,17 @@ class HealthReportSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, data):
-        """Validate date range"""
+        # Since HealthReportSerializer is a ModelSerializer, 
+        # this means that it can be used for both creating (POST) and Updating (PATCH) a report. So, 
+        # if a PATCH request is done to only change the report's title, the date variables won't be provided. 
+        # This is why we check if they exist or not with get() in the first place before we start validating them.
         if data.get('date_from') and data.get('date_to'):
-            if data['date_from'] > data['date_to']:
-                raise serializers.ValidationError("date_from must be before date_to")
-            
-            # Check if date range is not too large (max 1 year)
-            if (data['date_to'] - data['date_from']).days > 365:
-                raise serializers.ValidationError("Date range cannot exceed 1 year")
-        
+            self._validate_date_order(data)
+            self._validate_date_range_limit(data)
         return data
 
 
-class ReportGenerationSerializer(serializers.Serializer):
+class ReportGenerationSerializer(serializers.Serializer, DateValidationMixin):
     """Serializer for report generation requests"""
     report_type = serializers.ChoiceField(
         choices=HealthReport._meta.get_field('report_type').choices,
@@ -67,13 +65,8 @@ class ReportGenerationSerializer(serializers.Serializer):
 
     def validate(self, data):
         """Validate report generation data"""
-        if data['date_from'] > data['date_to']:
-            raise serializers.ValidationError("date_from must be before date_to")
-        
-        # Check if date range is not too large
-        if (data['date_to'] - data['date_from']).days > 365:
-            raise serializers.ValidationError("Date range cannot exceed 1 year")
-        
+        self._validate_date_order(data)
+        self._validate_date_range_limit(data)
         # Check if date_to is not in the future
         if data['date_to'] > timezone.now().date():
             raise serializers.ValidationError("date_to cannot be in the future")

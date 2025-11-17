@@ -9,13 +9,18 @@ from datetime import datetime
 from .models import HealthReport
 from .serializers import HealthReportSerializer, ReportGenerationSerializer
 from .services import ReportGenerationService
+from shared.views import SoftDeleteViewMixin, FilterByDateMixin
 
 
-class HealthReportViewSet(ModelViewSet):
+class HealthReportViewSet(ModelViewSet, SoftDeleteViewMixin, FilterByDateMixin):
     """ViewSet for managing health reports with PDF generation"""
     serializer_class = HealthReportSerializer
     permission_classes = [IsAuthenticated]
-
+    date_filter_start_field = "date_from__gte"
+    date_filter_end_field = "date_to__lte"
+    url_start_date_variable = 'start_date'
+    url_end_date_variable = 'end_date'
+    
     def get_queryset(self):
         """Get user's active reports with optional filtering"""
         queryset = HealthReport.objects.filter(user=self.request.user, is_active=True)
@@ -25,30 +30,11 @@ class HealthReportViewSet(ModelViewSet):
         if report_type:
             queryset = queryset.filter(report_type=report_type)
         
-        # Filter by date range
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
-        
-        if start_date:
-            try:
-                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(date_from__gte=start_date)
-            except ValueError:
-                pass
-        
-        if end_date:
-            try:
-                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(date_to__lte=end_date)
-            except ValueError:
-                pass
+        # Filter by date range (if provided)
+        queryset = self._filter_by_date_range(queryset)
         
         return queryset.order_by('-created_at')
-
-    def perform_destroy(self, instance):
-        """Soft delete report"""
-        instance.is_active = False
-        instance.save()
+    
 
     @action(detail=False, methods=['post'])
     def generate(self, request):

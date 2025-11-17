@@ -14,17 +14,24 @@ from .serializers import (
     OCRResultSerializer
 )
 from .services import PrescriptionService
+from shared.views import FilterByDateMixin
 
 
-class PrescriptionViewSet(ModelViewSet):
+class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
     """Complete CRUD operations for prescriptions"""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    date_filter_start_field = "prescription_date__gte"
+    date_filter_end_field = "prescription_date__lte"
+    url_start_date_variable = 'date_from'
+    url_end_date_variable = 'date_to'
     
     def get_queryset(self):
         queryset = Prescription.objects.filter(user=self.request.user, is_active=True)
         
-        # Add filtering capabilities
+        # TODO: use FilterByDateMixin here. 
+        # You'll probably have to create start_date and end_date dictionary variables
+        # so that it can correctly use 'date_from' and 'date_to'
         doctor_name = self.request.query_params.get('doctor_name')
         if doctor_name:
             queryset = queryset.filter(doctor_name__icontains=doctor_name)
@@ -33,17 +40,7 @@ class PrescriptionViewSet(ModelViewSet):
         if clinic_name:
             queryset = queryset.filter(clinic_name__icontains=clinic_name)
         
-        date_from = self.request.query_params.get('date_from')
-        if date_from:
-            date_from = parse_date(date_from)
-            if date_from:
-                queryset = queryset.filter(prescription_date__gte=date_from)
-        
-        date_to = self.request.query_params.get('date_to')
-        if date_to:
-            date_to = parse_date(date_to)
-            if date_to:
-                queryset = queryset.filter(prescription_date__lte=date_to)
+        queryset = self._filter_by_date_range(queryset)
         
         processing_status = self.request.query_params.get('processing_status')
         if processing_status:
