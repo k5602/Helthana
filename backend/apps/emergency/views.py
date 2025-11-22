@@ -161,8 +161,10 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
             alert = self.get_object()
             alert.resolve()
             
+            
             # Notify contacts that alert is resolved
-            EmergencyService.send_resolution_notification(
+            service = EmergencyService()
+            service.send_resolution_notification(
                 user=request.user,
                 alert=alert
             )
@@ -191,8 +193,8 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             alert.cancel()
-            
-            EmergencyService.send_cancellation_notification(
+            service = EmergencyService()
+            service.send_cancellation_notification(
                 user=request.user,
                 alert=alert
             )
