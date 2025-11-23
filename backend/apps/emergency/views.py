@@ -162,11 +162,12 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
         """Mark emergency alert as resolved"""
         try:
             alert = self.get_object()
-            alert.is_resolved = True
-            alert.save()
+            alert.resolve()
+            
             
             # Notify contacts that alert is resolved
-            EmergencyService.send_resolution_notification(
+            service = EmergencyService()
+            service.send_resolution_notification(
                 user=request.user,
                 alert=alert
             )
@@ -194,12 +195,9 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                     {'error': 'Cannot cancel resolved alert'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
-            # Mark as resolved and send cancellation notification
-            alert.is_resolved = True
-            alert.save()
-            
-            EmergencyService.send_cancellation_notification(
+            alert.cancel()
+            service = EmergencyService()
+            service.send_cancellation_notification(
                 user=request.user,
                 alert=alert
             )
