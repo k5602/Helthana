@@ -14,10 +14,10 @@ from .serializers import (
     OCRResultSerializer
 )
 from .services import PrescriptionService
-from shared.views import FilterByDateMixin
+from shared.views import FilterByDateMixin, SoftDeleteViewMixin
 
 
-class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
+class PrescriptionViewSet(ModelViewSet, FilterByDateMixin, SoftDeleteViewMixin):
     """Complete CRUD operations for prescriptions"""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -77,13 +77,6 @@ class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
         # Return full prescription data
         response_serializer = PrescriptionSerializer(prescription)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-    
-    def destroy(self, request, *args, **kwargs):
-        """Soft delete prescription"""
-        instance = self.get_object()
-        instance.is_active = False
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=True, methods=['post'])
     def process_ocr(self, request, pk=None):

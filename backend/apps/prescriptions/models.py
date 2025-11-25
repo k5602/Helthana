@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from shared.models import SoftDeleteMixin
 
 
-class Prescription(models.Model):
+class Prescription(models.Model, SoftDeleteMixin):
     """Scanned prescription records"""
     PROCESSING_STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -28,10 +29,8 @@ class Prescription(models.Model):
         choices=PROCESSING_STATUS_CHOICES,
         default='pending'
     )
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -42,6 +41,8 @@ class Prescription(models.Model):
 
     def __str__(self):
         return f"Prescription by {self.doctor_name} - {self.prescription_date}"
+    
+    
 
 
 class Medication(models.Model):
@@ -56,3 +57,4 @@ class Medication(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.dosage}"
+    
