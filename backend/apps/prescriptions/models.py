@@ -45,7 +45,7 @@ class Prescription(models.Model, SoftDeleteMixin):
     
 
 
-class Medication(models.Model):
+class Medication(models.Model, SoftDeleteMixin):
     """Individual medications from prescriptions"""
     prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='medications')
     name = models.CharField(max_length=200)
@@ -53,7 +53,6 @@ class Medication(models.Model):
     frequency = models.CharField(max_length=100)
     duration = models.CharField(max_length=100, blank=True)
     instructions = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name} - {self.dosage}"
