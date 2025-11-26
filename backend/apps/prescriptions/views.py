@@ -14,10 +14,10 @@ from .serializers import (
     OCRResultSerializer
 )
 from .services import PrescriptionService
-from shared.views import FilterByDateMixin
+from shared.views import FilterByDateMixin, SoftDeleteViewMixin
 
 
-class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
+class PrescriptionViewSet(ModelViewSet, FilterByDateMixin, SoftDeleteViewMixin):
     """Complete CRUD operations for prescriptions"""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -28,11 +28,8 @@ class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
     
     def get_queryset(self):
         queryset = Prescription.objects.filter(user=self.request.user, is_active=True)
-        
-        # TODO: use FilterByDateMixin here. 
-        # You'll probably have to create start_date and end_date dictionary variables
-        # so that it can correctly use 'date_from' and 'date_to'
         doctor_name = self.request.query_params.get('doctor_name')
+        
         if doctor_name:
             queryset = queryset.filter(doctor_name__icontains=doctor_name)
         
@@ -77,13 +74,6 @@ class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
         # Return full prescription data
         response_serializer = PrescriptionSerializer(prescription)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-    
-    def destroy(self, request, *args, **kwargs):
-        """Soft delete prescription"""
-        instance = self.get_object()
-        instance.is_active = False
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=True, methods=['post'])
     def process_ocr(self, request, pk=None):
@@ -378,7 +368,7 @@ class PrescriptionViewSet(ModelViewSet, FilterByDateMixin):
         })
 
 
-class MedicationViewSet(ModelViewSet):
+class MedicationViewSet(ModelViewSet, SoftDeleteViewMixin):
     """CRUD operations for medications"""
     serializer_class = MedicationSerializer
     permission_classes = [IsAuthenticated]
@@ -400,10 +390,3 @@ class MedicationViewSet(ModelViewSet):
             queryset = queryset.filter(name__icontains=search)
         
         return queryset
-    
-    def destroy(self, request, *args, **kwargs):
-        """Soft delete medication"""
-        instance = self.get_object()
-        instance.is_active = False
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
