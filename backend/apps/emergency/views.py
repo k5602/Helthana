@@ -26,7 +26,8 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
         """Get user's active emergency contacts"""
         return EmergencyContact.objects.filter(user=self.request.user, is_active=True)
     
-    def _handle_primary_logic(self, serializer):
+    
+    def _save_instance(self, serializer):
         save_kwargs = {}
         if self.action == 'create':
             save_kwargs['user'] = self.request.user
@@ -37,10 +38,12 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
             EmergencyContact.objects.set_primary(user=self.request.user, contact_id=instance.id)
 
     def perform_create(self, serializer):
-        self._handle_primary_logic(serializer)
+        instance = self._save_instance(serializer)
+        self._handle_primary_status(serializer, instance)
     
     def perform_update(self, serializer):
-        self._handle_primary_logic(serializer)
+        instance = self._save_instance(serializer)
+        self._handle_primary_status(serializer, instance)
             
 
     @action(detail=True, methods=['post'])
@@ -159,11 +162,12 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
         """Mark emergency alert as resolved"""
         try:
             alert = self.get_object()
-            alert.is_resolved = True
-            alert.save()
+            alert.resolve()
+            
             
             # Notify contacts that alert is resolved
-            EmergencyService.send_resolution_notification(
+            service = EmergencyService()
+            service.send_resolution_notification(
                 user=request.user,
                 alert=alert
             )
@@ -191,12 +195,9 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                     {'error': 'Cannot cancel resolved alert'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
-            # Mark as resolved and send cancellation notification
-            alert.is_resolved = True
-            alert.save()
-            
-            EmergencyService.send_cancellation_notification(
+            alert.cancel()
+            service = EmergencyService()
+            service.send_cancellation_notification(
                 user=request.user,
                 alert=alert
             )
