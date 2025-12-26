@@ -1,0 +1,33 @@
+[project]
+name = "Helthana"
+version = "0.1.0"
+description = "Our health is our wealth. A comprehensive health application tailored for Egyptians."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "celery==5.4.0",
+    "dj-database-url==2.2.0",
+    "django==5.2.4",
+    "django-celery-beat==2.8.0",
+    "django-cors-headers==4.4.0",
+    "django-hijack==3.6.0",
+    "django-hijack-admin==2.1.10",
+    "djangorestframework==3.15.2",
+    "djangorestframework-simplejwt==5.5.0",
+    "drf-spectacular==0.28.0",
+    "google-cloud-speech==2.33.0",
+    "google-cloud-vision==3.7.2",
+    "gunicorn==23.0.0",
+    "matplotlib==3.8.2",
+    "pillow==10.4.0",
+    "psycopg==3.2.9",
+    "python-decouple==3.8",
+    "python-magic>=0.4.27",
+    "redis==5.0.8",
+    "reportlab==4.0.7",
+    "requests==2.32.4",
+    "twilio==9.2.4",
+    "user-agents==2.2.0",
+    "weasyprint==65.1",
+    "whitenoise==6.7.0",
+]
