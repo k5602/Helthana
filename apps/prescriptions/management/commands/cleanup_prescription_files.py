@@ -1,8 +1,7 @@
 """
 Django management command to clean up orphaned prescription files
 """
-from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
+from django.core.management.base import BaseCommand
 from health_guide.utils.file_upload import FileCleanupManager
 
 
@@ -33,7 +32,7 @@ class Command(BaseCommand):
         show_usage = options['show_usage']
 
         self.stdout.write(
-            self.style.SUCCESS(f'Starting file cleanup process...')
+            self.style.SUCCESS('Starting file cleanup process...')
         )
 
         if show_usage:
@@ -46,7 +45,7 @@ class Command(BaseCommand):
             if result['success']:
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Cleanup completed successfully!'
+                        'Cleanup completed successfully!'
                     )
                 )
                 self.stdout.write(f'Files deleted: {result["deleted_count"]}')

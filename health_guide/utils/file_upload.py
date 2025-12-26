@@ -3,17 +3,14 @@ Secure file upload and media handling utilities
 """
 import os
 import hashlib
-import mimetypes
 from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
 from PIL import Image, ImageOps
 from django.conf import settings
-from django.core.files.uploadedfile import InMemoryUploadedFile, TemporaryUploadedFile
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.text import get_valid_filename
-import magic
 
 
 class FileUploadValidator:
@@ -244,7 +241,6 @@ class ImageProcessor:
                 img = ImageOps.exif_transpose(img)
                 
                 # Resize if too large
-                original_size = img.size
                 if max(img.size) > cls.MAX_DIMENSION:
                     img.thumbnail((cls.MAX_DIMENSION, cls.MAX_DIMENSION), Image.Resampling.LANCZOS)
                 

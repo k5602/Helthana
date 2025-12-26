@@ -1,11 +1,9 @@
 """
 Token management utilities for cleanup and maintenance operations.
 """
-from datetime import timedelta
-from typing import Dict, List
+from typing import Dict
 from django.utils import timezone
 from django.db.models import Q
-from django.core.management.base import BaseCommand
 from .models import User
 from .tokens import (
     email_verification_token_generator,

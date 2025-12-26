@@ -1,13 +1,10 @@
 """
 Custom hijack views for frontend integration.
 """
-from django.contrib.auth import login
 from django.contrib.auth.decorators import user_passes_test
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
-from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.generic import View
 from hijack.views import AcquireUserView, ReleaseUserView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser

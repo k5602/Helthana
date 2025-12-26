@@ -5,7 +5,6 @@ import time
 import random
 from typing import Dict, Any, List
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.core.files.base import ContentFile
 from health_guide.utils.file_upload import (
     FileUploadValidator, 
     ImageProcessor, 

@@ -1,12 +1,9 @@
-import os
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.db.models import Q
 from .models import HealthReport
 from .chart_generator import ChartGenerator
 from apps.vitals.models import VitalReading

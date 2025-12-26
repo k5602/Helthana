@@ -3,9 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Avg, Count, Q
-from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime
 from .models import VitalReading
 from .serializers import VitalReadingSerializer, VitalTrendSerializer, VitalSummarySerializer
 from .services import VitalAnalyticsService

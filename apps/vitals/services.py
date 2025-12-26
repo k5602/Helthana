@@ -1,6 +1,5 @@
-from django.db.models import Avg, Count, Max, Min, Q
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Dict, List, Any, Optional
 from .models import VitalReading
 

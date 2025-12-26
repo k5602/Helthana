@@ -1,10 +1,12 @@
-from django.db import models, transaction
 from django.conf import settings
+from django.db import models, transaction
 from django.utils import timezone
-from shared.models import SoftDeleteMixin
+
+from apps.shared.models import SoftDeleteMixin
+
 
 class EmergencyContactManager(models.Manager):
-    
+
     def set_primary(self, user, contact_id):
         # transaction ensures that either all operations succeed, or none do.
         with transaction.atomic():
@@ -26,7 +28,7 @@ class EmergencyContactManager(models.Manager):
         queryset.filter(is_primary=True).exclude(id=contact_id).update(is_primary=False)
 
 
-class EmergencyContact(models.Model, SoftDeleteMixin):
+class EmergencyContact(SoftDeleteMixin):
     """Emergency contact information"""
     RELATIONSHIP_CHOICES = [
         ('family', 'Family Member'),
@@ -36,7 +38,7 @@ class EmergencyContact(models.Model, SoftDeleteMixin):
         ('neighbor', 'Neighbor'),
         ('other', 'Other'),
     ]
-    
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=15)
@@ -71,14 +73,14 @@ class EmergencyAlert(models.Model):
         ('medication', 'Medication Emergency'),
         ('test', 'Test Alert'),
     ]
-    
+
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('resolved', 'Resolved'),
         ('cancelled', 'Cancelled'),
         ('test', 'Test'),
     ]
-    
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     alert_type = models.CharField(max_length=20, choices=ALERT_TYPE_CHOICES, default='general')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
@@ -88,11 +90,11 @@ class EmergencyAlert(models.Model):
     message = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
-    
+
     # Tracking fields
     notifications_sent = models.IntegerField(default=0)
     notifications_failed = models.IntegerField(default=0)
-    
+
     class Meta:
         ordering = ['-created_at']
         indexes = [
@@ -103,8 +105,8 @@ class EmergencyAlert(models.Model):
 
     def __str__(self):
         return f"Emergency Alert - {self.user.username} - {self.get_alert_type_display()} - {self.created_at}"
-    # Generally, regular methods imply actions need to be performed on object. 
-    # Properties on the other hand are features/characteristics of objects. 
+    # Generally, regular methods imply actions need to be performed on object.
+    # Properties on the other hand are features/characteristics of objects.
     @property
     def is_resolved(self):
         """Backward compatibility property"""
@@ -148,7 +150,7 @@ class EmergencyNotification(models.Model):
         ('email', 'Email'),
         ('push', 'Push Notification'),
     ]
-    
+
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('sent', 'Sent'),
@@ -156,7 +158,7 @@ class EmergencyNotification(models.Model):
         ('failed', 'Failed'),
         ('cancelled', 'Cancelled'),
     ]
-    
+
     alert = models.ForeignKey(EmergencyAlert, on_delete=models.CASCADE, related_name='notifications')
     contact = models.ForeignKey(EmergencyContact, on_delete=models.CASCADE)
     notification_type = models.CharField(max_length=10, choices=NOTIFICATION_TYPE_CHOICES)
@@ -176,8 +178,8 @@ class EmergencyNotification(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.get_notification_type_display()} to {self.contact.name} - {self.status}" 
-    
+        return f"{self.get_notification_type_display()} to {self.contact.name} - {self.status}"
+
     def mark_sent(self, external_id=None):
         """Mark notification as sent"""
         self.status = 'sent'

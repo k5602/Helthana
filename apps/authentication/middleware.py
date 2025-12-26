@@ -2,11 +2,8 @@
 Security middleware for authentication and rate limiting
 """
 import time
-import json
 import logging
-from collections import defaultdict
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 from django.core.cache import cache
 from django.http import JsonResponse

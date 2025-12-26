@@ -1,20 +1,20 @@
+
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
-from datetime import datetime, timedelta
-from .models import EmergencyContact, EmergencyAlert
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+
+from apps.shared.views import FilterByDateMixin, SoftDeleteViewMixin
+
+from .models import EmergencyAlert, EmergencyContact
 from .serializers import (
-    EmergencyContactSerializer, 
-    EmergencyAlertSerializer,
     EmergencyAlertCreateSerializer,
-    EmergencyStatusSerializer
+    EmergencyAlertSerializer,
+    EmergencyContactSerializer,
+    EmergencyStatusSerializer,
 )
 from .services import EmergencyService
-from django.db import transaction
-from shared.views import SoftDeleteViewMixin, FilterByDateMixin
 
 
 class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
@@ -25,13 +25,13 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
     def get_queryset(self):
         """Get user's active emergency contacts"""
         return EmergencyContact.objects.filter(user=self.request.user, is_active=True)
-    
-    
+
+
     def _save_instance(self, serializer):
         save_kwargs = {}
         if self.action == 'create':
             save_kwargs['user'] = self.request.user
-        # save_kwargs will be empty if self.action == 'update', 
+        # save_kwargs will be empty if self.action == 'update',
         # which is correct.
         instance = serializer.save(**save_kwargs)
         if serializer.validated_data.get('is_primary', False):
@@ -40,11 +40,11 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
     def perform_create(self, serializer):
         instance = self._save_instance(serializer)
         self._handle_primary_status(serializer, instance)
-    
+
     def perform_update(self, serializer):
         instance = self._save_instance(serializer)
         self._handle_primary_status(serializer, instance)
-            
+
 
     @action(detail=True, methods=['post'])
     def set_primary_contact(self, request, pk=None):
@@ -52,7 +52,7 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
             contact = EmergencyContact.objects.set_primary(request.user, pk)
             serializer = self.get_serializer(contact)
             return Response(serializer.data)
-        
+
         except EmergencyContact.DoesNotExist:
             return Response(
                 {"error": "Contact not found"},
@@ -68,7 +68,7 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
                 is_primary=True,
                 is_active=True
             ).first()
-            
+
             if primary_contact:
                 serializer = self.get_serializer(primary_contact)
                 return Response(serializer.data)
@@ -77,7 +77,7 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
                     {'message': 'No primary contact set'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-                
+
         except Exception as e:
             return Response(
                 {'error': f'Failed to get primary contact: {str(e)}'},
@@ -93,19 +93,19 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
     date_filter_end_field = "created_at__date__lte"
     url_start_date_variable = 'start_date'
     url_end_date_variable = 'end_date'
-    
+
     def get_queryset(self):
         """Get user's emergency alerts with optional filtering"""
         queryset = EmergencyAlert.objects.filter(user=self.request.user)
-        
+
         # Filter by resolution status
         is_resolved = self.request.query_params.get('resolved')
         if is_resolved is not None:
             queryset = queryset.filter(is_resolved=is_resolved.lower() == 'true')
-        
+
         # Filter by date range (if provided)
         queryset = self._filter_by_date_range(queryset)
-        
+
         return queryset.order_by('-created_at')
 
     def get_serializer_class(self):
@@ -124,7 +124,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                     {'error': 'Invalid data', 'details': serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             # Create the alert
             alert = EmergencyAlert.objects.create(
                 user=request.user,
@@ -132,9 +132,9 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                 location_lng=serializer.validated_data.get('location_lng'),
                 message=serializer.validated_data.get('message', 'Emergency alert from Your Health Guide app')
             )
-            
+
             service = EmergencyService()
-            
+
             # handle alert based on alert type
             result = service.handle_alert(
                 user=request.user,
@@ -142,7 +142,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                 alert_type=serializer.validated_data.get('alert_type', 'general'),
                 include_location=serializer.validated_data.get('include_location', True)
             )
-            
+
             response_serializer = EmergencyAlertSerializer(alert)
             return Response({
                 'message': 'Emergency alert sent successfully',
@@ -150,7 +150,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                 'notifications_sent': result['notifications_sent'],
                 'failed_notifications': result['failed_notifications']
             }, status=status.HTTP_201_CREATED)
-            
+
         except Exception as e:
             return Response(
                 {'error': f'Failed to send emergency alert: {str(e)}'},
@@ -163,21 +163,21 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
         try:
             alert = self.get_object()
             alert.resolve()
-            
-            
+
+
             # Notify contacts that alert is resolved
             service = EmergencyService()
             service.send_resolution_notification(
                 user=request.user,
                 alert=alert
             )
-            
+
             serializer = self.get_serializer(alert)
             return Response({
                 'message': 'Emergency alert resolved',
                 'alert': serializer.data
             })
-            
+
         except Exception as e:
             return Response(
                 {'error': f'Failed to resolve alert: {str(e)}'},
@@ -189,7 +189,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
         """Cancel emergency alert"""
         try:
             alert = self.get_object()
-            
+
             if alert.is_resolved:
                 return Response(
                     {'error': 'Cannot cancel resolved alert'},
@@ -201,13 +201,13 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
                 user=request.user,
                 alert=alert
             )
-            
+
             serializer = self.get_serializer(alert)
             return Response({
                 'message': 'Emergency alert cancelled',
                 'alert': serializer.data
             })
-            
+
         except Exception as e:
             return Response(
                 {'error': f'Failed to cancel alert: {str(e)}'},
@@ -221,7 +221,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
             status_data = EmergencyService.get_emergency_status(request.user)
             serializer = EmergencyStatusSerializer(status_data)
             return Response(serializer.data)
-            
+
         except Exception as e:
             return Response(
                 {'error': f'Failed to get emergency status: {str(e)}'},
@@ -235,7 +235,7 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
             days = int(request.query_params.get('days', 30))
             history_data = EmergencyService.get_alert_history(request.user, days)
             return Response(history_data)
-            
+
         except ValueError:
             return Response(
                 {'error': 'Invalid days parameter'},

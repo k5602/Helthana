@@ -1,9 +1,10 @@
-from django.db import models
 from django.conf import settings
-from shared.models import SoftDeleteMixin
+from django.db import models
+
+from apps.shared.models import SoftDeleteMixin
 
 
-class Prescription(models.Model, SoftDeleteMixin):
+class Prescription(SoftDeleteMixin):
     """Scanned prescription records"""
     PROCESSING_STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -12,7 +13,7 @@ class Prescription(models.Model, SoftDeleteMixin):
         ('failed', 'Failed'),
         ('manual_review', 'Manual Review Required')
     ]
-    
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     doctor_name = models.CharField(max_length=100)
     clinic_name = models.CharField(max_length=100, blank=True)
@@ -20,7 +21,7 @@ class Prescription(models.Model, SoftDeleteMixin):
     image = models.ImageField(upload_to='prescriptions/')
     ocr_text = models.TextField(blank=True)
     is_processed = models.BooleanField(default=False)
-    
+
     # Enhanced fields for AI processing
     ai_confidence_score = models.FloatField(default=0.0)
     manual_verification_required = models.BooleanField(default=False)
@@ -41,11 +42,11 @@ class Prescription(models.Model, SoftDeleteMixin):
 
     def __str__(self):
         return f"Prescription by {self.doctor_name} - {self.prescription_date}"
-    
-    
 
 
-class Medication(models.Model, SoftDeleteMixin):
+
+
+class Medication(SoftDeleteMixin):
     """Individual medications from prescriptions"""
     prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='medications')
     name = models.CharField(max_length=200)
@@ -56,4 +57,3 @@ class Medication(models.Model, SoftDeleteMixin):
 
     def __str__(self):
         return f"{self.name} - {self.dosage}"
-    

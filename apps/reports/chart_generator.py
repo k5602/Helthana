@@ -3,9 +3,7 @@ Chart generation utilities for health reports
 """
 import base64
 from io import BytesIO
-from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
-import json
+from typing import Dict, List, Any
 
 
 class ChartGenerator:

@@ -1,13 +1,16 @@
-from rest_framework import serializers
+
 from django.utils import timezone
-from datetime import datetime, timedelta
+from rest_framework import serializers
+
+from apps.shared.serializers import DateValidationMixin
+
 from .models import HealthReport
-from shared.serializers import DateValidationMixin
+
 
 class HealthReportSerializer(serializers.ModelSerializer, DateValidationMixin):
     pdf_url = serializers.SerializerMethodField()
     file_size = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = HealthReport
         fields = '__all__'
@@ -36,9 +39,9 @@ class HealthReportSerializer(serializers.ModelSerializer, DateValidationMixin):
         return None
 
     def validate(self, data):
-        # Since HealthReportSerializer is a ModelSerializer, 
-        # this means that it can be used for both creating (POST) and Updating (PATCH) a report. So, 
-        # if a PATCH request is done to only change the report's title, the date variables won't be provided. 
+        # Since HealthReportSerializer is a ModelSerializer,
+        # this means that it can be used for both creating (POST) and Updating (PATCH) a report. So,
+        # if a PATCH request is done to only change the report's title, the date variables won't be provided.
         # This is why we check if they exist or not with get() in the first place before we start validating them.
         if data.get('date_from') and data.get('date_to'):
             self._validate_date_order(data)
@@ -70,12 +73,12 @@ class ReportGenerationSerializer(serializers.Serializer, DateValidationMixin):
         # Check if date_to is not in the future
         if data['date_to'] > timezone.now().date():
             raise serializers.ValidationError("date_to cannot be in the future")
-        
+
         # Generate default title if not provided
         if not data.get('title'):
             report_type_display = dict(HealthReport._meta.get_field('report_type').choices)[data['report_type']]
             data['title'] = f"{report_type_display} - {data['date_from']} to {data['date_to']}"
-        
+
         return data
 
 
@@ -130,8 +133,8 @@ class ReportScheduleSerializer(serializers.Serializer):
         """Validate schedule configuration"""
         if data['frequency'] == 'weekly' and 'day_of_week' not in data:
             raise serializers.ValidationError("day_of_week is required for weekly frequency")
-        
+
         if data['frequency'] == 'monthly' and 'day_of_month' not in data:
             raise serializers.ValidationError("day_of_month is required for monthly frequency")
-        
+
         return data

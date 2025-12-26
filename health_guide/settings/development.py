@@ -3,7 +3,6 @@ Development settings for health_guide project.
 """
 
 from .base import *
-import dj_database_url
 import socket
 
 # SECURITY WARNING: don't run with debug turned on in production!

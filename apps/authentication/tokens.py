@@ -4,11 +4,10 @@ Custom token generators for email verification and password reset functionality.
 import hashlib
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from typing import Tuple
 from django.conf import settings
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import timezone
-from django.utils.encoding import force_bytes
 from django.utils.http import base36_to_int, int_to_base36
 from .models import User
 

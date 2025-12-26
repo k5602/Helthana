@@ -26,8 +26,7 @@ from .services import EmailService
 from .error_handlers import (
     AuthErrorCodes, 
     StandardizedErrorResponse, 
-    AuthErrorHandler,
-    handle_auth_exception
+    AuthErrorHandler
 )
 
 logger = logging.getLogger(__name__)
@@ -306,9 +305,9 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             logger.error(f"Password reset confirmation failed: {str(e)}")
             
             if hasattr(e, 'detail'):
-                error_details = e.detail
+                pass
             else:
-                error_details = {'non_field_errors': [str(e)]}
+                {'non_field_errors': [str(e)]}
             
             return AuthErrorHandler.handle_password_reset_error(e)
 
@@ -456,9 +455,9 @@ class ChangePasswordView(generics.GenericAPIView):
             logger.error(f"Password change failed: {str(e)}")
             
             if hasattr(e, 'detail'):
-                error_details = e.detail
+                pass
             else:
-                error_details = {'non_field_errors': [str(e)]}
+                {'non_field_errors': [str(e)]}
             
             return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.PASSWORD_CHANGE_FAILED)
 
@@ -495,9 +494,9 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             logger.error(f"Profile update failed: {str(e)}")
             
             if hasattr(e, 'detail'):
-                error_details = e.detail
+                pass
             else:
-                error_details = {'non_field_errors': [str(e)]}
+                {'non_field_errors': [str(e)]}
             
             return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.PROFILE_UPDATE_FAILED)
 
@@ -567,9 +566,9 @@ class EmailUpdateView(generics.GenericAPIView):
             logger.error(f"Email update failed: {str(e)}")
             
             if hasattr(e, 'detail'):
-                error_details = e.detail
+                pass
             else:
-                error_details = {'non_field_errors': [str(e)]}
+                {'non_field_errors': [str(e)]}
             
             return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.EMAIL_UPDATE_FAILED)
 
@@ -647,9 +646,9 @@ class AccountDeletionView(generics.GenericAPIView):
             logger.error(f"Account deletion failed: {str(e)}")
             
             if hasattr(e, 'detail'):
-                error_details = e.detail
+                pass
             else:
-                error_details = {'non_field_errors': [str(e)]}
+                {'non_field_errors': [str(e)]}
             
             return AuthErrorHandler.handle_generic_error(e, AuthErrorCodes.ACCOUNT_DELETION_FAILED)
 

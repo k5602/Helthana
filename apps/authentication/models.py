@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
-from typing import Optional, Tuple
+from typing import Tuple
 
 
 class User(AbstractUser):

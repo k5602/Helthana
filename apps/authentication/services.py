@@ -4,7 +4,7 @@ Email service for authentication-related emails.
 
 import logging
 from typing import Dict, Any
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth import get_user_model

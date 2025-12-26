@@ -1,8 +1,7 @@
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from datetime import timedelta
+from typing import Dict, Any
 from django.utils import timezone
-from django.db.models import Count, Q
 from .models import EmergencyContact, EmergencyAlert
 
 ALERT_TYPE_CONFIG = {

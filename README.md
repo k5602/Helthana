@@ -359,7 +359,8 @@ your-health-guide/
 │   │   ├── vitals/         # Health metrics tracking
 │   │   ├── reports/        # PDF generation
 │   │   └── emergency/      # SOS functionality
-│   └── requirements.txt
+│   ├── pyproject.toml
+│   └── uv.lock
 ├── frontend/               # PWA frontend
 │   ├── public/            # Static HTML files
 │   │   ├── index.html     # Landing page
@@ -378,7 +379,8 @@ your-health-guide/
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.12+
+- uv
 - Node.js 16+
 - PostgreSQL (for production)
 - Docker (optional)
@@ -386,26 +388,18 @@ your-health-guide/
 ### Backend Setup
 
 ```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# .\venv\Scripts\activate  # Windows
-
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies and create virtual environment
+uv sync
 
 # Run migrations
-python manage.py makemigrations
-python manage.py migrate
+uv run python manage.py makemigrations
+uv run python manage.py migrate
 
 # Create superuser (optional)
-python manage.py createsuperuser
+uv run python manage.py createsuperuser
 
 # Run development server
-python manage.py runserver
+uv run python manage.py runserver
 ```
 
 ### Frontend Setup
@@ -479,7 +473,6 @@ docker-compose up --build
 - **Khaled Mahmoud**: Project Lead & Backend Developer & Ai Engineer &software Archticet
 - **Gasser Mohammed**: Frontend Developer & Deployment engineer & UX Designer
 
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -490,6 +483,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Tailwind CSS and DaisyUI for the beautiful UI
 - Django and Django REST Framework for the robust backend
 - The open-source community for the amazing tools and libraries
+
 ---
 
 Made with ❤️ for the people of Egypt.
