@@ -28,6 +28,8 @@ class PrescriptionViewSet(ModelViewSet, FilterByDateMixin, SoftDeleteViewMixin):
     url_end_date_variable = 'date_to'
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Prescription.objects.none()
         queryset = Prescription.objects.filter(user=self.request.user, is_active=True)
         doctor_name = self.request.query_params.get('doctor_name')
 
@@ -375,6 +377,8 @@ class MedicationViewSet(ModelViewSet, SoftDeleteViewMixin):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Medication.objects.none()
         queryset = Medication.objects.filter(
             prescription__user=self.request.user,
             is_active=True

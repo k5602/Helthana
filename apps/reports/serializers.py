@@ -1,5 +1,6 @@
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.shared.serializers import DateValidationMixin
@@ -20,6 +21,7 @@ class HealthReportSerializer(serializers.ModelSerializer, DateValidationMixin):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_pdf_url(self, obj):
         """Get PDF file URL if available"""
         if obj.pdf_file:
@@ -29,6 +31,7 @@ class HealthReportSerializer(serializers.ModelSerializer, DateValidationMixin):
             return obj.pdf_file.url
         return None
 
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_file_size(self, obj):
         """Get PDF file size in bytes"""
         if obj.pdf_file:

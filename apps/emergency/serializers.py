@@ -1,6 +1,8 @@
-from rest_framework import serializers
 from django.core.validators import RegexValidator
-from .models import EmergencyContact, EmergencyAlert
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from .models import EmergencyAlert, EmergencyContact
 
 
 class EmergencyContactSerializer(serializers.ModelSerializer):
@@ -12,7 +14,7 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
             )
         ]
     )
-    
+
     class Meta:
         model = EmergencyContact
         fields = '__all__'
@@ -34,7 +36,7 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
 class EmergencyAlertSerializer(serializers.ModelSerializer):
     location_display = serializers.SerializerMethodField()
     time_since_created = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = EmergencyAlert
         fields = '__all__'
@@ -44,19 +46,21 @@ class EmergencyAlertSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_location_display(self, obj):
         """Get formatted location display"""
         if obj.location_lat and obj.location_lng:
             return f"{obj.location_lat}, {obj.location_lng}"
         return None
 
+    @extend_schema_field(serializers.CharField())
     def get_time_since_created(self, obj):
         """Get human-readable time since alert was created"""
         from django.utils import timezone
-        
+
         now = timezone.now()
         diff = now - obj.created_at
-        
+
         if diff.days > 0:
             return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
         elif diff.seconds > 3600:
@@ -72,19 +76,19 @@ class EmergencyAlertSerializer(serializers.ModelSerializer):
 class EmergencyAlertCreateSerializer(serializers.Serializer):
     """Serializer for creating emergency alerts"""
     location_lat = serializers.DecimalField(
-        max_digits=9, 
-        decimal_places=6, 
+        max_digits=9,
+        decimal_places=6,
         required=False,
         allow_null=True
     )
     location_lng = serializers.DecimalField(
-        max_digits=9, 
-        decimal_places=6, 
+        max_digits=9,
+        decimal_places=6,
         required=False,
         allow_null=True
     )
     message = serializers.CharField(
-        max_length=500, 
+        max_length=500,
         required=False,
         default="Emergency alert from Your Health Guide app"
     )
@@ -110,16 +114,16 @@ class EmergencyAlertCreateSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Both latitude and longitude must be provided")
             if data.get('location_lng') is not None and data.get('location_lat') is None:
                 raise serializers.ValidationError("Both latitude and longitude must be provided")
-        
+
         # Validate coordinates range
         if data.get('location_lat') is not None:
             if not (-90 <= float(data['location_lat']) <= 90):
                 raise serializers.ValidationError("Latitude must be between -90 and 90")
-        
+
         if data.get('location_lng') is not None:
             if not (-180 <= float(data['location_lng']) <= 180):
                 raise serializers.ValidationError("Longitude must be between -180 and 180")
-        
+
         return data
 
 

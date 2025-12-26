@@ -1,17 +1,20 @@
 """
 Custom hijack views for frontend integration.
 """
+import logging
+
 from django.contrib.auth.decorators import user_passes_test
 from django.http import JsonResponse
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
+from drf_spectacular.utils import extend_schema, inline_serializer
 from hijack.views import AcquireUserView, ReleaseUserView
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework import status
-from .models import User, SecurityAuditLog
-import logging
+
+from .models import SecurityAuditLog, User
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +26,11 @@ def is_admin_user(user):
 
 class CustomHijackView(AcquireUserView):
     """Custom hijack view with enhanced logging and frontend integration"""
-    
+
     @method_decorator(user_passes_test(is_admin_user))
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
-    
+
     def post(self, request, *args, **kwargs):
         """Handle hijack request with security logging"""
         try:
@@ -35,7 +38,7 @@ class CustomHijackView(AcquireUserView):
             user_id = kwargs.get('pk') or kwargs.get('user_id')
             target_user = get_object_or_404(User, id=user_id)
             hijacker = request.user
-            
+
             # Log the hijack attempt
             SecurityAuditLog.objects.create(
                 user=target_user,
@@ -50,22 +53,22 @@ class CustomHijackView(AcquireUserView):
                     'target_user_email': target_user.email
                 }
             )
-            
+
             logger.info(f"Admin {hijacker.email} hijacked user {target_user.email}")
-            
+
             # Call the parent class method to handle the actual hijack
             response = super().post(request, *args, **kwargs)
-            
+
             # Override the redirect to go to frontend dashboard
             if response.status_code == 302:
                 return redirect('/dashboard.html')
-            
+
             return response
-            
+
         except Exception as e:
             logger.error(f"Hijack error: {str(e)}")
             return JsonResponse({'error': 'Hijack failed'}, status=500)
-    
+
     def get_client_ip(self, request):
         """Get client IP address"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -78,7 +81,7 @@ class CustomHijackView(AcquireUserView):
 
 class CustomReleaseView(ReleaseUserView):
     """Custom release view with enhanced logging"""
-    
+
     def get(self, request):
         """Handle hijack release with security logging"""
         try:
@@ -87,7 +90,7 @@ class CustomReleaseView(ReleaseUserView):
                 if hijack_history:
                     original_user_id = hijack_history[-1]
                     current_user = request.user
-                    
+
                     # Log the release
                     SecurityAuditLog.objects.create(
                         user=current_user,
@@ -101,22 +104,22 @@ class CustomReleaseView(ReleaseUserView):
                             'hijacked_user_email': current_user.email
                         }
                     )
-                    
+
                     logger.info(f"Released hijack session for user {current_user.email}")
-            
+
             # Call the parent class method to handle the actual release
             response = super().get(request)
-            
+
             # Override the redirect to go to admin panel
             if response.status_code == 302:
                 return redirect('/admin/')
-            
+
             return response
-            
+
         except Exception as e:
             logger.error(f"Release hijack error: {str(e)}")
             return JsonResponse({'error': 'Release failed'}, status=500)
-    
+
     def get_client_ip(self, request):
         """Get client IP address"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -127,6 +130,18 @@ class CustomReleaseView(ReleaseUserView):
         return ip
 
 
+@extend_schema(
+    responses={
+        200: inline_serializer(
+            name='HijackStatusResponse',
+            fields={
+                'is_hijacked': serializers.BooleanField(),
+                'original_user': serializers.DictField(required=False),
+                'current_user': serializers.DictField(required=False),
+            }
+        )
+    }
+)
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def hijack_status_api(request):
@@ -134,7 +149,7 @@ def hijack_status_api(request):
     try:
         is_hijacked = hasattr(request, 'session') and 'hijack_history' in request.session
         hijack_info = {}
-        
+
         if is_hijacked:
             hijack_history = request.session.get('hijack_history', [])
             if hijack_history:
@@ -160,17 +175,31 @@ def hijack_status_api(request):
                     hijack_info = {'is_hijacked': False}
         else:
             hijack_info = {'is_hijacked': False}
-        
+
         return Response(hijack_info, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         logger.error(f"Hijack status API error: {str(e)}")
         return Response(
-            {'error': 'Failed to get hijack status'}, 
+            {'error': 'Failed to get hijack status'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
+@extend_schema(
+    responses={
+        200: inline_serializer(
+            name='HijackUserResponse',
+            fields={
+                'success': serializers.BooleanField(),
+                'message': serializers.CharField(),
+                'hijacked_user': serializers.DictField(),
+            }
+        ),
+        400: inline_serializer(name='HijackUserError', fields={'error': serializers.CharField()}),
+        404: inline_serializer(name='HijackUserNotFound', fields={'error': serializers.CharField()}),
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def hijack_user_api(request, user_id):
@@ -178,14 +207,14 @@ def hijack_user_api(request, user_id):
     try:
         target_user = User.objects.get(id=user_id)
         hijacker = request.user
-        
+
         # Check if user is already hijacked
         if hasattr(request, 'session') and 'hijack_history' in request.session:
             return Response(
-                {'error': 'Already in hijack session'}, 
+                {'error': 'Already in hijack session'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Log the hijack attempt
         SecurityAuditLog.objects.create(
             user=target_user,
@@ -200,12 +229,12 @@ def hijack_user_api(request, user_id):
                 'target_user_email': target_user.email
             }
         )
-        
+
         # Note: Actual hijack is handled by the hijack middleware and views
         # This API is for logging purposes only
-        
+
         logger.info(f"Admin {hijacker.email} hijacked user {target_user.email} via API")
-        
+
         return Response({
             'success': True,
             'message': f'Successfully hijacked user {target_user.email}',
@@ -216,21 +245,33 @@ def hijack_user_api(request, user_id):
                 'last_name': target_user.last_name
             }
         }, status=status.HTTP_200_OK)
-        
+
     except User.DoesNotExist:
         logger.warning(f"Admin {request.user.email} attempted to hijack non-existent user {user_id}")
         return Response(
-            {'error': 'User not found'}, 
+            {'error': 'User not found'},
             status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
         logger.error(f"Hijack API error: {str(e)}")
         return Response(
-            {'error': 'Hijack failed'}, 
+            {'error': 'Hijack failed'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
+@extend_schema(
+    responses={
+        200: inline_serializer(
+            name='ReleaseHijackResponse',
+            fields={
+                'success': serializers.BooleanField(),
+                'message': serializers.CharField(),
+            }
+        ),
+        400: inline_serializer(name='ReleaseHijackError', fields={'error': serializers.CharField()}),
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def release_hijack_api(request):
@@ -238,15 +279,15 @@ def release_hijack_api(request):
     try:
         if not (hasattr(request, 'session') and 'hijack_history' in request.session):
             return Response(
-                {'error': 'No active hijack session'}, 
+                {'error': 'No active hijack session'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         hijack_history = request.session.get('hijack_history', [])
         if hijack_history:
             original_user_id = hijack_history[-1]
             current_user = request.user
-            
+
             # Log the release
             SecurityAuditLog.objects.create(
                 user=current_user,
@@ -260,21 +301,21 @@ def release_hijack_api(request):
                     'hijacked_user_email': current_user.email
                 }
             )
-            
+
             logger.info(f"Released hijack session for user {current_user.email} via API")
-        
+
         # Note: Actual release is handled by the hijack middleware and views
         # This API is for logging purposes only
-        
+
         return Response({
             'success': True,
             'message': 'Hijack session release logged'
         }, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         logger.error(f"Release hijack API error: {str(e)}")
         return Response(
-            {'error': 'Release failed'}, 
+            {'error': 'Release failed'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

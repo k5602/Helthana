@@ -24,6 +24,8 @@ class EmergencyContactViewSet(ModelViewSet, SoftDeleteViewMixin):
 
     def get_queryset(self):
         """Get user's active emergency contacts"""
+        if getattr(self, 'swagger_fake_view', False):
+            return EmergencyContact.objects.none()
         return EmergencyContact.objects.filter(user=self.request.user, is_active=True)
 
 
@@ -96,6 +98,9 @@ class EmergencyAlertViewSet(ModelViewSet, FilterByDateMixin):
 
     def get_queryset(self):
         """Get user's emergency alerts with optional filtering"""
+        if getattr(self, 'swagger_fake_view', False):
+            return EmergencyAlert.objects.none()
+
         queryset = EmergencyAlert.objects.filter(user=self.request.user)
 
         # Filter by resolution status

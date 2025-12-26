@@ -1,5 +1,7 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from .models import Prescription, Medication
+
+from .models import Medication, Prescription
 from .services import PrescriptionService
 
 
@@ -7,7 +9,7 @@ class MedicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medication
         fields = [
-            'id', 'name', 'dosage', 'frequency', 'duration', 
+            'id', 'name', 'dosage', 'frequency', 'duration',
             'instructions', 'is_active'
         ]
 
@@ -29,6 +31,7 @@ class PrescriptionSerializer(serializers.ModelSerializer):
             'manual_verification_required', 'processing_status'
         )
 
+    @extend_schema_field(serializers.IntegerField())
     def get_medication_count(self, obj):
         return obj.medications.filter(is_active=True).count()
 
@@ -42,7 +45,7 @@ class PrescriptionSerializer(serializers.ModelSerializer):
 
 class PrescriptionCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating prescriptions"""
-    
+
     class Meta:
         model = Prescription
         fields = [

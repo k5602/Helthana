@@ -24,6 +24,9 @@ class HealthReportViewSet(ModelViewSet, SoftDeleteViewMixin, FilterByDateMixin):
 
     def get_queryset(self):
         """Get user's active reports with optional filtering"""
+        if getattr(self, 'swagger_fake_view', False):
+            return HealthReport.objects.none()
+
         queryset = HealthReport.objects.filter(user=self.request.user, is_active=True)
 
         # Filter by report type
